@@ -1,7 +1,9 @@
-from libs import OpenpyxlWrapper as Excel
-from libs import DataAggregation
 
 import os, sys, pprint
+
+from libs import OpenpyxlWrapper as Excel
+from libs import DataAggregation
+from libs import Viewer
 from libs import Dialog
 from libs import Logger
 from libs import Utility
@@ -147,14 +149,20 @@ if __name__ == "__main__":
             temp_dirs.append(temp_dir)
 
     # ファイルを処理
+    out_data = []
     for xlsx_path in xlsx_files:
         # 集計
         result = aggregate_results(filepath=xlsx_path)
         # 出力
         if not Utility.is_empty(result):
-            console_out(result)
+            console_out(result);
+            result["file"] = xlsx_path
+            out_data.append(result)
         else:
             logger.info("  データがありません")
+    
+    # ビューア起動
+    Viewer.load_data(out_data)
 
     # 一時フォルダを掃除
     if len(temp_dirs): Zip.cleanup_old_temp_dirs()  # 起動時に古い一時フォルダを削除
