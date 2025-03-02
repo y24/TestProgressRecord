@@ -113,12 +113,6 @@ def console_out(data):
     logger.info("~" * 50)
 
 
-def extract_zip(filepath):
-    # zipファイル
-    files, temp_dir = Zip.extract_files_from_zip(filepath, extensions=['.xlsx'])
-    return files, temp_dir
-
-
 if __name__ == "__main__":
     xlsx_files = []
     temp_dirs = []
@@ -138,8 +132,8 @@ if __name__ == "__main__":
         if ext == "xlsx":
             xlsx_files.append(input)
         elif ext == "zip":
-            extracted_files, temp_dir = extract_zip(input)
-            logger.info(f"extracted: {input}")
+            # zipファイル展開
+            extracted_files, temp_dir = Zip.extract_files_from_zip(input, extensions=['.xlsx'])
             for f in extracted_files:
                 xlsx_files.append(f)
             temp_dirs.append(temp_dir)
@@ -147,8 +141,7 @@ if __name__ == "__main__":
     # 処理
     for xlsx_path in xlsx_files:
         result = aggregate_results(filepath=xlsx_path)
-        console_out(result)
+        if result: console_out(result)
 
     # 一時フォルダを掃除
-    if len(temp_dirs):
-        Zip.cleanup_old_temp_dirs()  # 起動時に古い一時フォルダを削除
+    if len(temp_dirs): Zip.cleanup_old_temp_dirs()  # 起動時に古い一時フォルダを削除
