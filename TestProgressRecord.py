@@ -8,7 +8,15 @@ from libs import Utility
 from libs import Zip
 logger = Logger.get_logger(__name__, console=True, file=False, trace_line=False)
 
-inputs = []
+INPUTS = []
+CONFIG = {
+    "sheet_search_key": "テスト項目",
+    "header": {"search_col": "A", "search_key": "#"},
+    "result_row": {"key": "結果", "ignores": ["期待結果"]},
+    "person_row": {"key": "担当者"},
+    "date_row": {"key":"日付"},
+    "filter": ["Pass", "Fixed"]
+}
 
 # 処理
 def aggregate_results(filepath:str):
@@ -18,7 +26,7 @@ def aggregate_results(filepath:str):
 
     # 対象シート名を取得
     workbook = Excel.load(filepath)
-    sheet_names = Excel.get_sheetnames_by_keyword(workbook, "テスト項目")
+    sheet_names = Excel.get_sheetnames_by_keyword(workbook, CONFIG["sheet_search_key"])
 
     # シートがない場合はスキップ
     if len(sheet_names) == 0:
@@ -33,24 +41,24 @@ def aggregate_results(filepath:str):
         sheet = Excel.get_sheet_by_name(workbook=workbook, sheet_name=sheet_name)
 
         # ヘッダ行を探して取得
-        row_num = Excel.find_row(sheet, search_row="A", search_str="#")
+        row_num = Excel.find_row(sheet, search_col=CONFIG["header"]["search_col"], search_str=CONFIG["header"]["search_key"])
         header = Excel.get_row_values(sheet=sheet, row_num=row_num)
 
         # 列セット(例:環境別)を取得
         # 結果
-        result_rows = Utility.find_rownum_by_keyword(list=header, keyword="結果", ignore_words=["期待結果"])
+        result_rows = Utility.find_rownum_by_keyword(list=header, keyword=CONFIG["result_row"]["key"], ignore_words=CONFIG["result_row"]["ignores"])
         # 担当者
-        person_rows = Utility.find_rownum_by_keyword(list=header, keyword="担当者")
+        person_rows = Utility.find_rownum_by_keyword(list=header, keyword=CONFIG["person_row"]["key"])
         # 日付
-        day_rows = Utility.find_rownum_by_keyword(list=header, keyword="日付")
+        date_rows = Utility.find_rownum_by_keyword(list=header, keyword=CONFIG["date_row"]["key"])
 
         # セットが正しく取得できない場合はスキップ
-        if Utility.check_lists_equal_length(result_rows, person_rows, day_rows) == False:
+        if Utility.check_lists_equal_length(result_rows, person_rows, date_rows) == False:
             logger.error(f"Failed to get result column. (Sheet: {sheet_name})")
             continue
 
         # 行番号のセット(結果、担当者、日付)を作成
-        sets = Utility.transpose_lists(result_rows, person_rows, day_rows)
+        sets = Utility.transpose_lists(result_rows, person_rows, date_rows)
         
         # 各セット処理
         for set in sets:
@@ -68,10 +76,10 @@ def aggregate_results(filepath:str):
                 continue
 
             # セットごとのデータ集計
-            data_by_env[set_name] = DataAggregation.get_daily(data=set_data, filter=["Pass", "Fixed"])
+            data_by_env[set_name] = DataAggregation.get_daily(data=set_data, filter=CONFIG["filter"])
 
     # 全セット集計(日付別)
-    data_total = DataAggregation.get_daily(data=all_data, filter=["Pass", "Fixed"])
+    data_total = DataAggregation.get_daily(data=all_data, filter=CONFIG["filter"])
 
     # 全セット集計(担当者別)
     data_by_name = DataAggregation.get_daily_by_name(data=all_data)
@@ -118,16 +126,16 @@ if __name__ == "__main__":
     temp_dirs = []
 
     # 引数でファイルパスを受け取る(複数可)
-    inputs = sys.argv.copy()
+    INPUTS = sys.argv.copy()
 
     # 引数がない場合はファイル選択ダイアログ(複数可)
-    if len(inputs) <= 1:
-        inputs = Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))
+    if len(INPUTS) <= 1:
+        INPUTS = Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))
     else:
-        del inputs[0]
+        del INPUTS[0]
 
     # 拡張子判定
-    for input in inputs:
+    for input in INPUTS:
         ext = Utility.get_ext_from_path(input)
         if ext == "xlsx":
             xlsx_files.append(input)
@@ -138,10 +146,15 @@ if __name__ == "__main__":
                 xlsx_files.append(f)
             temp_dirs.append(temp_dir)
 
-    # 処理
+    # ファイルを処理
     for xlsx_path in xlsx_files:
+        # 集計
         result = aggregate_results(filepath=xlsx_path)
-        if result: console_out(result)
+        # 出力
+        if not Utility.is_empty(result):
+            console_out(result)
+        else:
+            logger.info("  データがありません")
 
     # 一時フォルダを掃除
     if len(temp_dirs): Zip.cleanup_old_temp_dirs()  # 起動時に古い一時フォルダを削除

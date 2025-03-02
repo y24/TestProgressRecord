@@ -14,10 +14,10 @@ def get_sheetnames_by_keyword(workbook, keyword:str):
     return [sheet for sheet in workbook.sheetnames if keyword in sheet]
 
 
-def find_row(sheet, search_row:str, search_str:str):
+def find_row(sheet, search_col:str, search_str:str):
     try:
         # 列名
-        col_num = column_index_from_string(search_row) - 1
+        col_num = column_index_from_string(search_col) - 1
 
         # 指定列をループして値を確認
         for row in sheet.iter_rows(min_col=1, max_col=1):

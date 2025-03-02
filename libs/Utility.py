@@ -26,3 +26,25 @@ def check_lists_equal_length(*lists):
 
 def get_ext_from_path(filepath:str):
     return os.path.splitext(filepath)[1][1:]
+
+
+def is_empty(obj):
+    """
+    再帰的にオブジェクトが空かどうかを判定する関数。
+    
+    - 空の辞書、リスト、ネストされた空の辞書・リストは "空" と判定
+    - 文字列、数値、None などは "空でない" と判定
+    
+    :param obj: 判定対象のオブジェクト
+    :return: 空なら True、そうでなければ False
+    """
+    if isinstance(obj, dict):
+        # 辞書の場合、すべてのキーが空と判定されたら空
+        return all(is_empty(value) for value in obj.values())
+    
+    elif isinstance(obj, list):
+        # リストの場合、すべての要素が空と判定されたら空
+        return all(is_empty(item) for item in obj)
+    
+    # 空の辞書やリストを除いた場合、その他のオブジェクトは空ではない
+    return False
