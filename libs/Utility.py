@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from collections import OrderedDict
 
 def find_rownum_by_keyword(list, keyword, ignore_words=None):
     if ignore_words is None:
@@ -73,3 +74,12 @@ def get_relative_path(fullpath: str, base_dir: str) -> str:
         raise ValueError(f"指定されたパス '{fullpath}' は、基準ディレクトリ '{base_dir}' に含まれていません。")
     
     return str(fullpath.relative_to(base_dir))
+
+def sort_nested_dates_desc(data):
+    """
+    一番上の階層のキーはそのままで、その下のキー（日付）を降順でソートする関数
+    """
+    sorted_data = {}
+    for env, dates in data.items():
+        sorted_data[env] = OrderedDict(sorted(dates.items(), key=lambda x: x[0], reverse=True))
+    return sorted_data

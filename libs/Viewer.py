@@ -3,6 +3,8 @@ from tkinter import ttk, filedialog
 import csv
 from datetime import datetime
 
+from libs import Utility
+
 def create_treeview(parent, data, structure):
     columns = []
     if structure == 'by_env':
@@ -11,13 +13,16 @@ def create_treeview(parent, data, structure):
             for values in dates.values():
                 all_keys.update(values.keys())
         columns = ["環境名", "日付"] + sorted(all_keys)
+        data = dict(Utility.sort_nested_dates_desc(data))
     elif structure == 'by_name':
-        columns = ["日付", "名前", "数"]
+        columns = ["日付", "担当者", "実施数"]
+        data = dict(sorted(data.items(), reverse=True))
     elif structure == 'total':
         all_keys = set()
         for values in data.values():
             all_keys.update(values.keys())
         columns = ["日付"] + sorted(all_keys)
+        data = dict(sorted(data.items(), reverse=True))
     
     frame = ttk.Frame(parent)
     frame.pack(fill=tk.BOTH, expand=True)
