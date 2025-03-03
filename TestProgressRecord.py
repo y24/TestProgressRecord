@@ -173,4 +173,4 @@ if __name__ == "__main__":
     Viewer.load_data(out_data)
 
     # 一時フォルダを掃除
-    if len(temp_dirs): Zip.cleanup_old_temp_dirs()  # 起動時に古い一時フォルダを削除
+    if len(temp_dirs): Zip.cleanup_old_temp_dirs()
