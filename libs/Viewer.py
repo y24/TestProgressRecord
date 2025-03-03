@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, filedialog
 import csv
+from datetime import datetime
 
 def create_treeview(parent, data, structure):
     columns = []
@@ -27,30 +28,32 @@ def create_treeview(parent, data, structure):
         tree.heading(col, text=col)
         tree.column(col, anchor='center', width=100)
     
+    today = datetime.today().strftime("%Y-%m-%d")
     row_colors = {}
     alternating_colors = ["#ffffff", "#f0f0f0"]
+    highlight_color = "#d0f0ff"
     
     if structure == 'total':
         for index, (date, values) in enumerate(data.items()):
             bg_color = alternating_colors[index % 2]
             row = [date] + [values.get(k, 0) for k in sorted(all_keys)]
             item_id = tree.insert('', 'end', values=row, tags=(date,))
-            tree.tag_configure(date, background=bg_color)
+            tree.tag_configure(date, background=highlight_color if date == today else bg_color)
     elif structure == 'by_env':
         for index, (env, dates) in enumerate(data.items()):
             bg_color = alternating_colors[index % 2]
             row_colors[env] = bg_color
             for date, values in dates.items():
                 row = [env, date] + [values.get(k, 0) for k in sorted(all_keys)]
-                item_id = tree.insert('', 'end', values=row, tags=(env,))
-                tree.tag_configure(env, background=bg_color)
+                item_id = tree.insert('', 'end', values=row, tags=(date,))
+                tree.tag_configure(date, background=highlight_color if date == today else bg_color)
     elif structure == 'by_name':
         for index, (date, names) in enumerate(data.items()):
             bg_color = alternating_colors[index % 2]
             row_colors[date] = bg_color
             for name, count in names.items():
                 item_id = tree.insert('', 'end', values=(date, name, count), tags=(date,))
-                tree.tag_configure(date, background=bg_color)
+                tree.tag_configure(date, background=highlight_color if date == today else bg_color)
     
     tree.pack(fill=tk.BOTH, expand=True)
     
