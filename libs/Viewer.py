@@ -22,8 +22,17 @@ def create_treeview(parent, data, structure):
     frame = ttk.Frame(parent)
     frame.pack(fill=tk.BOTH, expand=True)
     
-    tree = ttk.Treeview(frame, columns=columns, show='headings')
+    tree_frame = ttk.Frame(frame)
+    tree_frame.pack(fill=tk.BOTH, expand=True)
+
+    tree = ttk.Treeview(tree_frame, columns=columns, show='headings')
+
+    scrollbar_y = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
+    tree.configure(yscrollcommand=scrollbar_y.set)
     
+    scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+    tree.pack(fill=tk.BOTH, expand=True)
+
     for col in columns:
         tree.heading(col, text=col)
         tree.column(col, anchor='center', width=100)
