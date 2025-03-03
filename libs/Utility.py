@@ -28,6 +28,10 @@ def get_ext_from_path(filepath:str):
     return os.path.splitext(filepath)[1][1:]
 
 
+def get_filename_from_path(filepath:str):
+    return os.path.basename(filepath)
+
+
 def is_empty(obj):
     """
     再帰的にオブジェクトが空かどうかを判定する関数。

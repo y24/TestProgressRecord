@@ -156,7 +156,7 @@ if __name__ == "__main__":
         # 出力
         if not Utility.is_empty(result):
             console_out(result);
-            result["file"] = xlsx_path
+            result["file"] = Utility.get_filename_from_path(xlsx_path)
             out_data.append(result)
         else:
             logger.info("  データがありません")

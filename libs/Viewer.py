@@ -28,9 +28,15 @@ def create_treeview(parent, data, structure):
         tree.column(col, anchor='center', width=100)
     
     row_colors = {}
-    alternating_colors = ["#f0f0f0", "#ffffff"]
+    alternating_colors = ["#ffffff", "#f0f0f0"]
     
-    if structure == 'by_env':
+    if structure == 'total':
+        for index, (date, values) in enumerate(data.items()):
+            bg_color = alternating_colors[index % 2]
+            row = [date] + [values.get(k, 0) for k in sorted(all_keys)]
+            item_id = tree.insert('', 'end', values=row, tags=(date,))
+            tree.tag_configure(date, background=bg_color)
+    elif structure == 'by_env':
         for index, (env, dates) in enumerate(data.items()):
             bg_color = alternating_colors[index % 2]
             row_colors[env] = bg_color
@@ -45,16 +51,10 @@ def create_treeview(parent, data, structure):
             for name, count in names.items():
                 item_id = tree.insert('', 'end', values=(date, name, count), tags=(date,))
                 tree.tag_configure(date, background=bg_color)
-    elif structure == 'total':
-        for index, (date, values) in enumerate(data.items()):
-            bg_color = alternating_colors[index % 2]
-            row = [date] + [values.get(k, 0) for k in sorted(all_keys)]
-            item_id = tree.insert('', 'end', values=row, tags=(date,))
-            tree.tag_configure(date, background=bg_color)
     
     tree.pack(fill=tk.BOTH, expand=True)
     
-    save_button = ttk.Button(frame, text="CSVに保存", command=lambda: save_to_csv(tree, columns))
+    save_button = ttk.Button(frame, text="CSV保存", command=lambda: save_to_csv(tree, columns))
     save_button.pack(pady=5)
     
     return tree
@@ -77,25 +77,25 @@ def update_display(selected_file, data_files):
         widget.destroy()
     
     data = next(item for item in data_files if item['file'] == selected_file)
-    
+
+    frame_total = ttk.Frame(notebook)
+    notebook.add(frame_total, text="合計")
+    create_treeview(frame_total, data['total'], 'total')
+
     frame_env = ttk.Frame(notebook)
     notebook.add(frame_env, text="環境別")
     create_treeview(frame_env, data['by_env'], 'by_env')
     
     frame_name = ttk.Frame(notebook)
-    notebook.add(frame_name, text="名前別")
+    notebook.add(frame_name, text="担当者別")
     create_treeview(frame_name, data['by_name'], 'by_name')
-    
-    frame_total = ttk.Frame(notebook)
-    notebook.add(frame_total, text="合計")
-    create_treeview(frame_total, data['total'], 'total')
     
     notebook.select(current_tab)
 
 def load_data(data_files):
     global notebook, file_selector
     root = tk.Tk()
-    root.title("データ表示アプリ")
+    root.title("Viwer")
     root.geometry("600x450")
     
     file_selector = ttk.Combobox(root, values=[file['file'] for file in data_files], state="readonly")
