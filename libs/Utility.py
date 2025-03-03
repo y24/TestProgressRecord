@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 def find_rownum_by_keyword(list, keyword, ignore_words=None):
     if ignore_words is None:
@@ -52,3 +53,23 @@ def is_empty(obj):
     
     # 空の辞書やリストを除いた場合、その他のオブジェクトは空ではない
     return False
+
+
+def get_relative_path(fullpath: str, base_dir: str) -> str:
+    """
+    指定した基準ディレクトリ以降のパスを取得する関数
+    
+    Args:
+        full_path (str): フルパス
+        base_dir (str): 基準ディレクトリ
+    
+    Returns:
+        str: 基準ディレクトリ以降の相対パス
+    """
+    fullpath = Path(fullpath).resolve()
+    base_dir = Path(base_dir).resolve()
+    
+    if base_dir not in fullpath.parents:
+        raise ValueError(f"指定されたパス '{fullpath}' は、基準ディレクトリ '{base_dir}' に含まれていません。")
+    
+    return str(fullpath.relative_to(base_dir))

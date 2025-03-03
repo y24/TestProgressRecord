@@ -22,9 +22,6 @@ CONFIG = {
 
 # 処理
 def aggregate_results(filepath:str):
-    filename = os.path.basename(filepath)
-    logger.info(f"FILE: {filename}")
-    logger.info(" ")
 
     # 対象シート名を取得
     workbook = Excel.load(filepath)
@@ -95,6 +92,10 @@ def aggregate_results(filepath:str):
 
 
 def console_out(data):
+    filename = data["file"]
+    logger.info(f"FILE: {filename}")
+    logger.info(" ")
+
     # インデント
     dep = "  "
 
@@ -124,7 +125,7 @@ def console_out(data):
 
 
 if __name__ == "__main__":
-    xlsx_files = []
+    files = []
     temp_dirs = []
 
     # 引数でファイルパスを受け取る(複数可)
@@ -140,23 +141,30 @@ if __name__ == "__main__":
     for input in INPUTS:
         ext = Utility.get_ext_from_path(input)
         if ext == "xlsx":
-            xlsx_files.append(input)
+            files.append({"fullpath": input, "temp_dir": ""})
         elif ext == "zip":
             # zipファイル展開
             extracted_files, temp_dir = Zip.extract_files_from_zip(input, extensions=['.xlsx'])
             for f in extracted_files:
-                xlsx_files.append(f)
+                files.append({"fullpath": f, "temp_dir": temp_dir})
             temp_dirs.append(temp_dir)
 
     # ファイルを処理
     out_data = []
-    for xlsx_path in xlsx_files:
+    for file in files:
         # 集計
-        result = aggregate_results(filepath=xlsx_path)
+        result = aggregate_results(filepath=file["fullpath"])
         # 出力
         if not Utility.is_empty(result):
-            console_out(result);
-            result["file"] = Utility.get_filename_from_path(xlsx_path)
+            if file["temp_dir"]:
+                # zipファイルの場合はディレクトリ名を含んだパスを出力
+                result["file"] = Utility.get_relative_path(fullpath=file["fullpath"], base_dir=file["temp_dir"])
+            else:
+                # xlsxファイル直接の場合はファイル名のみ
+                result["file"] = Utility.get_filename_from_path(filepath=file["fullpath"])
+            # コンソール出力
+            console_out(result)
+            # ビューアに渡す配列に格納
             out_data.append(result)
         else:
             logger.info("  データがありません")
