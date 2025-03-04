@@ -1,9 +1,12 @@
 import tkinter as tk
 from tkinter import ttk, filedialog
-import csv
+import csv, json
 from datetime import datetime
 
 from libs import Utility
+
+# 設定ファイルのパス
+CONFIG_FILE = "appconfig.json"
 
 def create_treeview(parent, data, structure):
     columns = []
@@ -109,11 +112,76 @@ def update_display(selected_file, data_files):
     
     notebook.select(current_tab)
 
+def write_data(write_settings):
+    print(write_settings)
+
+def create_input_area(parent):
+    frame = ttk.LabelFrame(parent, text="データ書込設定")
+    frame.pack(fill=tk.X, padx=5, pady=5)
+    
+    ttk.Label(frame, text="ファイルパス:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
+    file_path_entry = ttk.Entry(frame, width=50)
+    file_path_entry.grid(row=0, column=1, padx=5, pady=2)
+    ttk.Button(frame, text="選択", command=lambda: file_path_entry.insert(0, filedialog.askopenfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")]))).grid(row=0, column=2, padx=5, pady=2)
+    
+    field_frame = ttk.Frame(frame)
+    field_frame.grid(row=1, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W)
+    
+    ttk.Label(field_frame, text="ヘッダー列:").pack(side=tk.LEFT, padx=5)
+    header_col_entry = ttk.Entry(field_frame, width=5)
+    header_col_entry.insert(0, "H")
+    header_col_entry.pack(side=tk.LEFT)
+    
+    ttk.Label(field_frame, text="ファイル名列:").pack(side=tk.LEFT, padx=5)
+    filename_col_entry = ttk.Entry(field_frame, width=5)
+    filename_col_entry.insert(0, "B")
+    filename_col_entry.pack(side=tk.LEFT)
+    
+    ttk.Label(field_frame, text="日付キー:").pack(side=tk.LEFT, padx=5)
+    date_key_entry = ttk.Entry(field_frame, width=10)
+    date_key_entry.insert(0, "日付")
+    date_key_entry.pack(side=tk.LEFT)
+    
+    ttk.Label(field_frame, text="実績キー:").pack(side=tk.LEFT, padx=5)
+    actual_key_entry = ttk.Entry(field_frame, width=10)
+    actual_key_entry.insert(0, "実績")
+    actual_key_entry.pack(side=tk.LEFT)
+    
+    date_frame = ttk.Frame(frame)
+    date_frame.grid(row=2, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W+tk.E)
+    ttk.Label(date_frame, text="開始日:").pack(side=tk.LEFT, padx=5)
+    start_date_entry = ttk.Entry(date_frame, width=15)
+    start_date_entry.insert(0, "2000-01-01")
+    start_date_entry.pack(side=tk.LEFT)
+    ttk.Label(date_frame, text="終了日:").pack(side=tk.LEFT, padx=5)
+    end_date_entry = ttk.Entry(date_frame, width=15)
+    end_date_entry.insert(0, datetime.today().strftime("%Y-%m-%d"))
+    end_date_entry.pack(side=tk.LEFT)
+
+    until_today_var = tk.BooleanVar()
+    ttk.Checkbutton(date_frame, text="今日まで", variable=until_today_var).pack(side=tk.LEFT, padx=10)
+
+
+    write_settings = {
+        "filepath": file_path_entry.get(),
+        "header_row": header_col_entry.get(),
+        "filename_row": filename_col_entry.get(),
+        "date_row": date_key_entry.get(),
+        "actual_row": actual_key_entry.get(),
+        "until_today": until_today_var.get(),
+        "start_date": start_date_entry.get(),
+        "end_date": end_date_entry.get()
+    }
+
+    submit_frame = ttk.Frame(parent)
+    submit_frame.pack(fill=tk.BOTH)
+    ttk.Button(submit_frame, text="書き込み", command=lambda: write_data(write_settings)).pack(pady=(0,5))
+
 def load_data(data_files):
     global notebook, file_selector
     root = tk.Tk()
     root.title("Viwer")
-    root.geometry("600x450")
+    root.geometry("600x500")
     
     file_selector = ttk.Combobox(root, values=[file['file'] for file in data_files], state="readonly")
     file_selector.pack(fill=tk.X, padx=5, pady=5)
@@ -126,6 +194,8 @@ def load_data(data_files):
         file_selector.current(0)
         update_display(data_files[0]['file'], data_files)
     
+    create_input_area(root)
+
     root.protocol("WM_DELETE_WINDOW", root.quit)  # アプリ終了時に後続処理を継続
     root.mainloop()
     root.destroy()

@@ -90,7 +90,7 @@ def aggregate_results(filepath:str):
         "by_env": data_by_env
     }
 
-
+# コンソール出力
 def console_out(data):
     filename = data["file"]
     logger.info(f"FILE: {filename}")
@@ -170,7 +170,7 @@ if __name__ == "__main__":
             logger.info("  データがありません")
     
     # ビューア起動
-    Viewer.load_data(out_data)
+    if len(out_data): Viewer.load_data(out_data)
 
     # 一時フォルダを掃除
     if len(temp_dirs): Zip.cleanup_old_temp_dirs()
