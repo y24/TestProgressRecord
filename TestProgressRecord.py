@@ -1,9 +1,9 @@
 
 import os, sys, pprint
 
+import App
 from libs import OpenpyxlWrapper as Excel
 from libs import DataAggregation
-from libs import Viewer
 from libs import Dialog
 from libs import Logger
 from libs import Utility
@@ -151,11 +151,13 @@ if __name__ == "__main__":
 
     # ファイルを処理
     out_data = []
+    errors = []
     for file in files:
         # 集計
         result = aggregate_results(filepath=file["fullpath"])
+        
         # 出力
-        if not Utility.is_empty(result):
+        if result and not Utility.is_empty(result):
             if file["temp_dir"]:
                 # zipファイルの場合はディレクトリ名を含んだパスを出力
                 result["file"] = Utility.get_relative_path(fullpath=file["fullpath"], base_dir=file["temp_dir"])
@@ -167,10 +169,16 @@ if __name__ == "__main__":
             # ビューアに渡す配列に格納
             out_data.append(result)
         else:
-            logger.info("  データがありません")
-    
-    # ビューア起動
-    if len(out_data): Viewer.load_data(out_data)
+            # 出力データなし
+            errors.append(file['fullpath'])
 
-    # 一時フォルダを掃除
+    # ビューア起動
+    if len(out_data):
+        App.load_data(out_data)
+    else:
+        # 1件もデータがなかった場合はメッセージ
+        ers = "\n".join(errors)
+        Dialog.show_warning("Info", f"以下のファイルからはデータが検出できませんでした。\n{ers}")
+
+    # zipファイルを展開していた場合は一時フォルダを掃除
     if len(temp_dirs): Zip.cleanup_old_temp_dirs()

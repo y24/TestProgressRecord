@@ -1,12 +1,14 @@
 import tkinter as tk
 from tkinter import ttk, filedialog
-import csv, json
+import csv, pprint
 from datetime import datetime
 
+import WriteData
 from libs import Utility
+from libs import AppConfig
+from libs import Dialog
 
-# 設定ファイルのパス
-CONFIG_FILE = "appconfig.json"
+WRITE_SETTINGS = {"filepath": "", "table_name": "DATA"}
 
 def create_treeview(parent, data, structure):
     columns = []
@@ -57,13 +59,16 @@ def create_treeview(parent, data, structure):
             item_id = tree.insert('', 'end', values=row, tags=(date,))
             tree.tag_configure(date, background=highlight_color if date == today else bg_color)
     elif structure == 'by_env':
-        for index, (env, dates) in enumerate(data.items()):
-            bg_color = alternating_colors[index % 2]
-            row_colors[env] = bg_color
-            for date, values in dates.items():
-                row = [env, date] + [values.get(k, 0) for k in sorted(all_keys)]
-                item_id = tree.insert('', 'end', values=row, tags=(date,))
-                tree.tag_configure(date, background=highlight_color if date == today else bg_color)
+        if not data:
+            tree.insert('', 'end', values=["取得失敗", "-"] + ["-" for _ in sorted(all_keys)])
+        else:
+            for index, (env, dates) in enumerate(data.items()):
+                bg_color = alternating_colors[index % 2]
+                row_colors[env] = bg_color
+                for date, values in dates.items():
+                    row = [env, date] + [values.get(k, 0) for k in sorted(all_keys)]
+                    item_id = tree.insert('', 'end', values=row, tags=(date,))
+                    tree.tag_configure(date, background=highlight_color if date == today else bg_color)
     elif structure == 'by_name':
         for index, (date, names) in enumerate(data.items()):
             bg_color = alternating_colors[index % 2]
@@ -112,77 +117,79 @@ def update_display(selected_file, data_files):
     
     notebook.select(current_tab)
 
-def write_data(write_settings):
-    print(write_settings)
+def convert_to_2d_array(data):
+    header = ["ファイル名", "環境名", "日付", "Total"]
+    result = [header]
+    for entry in data:
+        file_name = entry.get("file", "")
+        if entry["by_env"]:
+            for env, env_data in entry.get("by_env", {}).items():
+                for date, values in env_data.items():
+                    result.append([file_name, env, date, values.get("Total", 0)])
+        else:
+            # 環境別データがない場合は環境名を - として出力
+            for date, values in entry.get("total", {}).items():
+                result.append([file_name, "-", date, values.get("Total", 0)])
+    return result
 
-def create_input_area(parent):
-    frame = ttk.LabelFrame(parent, text="データ書込設定")
-    frame.pack(fill=tk.X, padx=5, pady=5)
-    
-    ttk.Label(frame, text="ファイルパス:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
-    file_path_entry = ttk.Entry(frame, width=50)
-    file_path_entry.grid(row=0, column=1, padx=5, pady=2)
-    ttk.Button(frame, text="選択", command=lambda: file_path_entry.insert(0, filedialog.askopenfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")]))).grid(row=0, column=2, padx=5, pady=2)
-    
-    field_frame = ttk.Frame(frame)
-    field_frame.grid(row=1, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W)
-    
-    ttk.Label(field_frame, text="ヘッダー列:").pack(side=tk.LEFT, padx=5)
-    header_col_entry = ttk.Entry(field_frame, width=5)
-    header_col_entry.insert(0, "H")
-    header_col_entry.pack(side=tk.LEFT)
-    
-    ttk.Label(field_frame, text="ファイル名列:").pack(side=tk.LEFT, padx=5)
-    filename_col_entry = ttk.Entry(field_frame, width=5)
-    filename_col_entry.insert(0, "B")
-    filename_col_entry.pack(side=tk.LEFT)
-    
-    ttk.Label(field_frame, text="日付キー:").pack(side=tk.LEFT, padx=5)
-    date_key_entry = ttk.Entry(field_frame, width=10)
-    date_key_entry.insert(0, "日付")
-    date_key_entry.pack(side=tk.LEFT)
-    
-    ttk.Label(field_frame, text="実績キー:").pack(side=tk.LEFT, padx=5)
-    actual_key_entry = ttk.Entry(field_frame, width=10)
-    actual_key_entry.insert(0, "実績")
-    actual_key_entry.pack(side=tk.LEFT)
-    
-    date_frame = ttk.Frame(frame)
-    date_frame.grid(row=2, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W+tk.E)
-    ttk.Label(date_frame, text="開始日:").pack(side=tk.LEFT, padx=5)
-    start_date_entry = ttk.Entry(date_frame, width=15)
-    start_date_entry.insert(0, "2000-01-01")
-    start_date_entry.pack(side=tk.LEFT)
-    ttk.Label(date_frame, text="終了日:").pack(side=tk.LEFT, padx=5)
-    end_date_entry = ttk.Entry(date_frame, width=15)
-    end_date_entry.insert(0, datetime.today().strftime("%Y-%m-%d"))
-    end_date_entry.pack(side=tk.LEFT)
-
-    until_today_var = tk.BooleanVar()
-    ttk.Checkbutton(date_frame, text="今日まで", variable=until_today_var).pack(side=tk.LEFT, padx=10)
-
-
-    write_settings = {
-        "filepath": file_path_entry.get(),
-        "header_row": header_col_entry.get(),
-        "filename_row": filename_col_entry.get(),
-        "date_row": date_key_entry.get(),
-        "actual_row": actual_key_entry.get(),
-        "until_today": until_today_var.get(),
-        "start_date": start_date_entry.get(),
-        "end_date": end_date_entry.get()
+def write_data(field_data):
+    WRITE_SETTINGS = {
+        "filepath": field_data["filepath"].get(),
+        "table_name": field_data["table_name"].get()
     }
+
+    # データを書込用に変換
+    converted_data = convert_to_2d_array(INPUT_DATA)
+
+    # データ書込
+    try:
+        WriteData.update_table(converted_data, WRITE_SETTINGS["filepath"], WRITE_SETTINGS["table_name"])
+    except Exception as e:
+        Dialog.show_warning("Error", f"保存失敗：ファイルが読み取り専用の可能性があります。\n{e}")
+
+    # 設定を保存
+    AppConfig.save_settings(WRITE_SETTINGS)
+
+def select_write_file(entry):
+    filepath = filedialog.askopenfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
+    if filepath:  # キャンセルで空文字が返ってきたときは変更しない
+        entry.delete(0, tk.END)  # 既存の内容をクリア
+        entry.insert(0, filepath)  # 新しいファイルパスをセット
+
+def create_input_area(parent, settings):
+    input_frame = ttk.LabelFrame(parent, text="データ書込設定")
+    input_frame.pack(fill=tk.X, padx=5, pady=5)
+    
+    ttk.Label(input_frame, text="ファイルパス:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
+    file_path_entry = ttk.Entry(input_frame, width=50)
+    file_path_entry.insert(0, settings["filepath"])
+    file_path_entry.grid(row=0, column=1, padx=5, pady=2)
+    ttk.Button(input_frame, text="選択", command=lambda: select_write_file(file_path_entry)).grid(row=0, column=2, padx=5, pady=2)
+    
+    field_frame = ttk.Frame(input_frame)
+    field_frame.grid(row=1, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W)
+
+    ttk.Label(field_frame, text="データシート名:").pack(side=tk.LEFT, pady=5)
+    table_name_entry = ttk.Entry(field_frame, width=20)
+    table_name_entry.insert(0, settings["table_name"])
+    table_name_entry.pack(side=tk.LEFT)
+
+    field_data = {"filepath": file_path_entry, "table_name": table_name_entry}
 
     submit_frame = ttk.Frame(parent)
     submit_frame.pack(fill=tk.BOTH)
-    ttk.Button(submit_frame, text="書き込み", command=lambda: write_data(write_settings)).pack(pady=(0,5))
+    ttk.Button(submit_frame, text="書き込み", command=lambda: write_data(field_data)).pack(pady=(0,5))
 
 def load_data(data_files):
-    global notebook, file_selector
+    global notebook, file_selector, INPUT_DATA
+
+    INPUT_DATA = data_files
+
     root = tk.Tk()
     root.title("Viwer")
     root.geometry("600x500")
     
+    # ファイル読み込みエリア
     file_selector = ttk.Combobox(root, values=[file['file'] for file in data_files], state="readonly")
     file_selector.pack(fill=tk.X, padx=5, pady=5)
     file_selector.bind("<<ComboboxSelected>>", lambda event: update_display(file_selector.get(), data_files))
@@ -194,7 +201,10 @@ def load_data(data_files):
         file_selector.current(0)
         update_display(data_files[0]['file'], data_files)
     
-    create_input_area(root)
+    # 設定読み込み
+    settings = AppConfig.load_settings() or WRITE_SETTINGS
+    # ファイル書き込みエリア
+    create_input_area(root, settings)
 
     root.protocol("WM_DELETE_WINDOW", root.quit)  # アプリ終了時に後続処理を継続
     root.mainloop()
