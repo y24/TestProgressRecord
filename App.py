@@ -8,7 +8,7 @@ from libs import Utility
 from libs import AppConfig
 from libs import Dialog
 
-WRITE_SETTINGS = {"filepath": "", "table_name": "DATA"}
+SETTINGS = {"filepath": "", "table_name": "DATA"}
 master_result = ["Pass", "Fixed", "Suspend", "N/A", "Completed"]
 
 def create_treeview(parent, data, structure):
@@ -134,7 +134,7 @@ def convert_to_2d_array(data):
     return result
 
 def write_data(field_data):
-    WRITE_SETTINGS = {
+    SETTINGS = {
         "filepath": field_data["filepath"].get(),
         "table_name": field_data["table_name"].get()
     }
@@ -144,12 +144,12 @@ def write_data(field_data):
 
     # データ書込
     try:
-        WriteData.update_table(converted_data, WRITE_SETTINGS["filepath"], WRITE_SETTINGS["table_name"])
+        WriteData.update_table(converted_data, SETTINGS["filepath"], SETTINGS["table_name"])
     except Exception as e:
         Dialog.show_warning("Error", f"保存失敗：ファイルが読み取り専用の可能性があります。\n{e}")
 
     # 設定を保存
-    AppConfig.save_settings(WRITE_SETTINGS)
+    AppConfig.save_settings(SETTINGS)
 
 def select_write_file(entry):
     filepath = filedialog.askopenfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
@@ -203,7 +203,7 @@ def load_data(data_files):
         update_display(data_files[0]['file'], data_files)
     
     # 設定読み込み
-    settings = AppConfig.load_settings() or WRITE_SETTINGS
+    settings = AppConfig.load_settings() or SETTINGS
     # ファイル書き込みエリア
     create_input_area(root, settings)
 
