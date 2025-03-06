@@ -9,6 +9,7 @@ from libs import AppConfig
 from libs import Dialog
 
 WRITE_SETTINGS = {"filepath": "", "table_name": "DATA"}
+master_result = ["Pass", "Fixed", "Suspend", "N/A", "Completed"]
 
 def create_treeview(parent, data, structure):
     columns = []
@@ -17,7 +18,7 @@ def create_treeview(parent, data, structure):
         for dates in data.values():
             for values in dates.values():
                 all_keys.update(values.keys())
-        columns = ["環境名", "日付"] + sorted(all_keys)
+        columns = ["環境名", "日付"] + Utility.sort_by_master(master_list=master_result, input_list=all_keys)
         data = dict(Utility.sort_nested_dates_desc(data))
     elif structure == 'by_name':
         columns = ["日付", "担当者", "実施数"]
@@ -26,7 +27,7 @@ def create_treeview(parent, data, structure):
         all_keys = set()
         for values in data.values():
             all_keys.update(values.keys())
-        columns = ["日付"] + sorted(all_keys)
+        columns = ["日付"] + Utility.sort_by_master(master_list=master_result, input_list=all_keys)
         data = dict(sorted(data.items(), reverse=True))
     
     frame = ttk.Frame(parent)
@@ -118,18 +119,18 @@ def update_display(selected_file, data_files):
     notebook.select(current_tab)
 
 def convert_to_2d_array(data):
-    header = ["ファイル名", "環境名", "日付", "Total"]
+    header = ["ファイル名", "環境名", "日付", "Completed"]
     result = [header]
     for entry in data:
         file_name = entry.get("file", "")
         if entry["by_env"]:
             for env, env_data in entry.get("by_env", {}).items():
                 for date, values in env_data.items():
-                    result.append([file_name, env, date, values.get("Total", 0)])
+                    result.append([file_name, env, date, values.get("Completed", 0)])
         else:
             # 環境別データがない場合は環境名を - として出力
             for date, values in entry.get("total", {}).items():
-                result.append([file_name, "-", date, values.get("Total", 0)])
+                result.append([file_name, "-", date, values.get("Completed", 0)])
     return result
 
 def write_data(field_data):
@@ -189,7 +190,7 @@ def load_data(data_files):
     root.title("Viwer")
     root.geometry("600x500")
     
-    # ファイル読み込みエリア
+    # ファイル選択プルダウン
     file_selector = ttk.Combobox(root, values=[file['file'] for file in data_files], state="readonly")
     file_selector.pack(fill=tk.X, padx=5, pady=5)
     file_selector.bind("<<ComboboxSelected>>", lambda event: update_display(file_selector.get(), data_files))

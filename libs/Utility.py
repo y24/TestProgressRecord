@@ -83,3 +83,9 @@ def sort_nested_dates_desc(data):
     for env, dates in data.items():
         sorted_data[env] = OrderedDict(sorted(dates.items(), key=lambda x: x[0], reverse=True))
     return sorted_data
+
+def sort_by_master(master_list, input_list):
+    """
+    指定されたマスタリストの順番に基づいて、入力リストを並び替える。
+    """
+    return sorted(input_list, key=lambda x: master_list.index(x) if x in master_list else float('inf'))
