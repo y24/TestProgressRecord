@@ -128,9 +128,9 @@ def convert_to_2d_array(data):
                 for date, values in env_data.items():
                     result.append([file_name, env, date, values.get("Completed", 0)])
         else:
-            # 環境別データがない場合は環境名を - として出力
+            # 環境別データがない場合は環境名を !取得失敗! として出力
             for date, values in entry.get("total", {}).items():
-                result.append([file_name, "-", date, values.get("Completed", 0)])
+                result.append([file_name, "!取得失敗!", date, values.get("Completed", 0)])
     return result
 
 def write_data(field_data):
