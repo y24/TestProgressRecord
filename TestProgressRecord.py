@@ -127,6 +127,8 @@ def console_out(data):
 if __name__ == "__main__":
     files = []
     temp_dirs = []
+    out_data = []
+    errors = []
 
     # 引数でファイルパスを受け取る(複数可)
     INPUTS = sys.argv.copy()
@@ -150,26 +152,22 @@ if __name__ == "__main__":
             temp_dirs.append(temp_dir)
 
     # ファイルを処理
-    out_data = []
-    errors = []
     for file in files:
         # 集計
         result = aggregate_results(filepath=file["fullpath"])
-        
         # 出力
         if result and not Utility.is_empty(result):
+            # ファイルパス
+            result["file"] = Utility.get_filename_from_path(filepath=file["fullpath"])
+            # zipファイル内の相対パス
             if file["temp_dir"]:
-                # zipファイルの場合はディレクトリ名を含んだパスを出力
-                result["file"] = Utility.get_relative_path(fullpath=file["fullpath"], base_dir=file["temp_dir"])
-            else:
-                # xlsxファイル直接の場合はファイル名のみ
-                result["file"] = Utility.get_filename_from_path(filepath=file["fullpath"])
+                result["relative_path"] = Utility.get_relative_path(fullpath=file["fullpath"], base_dir=file["temp_dir"])
             # コンソール出力
             console_out(result)
             # ビューアに渡す配列に格納
             out_data.append(result)
         else:
-            # 出力データなし
+            # 出力データがない場合
             errors.append(file['fullpath'])
 
     # ビューア起動
@@ -178,7 +176,7 @@ if __name__ == "__main__":
     else:
         # 1件もデータがなかった場合はメッセージ
         ers = "\n".join(errors)
-        Dialog.show_warning("Info", f"以下のファイルからはデータが検出できませんでした。\n{ers}")
+        Dialog.show_warning("Info", f"ファイルからデータが検出できませんでした。\n{ers}")
 
     # zipファイルを展開していた場合は一時フォルダを掃除
     if len(temp_dirs): Zip.cleanup_old_temp_dirs()
