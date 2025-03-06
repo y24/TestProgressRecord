@@ -105,7 +105,7 @@ def console_out(data):
     filename = data["file"]
     logger.info(f"FILE: {filename}")
     logger.info(f"CASES COUNT: {data['case_count']}")
-    logger.info(" ")
+    logger.debug(" ")
 
     # インデント
     dep = "  "
@@ -114,24 +114,24 @@ def console_out(data):
     if any(data["total"]):
         logger.info("[Total]")
         for key, d in data["total"].items():
-            logger.info(dep + f"{key}: {d}")
-        logger.info(" ")
+            logger.debug(dep + f"{key}: {d}")
+        logger.debug(" ")
 
         logger.info("[By name]")
         for key, d in data["by_name"].items():
-            logger.info(dep + f"{key}: {d}")
-        logger.info(" ")
+            logger.debug(dep + f"{key}: {d}")
+        logger.debug(" ")
 
     # 出力(セット別)
     if any(data["by_env"]):
         logger.info("[By environment]")
         for key, d in data["by_env"].items():
-            logger.info(dep + f"{key}:")
+            logger.debug(dep + f"{key}:")
             for key, d in d.items():
-                logger.info(dep * 2 + f"{key}: {d}")
-        logger.info(" ")
+                logger.debug(dep * 2 + f"{key}: {d}")
+        logger.debug(" ")
 
-    logger.info(" ")
+    logger.debug(" ")
     logger.info("~" * 50)
 
 
