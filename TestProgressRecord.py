@@ -14,6 +14,7 @@ INPUTS = []
 CONFIG = {
     "sheet_search_key": "テスト項目",
     "header": {"search_col": "A", "search_key": "#"},
+    "tobe_row": {"key": "期待"},
     "result_row": {"key": "結果", "ignores": ["期待結果"]},
     "person_row": {"key": "担当者"},
     "date_row": {"key":"日付"},
@@ -40,8 +41,8 @@ def aggregate_results(filepath:str):
         sheet = Excel.get_sheet_by_name(workbook=workbook, sheet_name=sheet_name)
 
         # ヘッダ行を探して取得
-        row_num = Excel.find_row(sheet, search_col=CONFIG["header"]["search_col"], search_str=CONFIG["header"]["search_key"])
-        header = Excel.get_row_values(sheet=sheet, row_num=row_num)
+        header_rownum = Excel.find_row(sheet, search_col=CONFIG["header"]["search_col"], search_str=CONFIG["header"]["search_key"])
+        header = Excel.get_row_values(sheet=sheet, row_num=header_rownum)
 
         # 列セット(例:環境別)を取得
         # 結果
@@ -62,7 +63,7 @@ def aggregate_results(filepath:str):
         # 各セット処理
         for set in sets:
             # セットのデータ取得
-            set_data = Excel.get_columns_data(sheet=sheet, col_nums=set, header_row=row_num, ignore_header=True)
+            set_data = Excel.get_columns_data(sheet=sheet, col_nums=set, header_row=header_rownum, ignore_header=True)
 
             # 全セット合計のデータにも追加
             all_data = all_data + set_data
@@ -83,8 +84,17 @@ def aggregate_results(filepath:str):
     # 全セット集計(担当者別)
     data_by_name = DataAggregation.get_daily_by_name(data=all_data)
 
+    # テストケース数カウント
+    # 期待結果列の番号
+    tobe_rows = Utility.find_rownum_by_keyword(list=header, keyword=CONFIG["tobe_row"]["key"])
+    # 期待結果列を取得
+    tobe_data = Excel.get_column_values(sheet=sheet, col_nums=tobe_rows,header_row=header_rownum, ignore_header=True)
+    # テストケース数
+    case_count = sum(1 for item in tobe_data if any(x is not None for x in item))
+
     # 結果返却
     return {
+        "case_count": case_count,
         "total": data_total,
         "by_name": data_by_name,
         "by_env": data_by_env
@@ -94,6 +104,7 @@ def aggregate_results(filepath:str):
 def console_out(data):
     filename = data["file"]
     logger.info(f"FILE: {filename}")
+    logger.info(f"CASES COUNT: {data['case_count']}")
     logger.info(" ")
 
     # インデント
