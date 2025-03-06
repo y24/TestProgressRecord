@@ -18,7 +18,7 @@ CONFIG = {
     "result_row": {"key": "結果", "ignores": ["期待結果"]},
     "person_row": {"key": "担当者"},
     "date_row": {"key":"日付"},
-    "filter": ["Pass", "Fixed"]
+    "filter": ["Pass", "Fixed", "Suspend", "N/A"]
 }
 
 # 処理

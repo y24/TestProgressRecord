@@ -29,7 +29,7 @@ def create_treeview(parent, data, structure):
             all_keys.update(values.keys())
         columns = ["日付"] + Utility.sort_by_master(master_list=master_result, input_list=all_keys)
         data = dict(sorted(data.items(), reverse=True))
-    
+
     frame = ttk.Frame(parent)
     frame.pack(fill=tk.BOTH, expand=True)
     
@@ -56,18 +56,18 @@ def create_treeview(parent, data, structure):
     if structure == 'total':
         for index, (date, values) in enumerate(data.items()):
             bg_color = alternating_colors[index % 2]
-            row = [date] + [values.get(k, 0) for k in sorted(all_keys)]
+            row = [date] + [values.get(k, 0) for k in Utility.sort_by_master(master_list=master_result, input_list=all_keys)]
             item_id = tree.insert('', 'end', values=row, tags=(date,))
             tree.tag_configure(date, background=highlight_color if date == today else bg_color)
     elif structure == 'by_env':
         if not data:
-            tree.insert('', 'end', values=["取得失敗", "-"] + ["-" for _ in sorted(all_keys)])
+            tree.insert('', 'end', values=["取得失敗", "-"] + ["-" for _ in Utility.sort_by_master(master_list=master_result, input_list=all_keys)])
         else:
             for index, (env, dates) in enumerate(data.items()):
                 bg_color = alternating_colors[index % 2]
                 row_colors[env] = bg_color
                 for date, values in dates.items():
-                    row = [env, date] + [values.get(k, 0) for k in sorted(all_keys)]
+                    row = [env, date] + [values.get(k, 0) for k in Utility.sort_by_master(master_list=master_result, input_list=all_keys)]
                     item_id = tree.insert('', 'end', values=row, tags=(date,))
                     tree.tag_configure(date, background=highlight_color if date == today else bg_color)
     elif structure == 'by_name':
@@ -187,8 +187,8 @@ def load_data(data_files):
     INPUT_DATA = data_files
 
     root = tk.Tk()
-    root.title("Viwer")
-    root.geometry("600x500")
+    root.title("TestProgressRecord")
+    root.geometry("740x500")
     
     # ファイル選択プルダウン
     file_selector = ttk.Combobox(root, values=[file['file'] for file in data_files], state="readonly")
