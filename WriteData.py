@@ -31,8 +31,8 @@ def update_table(data, file_path, sheet_name):
     
     # テーブルの作成
     table = Table(displayName=sheet_name, ref=table_ref)
-    style = TableStyleInfo(name="TableStyleMedium9", showFirstColumn=False,
-                           showLastColumn=False, showRowStripes=True, showColumnStripes=True)
+    style = TableStyleInfo(name="TableStyleLight9", showFirstColumn=False,
+                           showLastColumn=False, showRowStripes=True, showColumnStripes=False)
     table.tableStyleInfo = style
     ws.add_table(table)
     
