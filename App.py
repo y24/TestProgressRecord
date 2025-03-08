@@ -15,7 +15,7 @@ def create_treeview(parent, data, structure, file_name):
         for dates in data.values():
             for values in dates.values():
                 all_keys.update(values.keys())
-        columns = ["環境名", "日付"] + Utility.sort_by_master(master_list=settings["common"]["completed_results"]+["completed"], input_list=all_keys)
+        columns = ["環境名", "日付"] + Utility.sort_by_master(master_list=settings["common"]["results"]+["completed"], input_list=all_keys)
         data = dict(Utility.sort_nested_dates_desc(data))
     elif structure == 'by_name':
         columns = ["日付", "担当者", "Completed"]
@@ -24,7 +24,7 @@ def create_treeview(parent, data, structure, file_name):
         all_keys = set()
         for values in data.values():
             all_keys.update(values.keys())
-        columns = ["日付"] + Utility.sort_by_master(master_list=settings["common"]["completed_results"]+["completed"], input_list=all_keys)
+        columns = ["日付"] + Utility.sort_by_master(master_list=settings["common"]["results"]+["completed"], input_list=all_keys)
         data = dict(sorted(data.items(), reverse=True))
 
     frame = ttk.Frame(parent)
@@ -60,18 +60,18 @@ def create_treeview(parent, data, structure, file_name):
     if structure == 'total':
         for index, (date, values) in enumerate(data.items()):
             bg_color = alternating_colors[index % 2]
-            row = [date] + [values.get(k, 0) for k in Utility.sort_by_master(master_list=settings["common"]["completed_results"]+["completed"], input_list=all_keys)]
+            row = [date] + [values.get(k, 0) for k in Utility.sort_by_master(master_list=settings["common"]["results"]+["completed"], input_list=all_keys)]
             item_id = tree.insert('', 'end', values=row, tags=(date,))
             tree.tag_configure(date, background=highlight_color if date == today else bg_color)
     elif structure == 'by_env':
         if not data:
-            tree.insert('', 'end', values=["取得失敗", "-"] + ["-" for _ in Utility.sort_by_master(master_list=settings["common"]["completed_results"]+["completed"], input_list=all_keys)])
+            tree.insert('', 'end', values=["取得失敗", "-"] + ["-" for _ in Utility.sort_by_master(master_list=settings["common"]["results"]+["completed"], input_list=all_keys)])
         else:
             for index, (env, dates) in enumerate(data.items()):
                 bg_color = alternating_colors[index % 2]
                 row_colors[env] = bg_color
                 for date, values in dates.items():
-                    row = [env, date] + [values.get(k, 0) for k in Utility.sort_by_master(master_list=settings["common"]["completed_results"]+["completed"], input_list=all_keys)]
+                    row = [env, date] + [values.get(k, 0) for k in Utility.sort_by_master(master_list=settings["common"]["results"]+["completed"], input_list=all_keys)]
                     item_id = tree.insert('', 'end', values=row, tags=(date,))
                     tree.tag_configure(date, background=highlight_color if date == today else bg_color)
     elif structure == 'by_name':
