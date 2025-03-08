@@ -189,7 +189,13 @@ def load_data(data_files):
     root = tk.Tk()
     root.title("TestProgressRecord")
     root.geometry("740x500")
-    
+
+    # 設定読み込み
+    settings = AppConfig.load_settings() or SETTINGS
+
+    # ファイル書き込みエリア
+    create_input_area(root, settings)
+
     # ファイル選択プルダウン
     file_selector = ttk.Combobox(root, values=[file["selector_label"] for file in data_files], state="readonly")
     file_selector.pack(fill=tk.X, padx=5, pady=5)
@@ -201,11 +207,6 @@ def load_data(data_files):
     if data_files:
         file_selector.current(0)
         update_display(data_files[0]['selector_label'], data_files)
-    
-    # 設定読み込み
-    settings = AppConfig.load_settings() or SETTINGS
-    # ファイル書き込みエリア
-    create_input_area(root, settings)
 
     root.protocol("WM_DELETE_WINDOW", root.quit)  # アプリ終了時に後続処理を継続
     root.mainloop()
