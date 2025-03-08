@@ -192,7 +192,7 @@ if __name__ == "__main__":
             # 出力データがない場合
             errors.append(file['fullpath'])
 
-    pprint.pprint(out_data)
+    # pprint.pprint(out_data)
 
     # ビューア起動
     if len(out_data):
