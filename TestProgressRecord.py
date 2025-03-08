@@ -68,15 +68,19 @@ def aggregate_results(filepath:str):
             # 全セット合計のデータにも追加
             all_data = all_data + set_data
 
-            # シートからセット名を取得
+            # そのセットの1行目からセット名を取得
             set_name = Excel.get_cell_value(sheet=sheet, col=set[0], row=1)
+
             # セット名がない場合はスキップ
             if not set_name:
                 logger.error(f"Failed to get environment name. (Sheet: {sheet_name})")
                 continue
 
-            # セットごとのデータ集計
-            data_by_env[set_name] = DataAggregation.get_daily(data=set_data, filter=CONFIG["filter"])
+            # 環境名
+            env_name = f"{sheet_name}_{set_name}"
+
+            # 環境ごとのデータ集計
+            data_by_env[env_name] = DataAggregation.get_daily(data=set_data, filter=CONFIG["filter"])
 
     # 全セット集計(日付別)
     data_total = DataAggregation.get_daily(data=all_data, filter=CONFIG["filter"])

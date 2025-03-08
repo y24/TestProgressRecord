@@ -127,12 +127,13 @@ def convert_to_2d_array(data):
         file_name = entry.get("file", "")
         if entry["by_env"]:
             for env, env_data in entry.get("by_env", {}).items():
+                print(env_data)
                 for date, values in env_data.items():
                     result.append([file_name, env, date, values.get("Completed", 0)])
         else:
-            # 環境別データがない場合は環境名を !取得失敗! として出力
+            # 環境別データがない場合は合計データを使用して、環境名は空で出力
             for date, values in entry.get("total", {}).items():
-                result.append([file_name, "!取得失敗!", date, values.get("Completed", 0)])
+                result.append([file_name, "", date, values.get("Completed", 0)])
     return result
 
 def write_data(field_data):

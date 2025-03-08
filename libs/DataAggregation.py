@@ -22,7 +22,7 @@ def get_daily_by_name(data):
     return result
 
 def get_daily(data, filter: list[str]):
-    total_label = "Comleted"
+    total_label = "Completed"
     result_count = defaultdict(lambda: defaultdict(int))
     
     for row in data:
