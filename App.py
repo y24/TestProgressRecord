@@ -21,7 +21,7 @@ def create_treeview(parent, data, structure):
         columns = ["環境名", "日付"] + Utility.sort_by_master(master_list=master_result, input_list=all_keys)
         data = dict(Utility.sort_nested_dates_desc(data))
     elif structure == 'by_name':
-        columns = ["日付", "担当者", "実施数"]
+        columns = ["日付", "担当者", "Completed"]
         data = dict(sorted(data.items(), reverse=True))
     elif structure == 'total':
         all_keys = set()
