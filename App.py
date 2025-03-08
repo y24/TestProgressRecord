@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, filedialog
+import subprocess
 import csv, os, pprint
 from datetime import datetime
 
@@ -168,11 +169,20 @@ def select_write_file(entry):
         entry.delete(0, tk.END)  # 既存の内容をクリア
         entry.insert(0, filepath)  # 新しいファイルパスをセット
 
+def open_file(file_path):
+    if os.path.isfile(file_path):
+        try:
+            os.startfile(file_path)  # Windows
+        except AttributeError:
+            subprocess.run(["xdg-open", file_path])  # Linux/Mac
+    else:
+        Dialog.showerror("エラー", "指定されたファイルが見つかりません")
+
 def create_input_area(parent, settings):
     input_frame = ttk.LabelFrame(parent, text="進捗データ書込")
     input_frame.pack(fill=tk.X, padx=5, pady=5)
     
-    ttk.Label(input_frame, text="書込先:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
+    ttk.Label(input_frame, text="書込先:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=3)
     file_path_entry = ttk.Entry(input_frame, width=50)
     file_path_entry.insert(0, settings["write"]["filepath"])
     file_path_entry.grid(row=0, column=1, padx=5, pady=5)
@@ -181,16 +191,17 @@ def create_input_area(parent, settings):
     field_frame = ttk.Frame(input_frame)
     field_frame.grid(row=1, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W)
 
-    ttk.Label(field_frame, text="データシート名:").pack(side=tk.LEFT, padx=5, pady=5)
+    ttk.Label(field_frame, text="データシート名:").pack(side=tk.LEFT, padx=5, pady=3)
     table_name_entry = ttk.Entry(field_frame, width=20)
     table_name_entry.insert(0, settings["write"]["table_name"])
     table_name_entry.pack(side=tk.LEFT)
 
     field_data = {"filepath": file_path_entry, "table_name": table_name_entry}
 
-    submit_frame = ttk.Frame(parent)
-    submit_frame.pack(fill=tk.BOTH)
-    ttk.Button(submit_frame, text="書き込み", command=lambda: write_data(field_data)).pack(pady=(0,5))
+    submit_frame = ttk.Frame(input_frame)
+    submit_frame.grid(row=2, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W)
+    ttk.Button(submit_frame, text="書き込み", command=lambda: write_data(field_data)).pack(side=tk.LEFT, pady=5)
+    ttk.Button(submit_frame, text="開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=5, pady=5)
 
 def load_data(data):
     global notebook, file_selector, input_data, settings
