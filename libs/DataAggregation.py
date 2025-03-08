@@ -21,7 +21,7 @@ def get_daily_by_name(data):
         result[date] = daily_count
     return result
 
-def get_daily(data, results: list[str]):
+def get_daily(data, results: list[str], completed_results: list[str]):
     total_label = "Comleted"
     result_count = defaultdict(lambda: defaultdict(int))
     
@@ -40,6 +40,7 @@ def get_daily(data, results: list[str]):
         # 結果列がフィルタ文字列に合致するものだけ抽出
         if result in results:
             result_count[date][result] += 1
+        if result in completed_results:
             result_count[date][total_label] += 1
     
     # 出力

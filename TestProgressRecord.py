@@ -70,10 +70,10 @@ def aggregate_results(filepath:str):
             env_name = f"{sheet_name}_{set_name}"
 
             # 環境ごとのデータ集計
-            data_by_env[env_name] = DataAggregation.get_daily(data=set_data, results=settings["common"]["results"])
+            data_by_env[env_name] = DataAggregation.get_daily(data=set_data, results=settings["common"]["results"], completed_results=settings["common"]["completed_results"])
 
     # 全セット集計(日付別)
-    data_total = DataAggregation.get_daily(data=all_data, results=settings["common"]["results"])
+    data_total = DataAggregation.get_daily(data=all_data, results=settings["common"]["results"], completed_results=settings["common"]["completed_results"])
 
     # 全セット集計(担当者別)
     data_by_name = DataAggregation.get_daily_by_name(data=all_data)
