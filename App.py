@@ -43,7 +43,14 @@ def create_treeview(parent, data, structure, file_name):
 
     for col in columns:
         tree.heading(col, text=col)
-        tree.column(col, anchor='center', width=100)
+        # 列幅
+        if col == "日付":
+            col_w = 100
+        elif col == "環境名":
+            col_w = 120
+        else:
+            col_w = 70
+        tree.column(col, anchor='center', width=col_w)
     
     today = datetime.today().strftime("%Y-%m-%d")
     row_colors = {}
@@ -117,19 +124,20 @@ def update_display(selected_file):
     notebook.select(current_tab)
 
 def convert_to_2d_array(data):
-    header = ["ファイル名", "環境名", "日付", "Completed"]
-    result = [header]
+    results = settings["common"]["results"] + ["Completed"]
+    header = ["ファイル名", "環境名", "日付"] + results
+    out_arr = [header]
     for entry in data:
         file_name = entry.get("file", "")
         if entry["by_env"]:
             for env, env_data in entry.get("by_env", {}).items():
                 for date, values in env_data.items():
-                    result.append([file_name, env, date, values.get("Completed", 0)])
+                    out_arr.append([file_name, env, date] + [values.get(v, 0) for v in results])
         else:
             # 環境別データがない場合は合計データを使用して、環境名は空で出力
             for date, values in entry.get("total", {}).items():
-                result.append([file_name, "", date, values.get("Completed", 0)])
-    return result
+                out_arr.append([file_name, "", date] + [values.get(v, 0) for v in results])
+    return out_arr
 
 def write_data(field_data):
     filepath = field_data["filepath"].get()
@@ -191,7 +199,7 @@ def load_data(data):
 
     root = tk.Tk()
     root.title("TestProgressRecord")
-    root.geometry("740x500")
+    root.geometry("780x500")
 
     # 設定読み込み
     settings = AppConfig.load_settings()
