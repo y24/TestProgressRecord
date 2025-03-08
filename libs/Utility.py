@@ -56,7 +56,7 @@ def is_empty(obj):
     return False
 
 
-def get_relative_path(fullpath: str, base_dir: str) -> str:
+def get_relative_path(full_path: str, base_dir: str) -> str:
     """
     指定した基準ディレクトリ以降のパスを取得する関数
     
@@ -67,13 +67,31 @@ def get_relative_path(fullpath: str, base_dir: str) -> str:
     Returns:
         str: 基準ディレクトリ以降の相対パス
     """
-    fullpath = Path(fullpath).resolve()
+    full_path = Path(full_path).resolve()
     base_dir = Path(base_dir).resolve()
     
-    if base_dir not in fullpath.parents:
-        raise ValueError(f"指定されたパス '{fullpath}' は、基準ディレクトリ '{base_dir}' に含まれていません。")
-    
-    return str(fullpath.relative_to(base_dir))
+    if base_dir not in full_path.parents:
+        raise ValueError(f"指定されたパス '{full_path}' は、基準ディレクトリ '{base_dir}' に含まれていません。")
+    return str(full_path.relative_to(base_dir))
+
+
+def get_relative_directory_path(full_path: str, base_dir: str) -> str:
+    """
+    指定したディレクトリ(base_dir) 以降のパスを取得する関数
+    """
+    # 絶対パスに変換して正規化
+    full_path = os.path.abspath(full_path)
+    base_dir = os.path.abspath(base_dir)
+
+    # base_dir が file_path の先頭部分と一致するか確認
+    if not full_path.startswith(base_dir):
+        raise ValueError("指定したディレクトリ(base_dir)が、ファイルのパス内に見つかりません。")
+
+    # base_dir の長さを取得し、それ以降のパスを取得
+    relative_path = full_path[len(base_dir):].lstrip(os.sep)
+
+    # ディレクトリ部分のみ取得
+    return os.path.dirname(relative_path)
 
 def sort_nested_dates_desc(data):
     """

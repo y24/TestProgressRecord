@@ -172,7 +172,7 @@ if __name__ == "__main__":
             result["file"] = Utility.get_filename_from_path(filepath=file["fullpath"])
             # zipファイル内の相対パス
             if file["temp_dir"]:
-                result["relative_path"] = Utility.get_relative_path(fullpath=file["fullpath"], base_dir=file["temp_dir"])
+                result["relative_path"] = Utility.get_relative_directory_path(full_path=file["fullpath"], base_dir=file["temp_dir"])
             # コンソール出力
             console_out(result)
             # ビューアに渡す配列に格納
@@ -180,6 +180,8 @@ if __name__ == "__main__":
         else:
             # 出力データがない場合
             errors.append(file['fullpath'])
+
+    pprint.pprint(out_data)
 
     # ビューア起動
     if len(out_data):
