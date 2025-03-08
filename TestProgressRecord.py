@@ -100,6 +100,12 @@ def aggregate_results(filepath:str):
         "by_env": data_by_env
     }
 
+def make_selector_label(file):
+    print(file)
+    file_name = file["file"]
+    relative_path = f'[{file["relative_path"]}] ' if file["relative_path"] else ""
+    return f"{relative_path}{file_name}"
+
 # コンソール出力
 def console_out(data):
     filename = data["file"]
@@ -170,9 +176,14 @@ if __name__ == "__main__":
         if result and not Utility.is_empty(result):
             # ファイルパス
             result["file"] = Utility.get_filename_from_path(filepath=file["fullpath"])
-            # zipファイル内の相対パス
+            # zipファイル内の相対パスを取得
             if file["temp_dir"]:
                 result["relative_path"] = Utility.get_relative_directory_path(full_path=file["fullpath"], base_dir=file["temp_dir"])
+                result["selector_label"] = make_selector_label(result)
+            else:
+                # zipファイルではない場合
+                result["relative_path"] = ""
+                result["selector_label"] = result["file"]
             # コンソール出力
             console_out(result)
             # ビューアに渡す配列に格納

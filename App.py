@@ -102,7 +102,7 @@ def update_display(selected_file, data_files):
     for widget in notebook.winfo_children():
         widget.destroy()
     
-    data = next(item for item in data_files if item['file'] == selected_file)
+    data = next(item for item in data_files if item['selector_label'] == selected_file)
 
     frame_total = ttk.Frame(notebook)
     notebook.add(frame_total, text="合計")
@@ -191,7 +191,7 @@ def load_data(data_files):
     root.geometry("740x500")
     
     # ファイル選択プルダウン
-    file_selector = ttk.Combobox(root, values=[file['file'] for file in data_files], state="readonly")
+    file_selector = ttk.Combobox(root, values=[file["selector_label"] for file in data_files], state="readonly")
     file_selector.pack(fill=tk.X, padx=5, pady=5)
     file_selector.bind("<<ComboboxSelected>>", lambda event: update_display(file_selector.get(), data_files))
     
@@ -200,7 +200,7 @@ def load_data(data_files):
     
     if data_files:
         file_selector.current(0)
-        update_display(data_files[0]['file'], data_files)
+        update_display(data_files[0]['selector_label'], data_files)
     
     # 設定読み込み
     settings = AppConfig.load_settings() or SETTINGS
