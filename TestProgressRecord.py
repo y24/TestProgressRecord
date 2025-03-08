@@ -153,6 +153,9 @@ if __name__ == "__main__":
     # 引数がない場合はファイル選択ダイアログ(複数可)
     if len(INPUTS) <= 1:
         INPUTS = Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))
+        if not INPUTS:
+            # キャンセル時は終了
+            sys.exit()
     else:
         del INPUTS[0]
 
