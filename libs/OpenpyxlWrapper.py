@@ -13,6 +13,14 @@ def get_sheet_by_name(workbook, sheet_name:str):
 def get_sheetnames_by_keyword(workbook, keyword:str):
     return [sheet for sheet in workbook.sheetnames if keyword in sheet]
 
+def get_sheetnames_by_keywords(workbook, keywords: list, ignores: list = None):
+    if ignores is None:
+        ignores = []
+    return [
+        sheet for sheet in workbook.sheetnames 
+        if any(keyword in sheet for keyword in keywords) and not any(ignore in sheet for ignore in ignores)
+    ]
+
 
 def find_row(sheet, search_col:str, search_str:str):
     try:

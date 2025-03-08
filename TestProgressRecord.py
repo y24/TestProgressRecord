@@ -8,25 +8,15 @@ from libs import Dialog
 from libs import Logger
 from libs import Utility
 from libs import Zip
+from libs import AppConfig
 logger = Logger.get_logger(__name__, console=True, file=False, trace_line=False)
-
-INPUTS = []
-CONFIG = {
-    "sheet_search_key": "テスト項目",
-    "header": {"search_col": "A", "search_key": "#"},
-    "tobe_row": {"key": "期待"},
-    "result_row": {"key": "結果", "ignores": ["期待結果"]},
-    "person_row": {"key": "担当者"},
-    "date_row": {"key":"日付"},
-    "filter": ["Pass", "Fixed", "Suspend", "N/A"]
-}
 
 # 処理
 def aggregate_results(filepath:str):
 
     # 対象シート名を取得
     workbook = Excel.load(filepath)
-    sheet_names = Excel.get_sheetnames_by_keyword(workbook, CONFIG["sheet_search_key"])
+    sheet_names = Excel.get_sheetnames_by_keywords(workbook, keywords=settings["read"]["sheet_search_keys"], ignores=settings["read"]["sheet_search_ignores"])
 
     # シートがない場合はスキップ
     if len(sheet_names) == 0:
@@ -41,16 +31,16 @@ def aggregate_results(filepath:str):
         sheet = Excel.get_sheet_by_name(workbook=workbook, sheet_name=sheet_name)
 
         # ヘッダ行を探して取得
-        header_rownum = Excel.find_row(sheet, search_col=CONFIG["header"]["search_col"], search_str=CONFIG["header"]["search_key"])
+        header_rownum = Excel.find_row(sheet, search_col=settings["read"]["header"]["search_col"], search_str=settings["read"]["header"]["search_key"])
         header = Excel.get_row_values(sheet=sheet, row_num=header_rownum)
 
         # 列セット(例:環境別)を取得
         # 結果
-        result_rows = Utility.find_rownum_by_keyword(list=header, keyword=CONFIG["result_row"]["key"], ignore_words=CONFIG["result_row"]["ignores"])
+        result_rows = Utility.find_rownum_by_keyword(list=header, keyword=settings["read"]["result_row"]["key"], ignore_words=settings["read"]["result_row"]["ignores"])
         # 担当者
-        person_rows = Utility.find_rownum_by_keyword(list=header, keyword=CONFIG["person_row"]["key"])
+        person_rows = Utility.find_rownum_by_keyword(list=header, keyword=settings["read"]["person_row"]["key"])
         # 日付
-        date_rows = Utility.find_rownum_by_keyword(list=header, keyword=CONFIG["date_row"]["key"])
+        date_rows = Utility.find_rownum_by_keyword(list=header, keyword=settings["read"]["date_row"]["key"])
 
         # セットが正しく取得できない場合はスキップ
         if Utility.check_lists_equal_length(result_rows, person_rows, date_rows) == False:
@@ -80,17 +70,17 @@ def aggregate_results(filepath:str):
             env_name = f"{sheet_name}_{set_name}"
 
             # 環境ごとのデータ集計
-            data_by_env[env_name] = DataAggregation.get_daily(data=set_data, filter=CONFIG["filter"])
+            data_by_env[env_name] = DataAggregation.get_daily(data=set_data, filter=settings["read"]["filter"])
 
     # 全セット集計(日付別)
-    data_total = DataAggregation.get_daily(data=all_data, filter=CONFIG["filter"])
+    data_total = DataAggregation.get_daily(data=all_data, filter=settings["read"]["filter"])
 
     # 全セット集計(担当者別)
     data_by_name = DataAggregation.get_daily_by_name(data=all_data)
 
     # テストケース数カウント
     # 期待結果列の番号
-    tobe_rows = Utility.find_rownum_by_keyword(list=header, keyword=CONFIG["tobe_row"]["key"])
+    tobe_rows = Utility.find_rownum_by_keyword(list=header, keyword=settings["read"]["tobe_row"]["key"])
     # 期待結果列を取得
     tobe_data = Excel.get_column_values(sheet=sheet, col_nums=tobe_rows,header_row=header_rownum, ignore_header=True)
     # テストケース数
@@ -146,25 +136,30 @@ def console_out(data):
 
 
 if __name__ == "__main__":
+    # 設定読み込み
+    global settings
+    settings = AppConfig.load_settings()
+
+    inputs = []
     files = []
     temp_dirs = []
     out_data = []
     errors = []
 
     # 引数でファイルパスを受け取る(複数可)
-    INPUTS = sys.argv.copy()
+    inputs = sys.argv.copy()
 
     # 引数がない場合はファイル選択ダイアログ(複数可)
-    if len(INPUTS) <= 1:
-        INPUTS = Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))
-        if not INPUTS:
+    if len(inputs) <= 1:
+        inputs = Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))
+        if not inputs:
             # キャンセル時は終了
             sys.exit()
     else:
-        del INPUTS[0]
+        del inputs[0]
 
     # 拡張子判定
-    for input in INPUTS:
+    for input in inputs:
         ext = Utility.get_ext_from_path(input)
         if ext == "xlsx":
             files.append({"fullpath": input, "temp_dir": ""})

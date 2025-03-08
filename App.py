@@ -8,10 +8,6 @@ from libs import Utility
 from libs import AppConfig
 from libs import Dialog
 
-SETTINGS = {"filepath": "", "table_name": "DATA"}
-RESULTS = ["Pass", "Fixed", "Suspend", "N/A", "Completed"]
-STRUCTURES = {"total": "合計", "by_env": "環境別", "by_name": "担当者別"}
-
 def create_treeview(parent, data, structure, file_name):
     columns = []
     if structure == 'by_env':
@@ -19,7 +15,7 @@ def create_treeview(parent, data, structure, file_name):
         for dates in data.values():
             for values in dates.values():
                 all_keys.update(values.keys())
-        columns = ["環境名", "日付"] + Utility.sort_by_master(master_list=RESULTS, input_list=all_keys)
+        columns = ["環境名", "日付"] + Utility.sort_by_master(master_list=settings["common"]["completed_results"]+["completed"], input_list=all_keys)
         data = dict(Utility.sort_nested_dates_desc(data))
     elif structure == 'by_name':
         columns = ["日付", "担当者", "Completed"]
@@ -28,7 +24,7 @@ def create_treeview(parent, data, structure, file_name):
         all_keys = set()
         for values in data.values():
             all_keys.update(values.keys())
-        columns = ["日付"] + Utility.sort_by_master(master_list=RESULTS, input_list=all_keys)
+        columns = ["日付"] + Utility.sort_by_master(master_list=settings["common"]["completed_results"]+["completed"], input_list=all_keys)
         data = dict(sorted(data.items(), reverse=True))
 
     frame = ttk.Frame(parent)
@@ -57,18 +53,18 @@ def create_treeview(parent, data, structure, file_name):
     if structure == 'total':
         for index, (date, values) in enumerate(data.items()):
             bg_color = alternating_colors[index % 2]
-            row = [date] + [values.get(k, 0) for k in Utility.sort_by_master(master_list=RESULTS, input_list=all_keys)]
+            row = [date] + [values.get(k, 0) for k in Utility.sort_by_master(master_list=settings["common"]["completed_results"]+["completed"], input_list=all_keys)]
             item_id = tree.insert('', 'end', values=row, tags=(date,))
             tree.tag_configure(date, background=highlight_color if date == today else bg_color)
     elif structure == 'by_env':
         if not data:
-            tree.insert('', 'end', values=["取得失敗", "-"] + ["-" for _ in Utility.sort_by_master(master_list=RESULTS, input_list=all_keys)])
+            tree.insert('', 'end', values=["取得失敗", "-"] + ["-" for _ in Utility.sort_by_master(master_list=settings["common"]["completed_results"]+["completed"], input_list=all_keys)])
         else:
             for index, (env, dates) in enumerate(data.items()):
                 bg_color = alternating_colors[index % 2]
                 row_colors[env] = bg_color
                 for date, values in dates.items():
-                    row = [env, date] + [values.get(k, 0) for k in Utility.sort_by_master(master_list=RESULTS, input_list=all_keys)]
+                    row = [env, date] + [values.get(k, 0) for k in Utility.sort_by_master(master_list=settings["common"]["completed_results"]+["completed"], input_list=all_keys)]
                     item_id = tree.insert('', 'end', values=row, tags=(date,))
                     tree.tag_configure(date, background=highlight_color if date == today else bg_color)
     elif structure == 'by_name':
@@ -88,7 +84,7 @@ def create_treeview(parent, data, structure, file_name):
 
 def save_to_csv(tree, columns, file_name, structure):
     basename = os.path.splitext(file_name)[0]
-    tab = STRUCTURES[structure]
+    tab = settings["write"]["structures"][structure]
     file_path = filedialog.asksaveasfilename(initialfile=f"{basename}_{tab}", defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
     if not file_path:
         return
@@ -108,15 +104,15 @@ def update_display(selected_file):
     data = next(item for item in input_data if item['selector_label'] == selected_file)
 
     frame_total = ttk.Frame(notebook)
-    notebook.add(frame_total, text=STRUCTURES["total"])
+    notebook.add(frame_total, text=settings["write"]["structures"]["total"])
     create_treeview(frame_total, data['total'], 'total', data["file"])
 
     frame_env = ttk.Frame(notebook)
-    notebook.add(frame_env, text=STRUCTURES["by_env"])
+    notebook.add(frame_env, text=settings["write"]["structures"]["by_env"])
     create_treeview(frame_env, data['by_env'], 'by_env', data["file"])
     
     frame_name = ttk.Frame(notebook)
-    notebook.add(frame_name, text=STRUCTURES["by_name"])
+    notebook.add(frame_name, text=settings["write"]["structures"]["by_name"])
     create_treeview(frame_name, data['by_name'], 'by_name', data["file"])
     notebook.select(current_tab)
 
@@ -127,7 +123,6 @@ def convert_to_2d_array(data):
         file_name = entry.get("file", "")
         if entry["by_env"]:
             for env, env_data in entry.get("by_env", {}).items():
-                print(env_data)
                 for date, values in env_data.items():
                     result.append([file_name, env, date, values.get("Completed", 0)])
         else:
@@ -137,22 +132,27 @@ def convert_to_2d_array(data):
     return result
 
 def write_data(field_data):
-    SETTINGS = {
-        "filepath": field_data["filepath"].get(),
-        "table_name": field_data["table_name"].get()
-    }
+    filepath = field_data["filepath"].get()
+    if not filepath:
+        Dialog.show_warning("Error", f"書込先のファイルを選択してください。")
+        return
+
+    # フィールドの値を取得
+    settings["write"]["filepath"] = filepath
+    settings["write"]["table_name"] = field_data["table_name"].get()
 
     # データを書込用に変換
     converted_data = convert_to_2d_array(input_data)
 
     # データ書込
     try:
-        WriteData.update_table(converted_data, SETTINGS["filepath"], SETTINGS["table_name"])
+        WriteData.update_table(converted_data, settings["write"]["filepath"], settings["write"]["table_name"])
     except Exception as e:
         Dialog.show_warning("Error", f"保存失敗：ファイルが読み取り専用の可能性があります。\n{e}")
+        return
 
     # 設定を保存
-    AppConfig.save_settings(SETTINGS)
+    AppConfig.save_settings(settings)
 
 def select_write_file(entry):
     filepath = filedialog.askopenfilename(defaultextension=".xlsx", filetypes=[("Excel file", "*.xlsx")])
@@ -166,7 +166,7 @@ def create_input_area(parent, settings):
     
     ttk.Label(input_frame, text="書込先:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
     file_path_entry = ttk.Entry(input_frame, width=50)
-    file_path_entry.insert(0, settings["filepath"])
+    file_path_entry.insert(0, settings["write"]["filepath"])
     file_path_entry.grid(row=0, column=1, padx=5, pady=5)
     ttk.Button(input_frame, text="選択", command=lambda: select_write_file(file_path_entry)).grid(row=0, column=2, padx=5, pady=2)
     
@@ -175,7 +175,7 @@ def create_input_area(parent, settings):
 
     ttk.Label(field_frame, text="データシート名:").pack(side=tk.LEFT, padx=5, pady=5)
     table_name_entry = ttk.Entry(field_frame, width=20)
-    table_name_entry.insert(0, settings["table_name"])
+    table_name_entry.insert(0, settings["write"]["table_name"])
     table_name_entry.pack(side=tk.LEFT)
 
     field_data = {"filepath": file_path_entry, "table_name": table_name_entry}
@@ -185,7 +185,7 @@ def create_input_area(parent, settings):
     ttk.Button(submit_frame, text="書き込み", command=lambda: write_data(field_data)).pack(pady=(0,5))
 
 def load_data(data):
-    global notebook, file_selector, input_data
+    global notebook, file_selector, input_data, settings
 
     input_data = data
 
@@ -194,7 +194,7 @@ def load_data(data):
     root.geometry("740x500")
 
     # 設定読み込み
-    settings = AppConfig.load_settings() or SETTINGS
+    settings = AppConfig.load_settings()
 
     # ファイル書き込みエリア
     create_input_area(root, settings)

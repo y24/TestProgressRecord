@@ -1,0 +1,21 @@
+{
+    "read": {
+        "sheet_search_keys": ["テスト項目"],
+        "sheet_search_ignores": [],
+        "header": {"search_col": "A", "search_key": "#"},
+        "tobe_row": {"key": "期待"},
+        "result_row": {"key": "結果", "ignores": ["期待結果"]},
+        "person_row": {"key": "担当者"},
+        "date_row": {"key":"日付"},
+        "filter": ["Pass", "Fixed", "Suspend", "N/A"]
+    },
+    "write": {
+        "filepath": "",
+        "table_name": "DATA",
+        "structures": {"total": "合計", "by_env": "環境別", "by_name": "担当者別"}
+    },
+    "common": {
+        "results": ["Pass", "Fixed", "Suspend", "N/A", "Completed"],
+        "completed_results": ["Pass", "Fixed", "Suspend", "N/A"]
+    }
+}
