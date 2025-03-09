@@ -17,3 +17,6 @@ def show_warning(title, message):
 
 def show_info(title, message):
     messagebox.showinfo(title=title, message=message)
+
+def ask(title, message):
+    return messagebox.askquestion(title=title, message=message)

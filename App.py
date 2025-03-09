@@ -91,17 +91,26 @@ def create_treeview(parent, data, structure, file_name):
     return tree
 
 def save_to_csv(tree, columns, file_name, structure):
+    # デフォルトファイル名
     basename = os.path.splitext(file_name)[0]
     tab = settings["write"]["structures"][structure]
+
+    # 保存先の選択
     file_path = filedialog.asksaveasfilename(initialfile=f"{basename}_{tab}", defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
     if not file_path:
         return
-    
+
+    # 保存
     with open(file_path, mode='w', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
         writer.writerow(columns)
         for item in tree.get_children():
             writer.writerow(tree.item(item)['values'])
+
+    # 保存完了
+    response = Dialog.ask(title="保存完了", message=f"CSVデータを保存しました。\n{file_path}\n\nファイルを開きますか？")
+    if response == "yes":
+        open_file(file_path=file_path)
 
 def update_display(selected_file):
     current_tab = notebook.index(notebook.select()) if notebook.tabs() else 0
@@ -166,7 +175,9 @@ def write_data(field_data):
     # 成功したら設定を保存
     if result:
         AppConfig.save_settings(settings)
-        Dialog.show_info(title="保存完了", message=f"テーブル'{table_name}'にデータを書き込みました。\n{file_path}")
+        response = Dialog.ask(title="保存完了", message=f"テーブル'{table_name}'にデータを書き込みました。\n{file_path}\n\nファイルを開きますか？")
+        if response == "yes":
+            open_file(file_path=file_path)
 
 def select_write_file(entry):
     filepath = filedialog.askopenfilename(defaultextension=".xlsx", filetypes=[("Excel file", "*.xlsx")])
