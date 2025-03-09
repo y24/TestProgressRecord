@@ -167,7 +167,7 @@ def write_data(field_data):
 
     # データ書込
     try:
-        result = WriteData.update_table(converted_data, file_path, table_name)
+        result = WriteData.execute(converted_data, file_path, table_name)
     except Exception as e:
         Dialog.show_warning(title="Error", message=f"保存失敗：ファイルが読み取り専用の可能性があります。\n{e}")
         return
@@ -225,7 +225,7 @@ def load_data(data):
     input_data = data
 
     root = tk.Tk()
-    root.title("TestProgressRecord")
+    root.title("Result Tracker")
     root.geometry("780x500")
 
     # 設定読み込み

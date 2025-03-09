@@ -12,7 +12,7 @@ from libs import AppConfig
 logger = Logger.get_logger(__name__, console=True, file=False, trace_line=False)
 
 # 処理
-def aggregate_results(filepath:str):
+def gathering_results(filepath:str):
 
     # 対象シート名を取得
     workbook = Excel.load(filepath)
@@ -173,7 +173,7 @@ if __name__ == "__main__":
     # ファイルを処理
     for file in files:
         # 集計
-        result = aggregate_results(filepath=file["fullpath"])
+        result = gathering_results(filepath=file["fullpath"])
         # 出力
         if result and not Utility.is_empty(result):
             # ファイルパス
