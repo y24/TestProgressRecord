@@ -1,6 +1,3 @@
-from openpyxl import load_workbook, Workbook
-from openpyxl.worksheet.table import Table, TableStyleInfo
-
 from libs import OpenpyxlWrapper as Excel
 
 def update_table(data, file_path, sheet_name):
@@ -19,6 +16,6 @@ def update_table(data, file_path, sheet_name):
     # 保存
     try:
         wb.save(file_path)
-        print(f"データテーブル '{sheet_name}' を保存しました。\n{file_path}")
+        return True
     except PermissionError:
         raise

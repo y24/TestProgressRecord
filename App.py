@@ -140,28 +140,33 @@ def convert_to_2d_array(data):
                 out_arr.append([file_name, "", date] + [values.get(v, 0) for v in results])
     return out_arr
 
-def write_data(field_data):
-    filepath = field_data["filepath"].get()
-    if not filepath:
+def write_data(field_data):    
+    file_path = field_data["filepath"].get()
+    table_name = field_data["table_name"].get()
+
+    # ファイルパス未入力
+    if not file_path:
         Dialog.show_warning("Error", f"書込先のファイルを選択してください。")
         return
 
-    # フィールドの値を取得
-    settings["write"]["filepath"] = filepath
-    settings["write"]["table_name"] = field_data["table_name"].get()
+    # フィールドの設定値をグローバルに反映
+    settings["write"]["filepath"] = file_path
+    settings["write"]["table_name"] = table_name
 
     # データを書込用に変換
     converted_data = convert_to_2d_array(input_data)
 
     # データ書込
     try:
-        WriteData.update_table(converted_data, settings["write"]["filepath"], settings["write"]["table_name"])
+        result = WriteData.update_table(converted_data, file_path, table_name)
     except Exception as e:
-        Dialog.show_warning("Error", f"保存失敗：ファイルが読み取り専用の可能性があります。\n{e}")
+        Dialog.show_warning(title="Error", message=f"保存失敗：ファイルが読み取り専用の可能性があります。\n{e}")
         return
 
-    # 設定を保存
-    AppConfig.save_settings(settings)
+    # 成功したら設定を保存
+    if result:
+        AppConfig.save_settings(settings)
+        Dialog.show_info(title="保存完了", message=f"テーブル'{table_name}'にデータを書き込みました。\n{file_path}")
 
 def select_write_file(entry):
     filepath = filedialog.askopenfilename(defaultextension=".xlsx", filetypes=[("Excel file", "*.xlsx")])
@@ -200,7 +205,7 @@ def create_input_area(parent, settings):
 
     submit_frame = ttk.Frame(input_frame)
     submit_frame.grid(row=2, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W)
-    ttk.Button(submit_frame, text="書き込み", command=lambda: write_data(field_data)).pack(side=tk.LEFT, pady=5)
+    ttk.Button(submit_frame, text="データ書込", command=lambda: write_data(field_data)).pack(side=tk.LEFT, pady=5)
     ttk.Button(submit_frame, text="開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=5, pady=5)
 
 def load_data(data):
