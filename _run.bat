@@ -1,3 +1,3 @@
 cd /d %~dp0
-python TestProgressRecord.py %*
+python ReadData.py %*
 pause
