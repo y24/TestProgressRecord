@@ -135,18 +135,18 @@ def update_display(selected_file):
 
 def convert_to_2d_array(data):
     results = settings["common"]["results"] + ["Completed"]
-    header = ["ファイル名", "環境名", "日付"] + results
+    header = ["フォルダ", "ファイル名", "環境名", "日付"] + results
     out_arr = [header]
     for entry in data:
         file_name = entry.get("file", "")
         if entry["by_env"]:
             for env, env_data in entry.get("by_env", {}).items():
                 for date, values in env_data.items():
-                    out_arr.append([file_name, env, date] + [values.get(v, 0) for v in results])
+                    out_arr.append([entry["relative_path"], file_name, env, date] + [values.get(v, 0) for v in results])
         else:
             # 環境別データがない場合は合計データを使用して、環境名は空で出力
             for date, values in entry.get("total", {}).items():
-                out_arr.append([file_name, "", date] + [values.get(v, 0) for v in results])
+                out_arr.append([entry["relative_path"], file_name, "", date] + [values.get(v, 0) for v in results])
     return out_arr
 
 def write_data(field_data):    
