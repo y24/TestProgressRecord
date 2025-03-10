@@ -195,7 +195,7 @@ def open_file(file_path):
         Dialog.showerror("エラー", "指定されたファイルが見つかりません")
 
 def create_input_area(parent, settings):
-    input_frame = ttk.LabelFrame(parent, text="進捗データ書込")
+    input_frame = ttk.LabelFrame(parent, text="データ書込")
     input_frame.pack(fill=tk.X, padx=5, pady=5)
     
     ttk.Label(input_frame, text="書込先:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=3)
@@ -207,10 +207,10 @@ def create_input_area(parent, settings):
     field_frame = ttk.Frame(input_frame)
     field_frame.grid(row=1, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W)
 
-    ttk.Label(field_frame, text="データシート名:").pack(side=tk.LEFT, padx=5, pady=3)
+    ttk.Label(field_frame, text="データシート名:").pack(side=tk.LEFT, pady=3)
     table_name_entry = ttk.Entry(field_frame, width=20)
     table_name_entry.insert(0, settings["write"]["table_name"])
-    table_name_entry.pack(side=tk.LEFT)
+    table_name_entry.pack(side=tk.LEFT, padx=5)
 
     field_data = {"filepath": file_path_entry, "table_name": table_name_entry}
 
@@ -225,7 +225,7 @@ def load_data(data):
     input_data = data
 
     root = tk.Tk()
-    root.title("Result Tracker")
+    root.title("TestProgressTracker")
     root.geometry("780x500")
 
     # 設定読み込み

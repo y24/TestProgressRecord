@@ -1,5 +1,6 @@
 
 import os, sys, pprint
+from tqdm import tqdm
 
 import App
 from libs import OpenpyxlWrapper as Excel
@@ -44,7 +45,7 @@ def gathering_results(filepath:str):
 
         # セットが正しく取得できない場合はスキップ
         if Utility.check_lists_equal_length(result_rows, person_rows, date_rows) == False:
-            logger.error(f"Failed to get result column. (Sheet: {sheet_name})")
+            # logger.error(f"Failed to get result column. (Sheet: {sheet_name})")
             continue
 
         # 行番号のセット(結果、担当者、日付)を作成
@@ -63,7 +64,7 @@ def gathering_results(filepath:str):
 
             # セット名がない場合はスキップ
             if not set_name:
-                logger.error(f"Failed to get environment name. (Sheet: {sheet_name})")
+                # logger.error(f"Failed to get environment name. (Sheet: {sheet_name})")
                 continue
 
             # 環境名
@@ -95,7 +96,6 @@ def gathering_results(filepath:str):
     }
 
 def make_selector_label(file):
-    print(file)
     file_name = file["file"]
     relative_path = f'[{file["relative_path"]}] ' if file["relative_path"] else ""
     return f"{relative_path}{file_name}"
@@ -171,7 +171,7 @@ if __name__ == "__main__":
             temp_dirs.append(temp_dir)
 
     # ファイルを処理
-    for file in files:
+    for file in tqdm(files):
         # 集計
         result = gathering_results(filepath=file["fullpath"])
         # 出力
@@ -187,7 +187,7 @@ if __name__ == "__main__":
                 result["relative_path"] = ""
                 result["selector_label"] = result["file"]
             # コンソール出力
-            console_out(result)
+            # console_out(result)
             # ビューアに渡す配列に格納
             out_data.append(result)
         else:
