@@ -133,22 +133,6 @@ def update_display(selected_file):
     create_treeview(frame_name, data['by_name'], 'by_name', data["file"])
     notebook.select(current_tab)
 
-def convert_to_2d_array(data):
-    results = settings["common"]["results"] + ["Completed"]
-    header = ["フォルダ", "ファイル名", "環境名", "日付"] + results
-    out_arr = [header]
-    for entry in data:
-        file_name = entry.get("file", "")
-        if entry["by_env"]:
-            for env, env_data in entry.get("by_env", {}).items():
-                for date, values in env_data.items():
-                    out_arr.append([entry["relative_path"], file_name, env, date] + [values.get(v, 0) for v in results])
-        else:
-            # 環境別データがない場合は合計データを使用して、環境名は空で出力
-            for date, values in entry.get("total", {}).items():
-                out_arr.append([entry["relative_path"], file_name, "", date] + [values.get(v, 0) for v in results])
-    return out_arr
-
 def write_data(field_data):    
     file_path = field_data["filepath"].get()
     table_name = field_data["table_name"].get()
@@ -162,12 +146,9 @@ def write_data(field_data):
     settings["write"]["filepath"] = file_path
     settings["write"]["table_name"] = table_name
 
-    # データを書込用に変換
-    converted_data = convert_to_2d_array(input_data)
-
     # データ書込
     try:
-        result = WriteData.execute(converted_data, file_path, table_name)
+        result = WriteData.execute(input_data, file_path, table_name)
     except Exception as e:
         Dialog.show_warning(title="Error", message=f"保存失敗：ファイルが読み取り専用の可能性があります。\n{e}")
         return

@@ -2,6 +2,7 @@ from libs import OpenpyxlWrapper as Excel
 from openpyxl.worksheet.table import Table, TableStyleInfo
 from unicodedata import east_asian_width
 from datetime import datetime
+from libs import AppConfig
 
 # 列幅調整用の情報
 width_dict = {
@@ -13,6 +14,23 @@ width_dict = {
   'N': 1    # Neutral
 }
 Font_depend = 1.2
+base_header = ["フォルダ", "ファイル名", "環境名", "日付"]
+
+def convert_to_2d_array(data):
+    results = settings["common"]["results"] + ["Completed"]
+    header = base_header + results
+    out_arr = [header]
+    for entry in data:
+        file_name = entry.get("file", "")
+        if entry["by_env"]:
+            for env, env_data in entry.get("by_env", {}).items():
+                for date, values in env_data.items():
+                    out_arr.append([entry["relative_path"], file_name, env, date] + [values.get(v, 0) for v in results])
+        else:
+            # 環境別データがない場合は合計データを使用して、環境名は空で出力
+            for date, values in entry.get("total", {}).items():
+                out_arr.append([entry["relative_path"], file_name, "", date] + [values.get(v, 0) for v in results])
+    return out_arr
 
 def create_datatable(ws, sheet_name:str, data, date_labels=["日付"]):
     # ヘッダーを取得
@@ -64,9 +82,18 @@ def adjust_colwidth_by_headername(sheet, target_headers:list[str], header_row:in
                         max_length= sum(width_list)
                 except:
                     pass
-                sheet.column_dimensions[column].width= max_length*max_diameter + 1.2
+                sheet.column_dimensions[column].width= max_length*max_diameter *0.9
+                print(max_length*max_diameter)
 
 def execute(data, file_path, sheet_name):
+    global settings
+
+    # 設定読み込み
+    settings = AppConfig.load_settings()
+
+    # データを書込用に変換
+    converted_data = convert_to_2d_array(data)
+
     # ブック読み込み
     wb = Excel.load(file_path=file_path)
     
@@ -74,10 +101,10 @@ def execute(data, file_path, sheet_name):
     ws = Excel.create_sheet(workbook=wb, sheet_name=sheet_name, overwrite=True)
     
     # データを書き込んでテーブルを作成
-    create_datatable(ws, sheet_name, data)
+    create_datatable(ws, sheet_name, converted_data)
     
     # 列幅の調整
-    adjust_colwidth_by_headername(sheet=ws, target_headers=["ファイル名", "環境名", "日付"], header_row=1)
+    adjust_colwidth_by_headername(sheet=ws, target_headers=base_header, header_row=1)
 
     # 保存
     try:
