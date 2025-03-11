@@ -197,12 +197,7 @@ if __name__ == "__main__":
     # pprint.pprint(out_data)
 
     # ビューア起動
-    if len(out_data):
-        App.load_data(out_data)
-    else:
-        # 1件もデータがなかった場合はメッセージ
-        ers = "\n".join(errors)
-        Dialog.show_warning("Info", f"ファイルからデータが検出できませんでした。\n{ers}")
+    App.load_data(out_data, errors)
 
     # zipファイルを展開していた場合は一時フォルダを掃除
     if len(temp_dirs): Zip.cleanup_old_temp_dirs()

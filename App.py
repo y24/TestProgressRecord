@@ -203,8 +203,14 @@ def create_input_area(parent, settings):
     ttk.Button(submit_frame, text="データ書込", command=lambda: write_data(field_data)).pack(side=tk.LEFT, pady=5)
     ttk.Button(submit_frame, text="開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=5, pady=5)
 
-def load_data(data):
+def load_data(data, errors):
     global notebook, file_selector, input_data, settings
+
+    if not len(data):
+        # 1件もデータがなかった場合はメッセージ
+        ers = "\n".join(errors)
+        Dialog.show_warning("Info", f"以下のファイルからは1件もデータが検出できませんでした。終了します。\n{ers}")
+        sys.exit()
 
     input_data = data
 
@@ -230,6 +236,10 @@ def load_data(data):
     if input_data:
         file_selector.current(0)
         update_display(input_data[0]['selector_label'])
+
+    if len(errors):
+        ers = "\n".join(errors)
+        Dialog.show_warning("Info", f"以下のファイルはデータが検出できませんでした。\n{ers}")
 
     root.protocol("WM_DELETE_WINDOW", root.quit)  # アプリ終了時に後続処理を継続
     root.mainloop()
