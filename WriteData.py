@@ -82,8 +82,7 @@ def adjust_colwidth_by_headername(sheet, target_headers:list[str], header_row:in
                         max_length= sum(width_list)
                 except:
                     pass
-                sheet.column_dimensions[column].width= max_length*max_diameter *0.9
-                print(max_length*max_diameter)
+                sheet.column_dimensions[column].width= max_length*max_diameter*0.9
 
 def execute(data, file_path, sheet_name):
     global settings
