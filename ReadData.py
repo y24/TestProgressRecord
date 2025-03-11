@@ -74,7 +74,7 @@ def aggregate_results(filepath:str):
 
     # シートがない場合はスキップ
     if len(sheet_names) == 0:
-        logger.error(f"Sheet not found. ({filepath})")
+        # logger.error(f"Sheet not found. ({filepath})")
         return
 
     # 各シート処理
