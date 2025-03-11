@@ -36,12 +36,12 @@ def get_daily(data, results: list[str], completed_results: list[str]):
             result_count[date][total_label] += 1
     
     # 出力
-    aggregated_results = {}
+    out_data = {}
     for date, counts in sorted(result_count.items()):
         counts = {**counts}
-        aggregated_results[date] = counts
+        out_data[date] = counts
     
-    return aggregated_results
+    return out_data
 
 # データ集計（名前別）
 def get_daily_by_name(data):
@@ -57,16 +57,16 @@ def get_daily_by_name(data):
             date_name_count[date][name] += 1
 
     # 集計結果を返却
-    result = {}
+    out_data = {}
     for date, name_counts in sorted(date_name_count.items()):
         daily_count = {}
         for name, count in sorted(name_counts.items()):
             daily_count[name] = count
-        result[date] = daily_count
-    return result
+        out_data[date] = daily_count
+    return out_data
 
 # 処理
-def gathering_results(filepath:str):
+def aggregate_results(filepath:str):
 
     # 対象シート名を取得
     workbook = Excel.load(filepath)
@@ -226,7 +226,7 @@ if __name__ == "__main__":
     # ファイルを処理
     for file in tqdm(files):
         # 集計
-        result = gathering_results(filepath=file["fullpath"])
+        result = aggregate_results(filepath=file["fullpath"])
         # 出力
         if result and not Utility.is_empty(result):
             # ファイルパス
