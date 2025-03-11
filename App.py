@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, filedialog
 import subprocess
-import csv, os, pprint
+import csv, os, sys, pprint
 from datetime import datetime
 
 import WriteData
@@ -156,9 +156,9 @@ def write_data(field_data):
     # 成功したら設定を保存
     if result:
         AppConfig.save_settings(settings)
-        response = Dialog.ask(title="保存完了", message=f"テーブル'{table_name}'にデータを書き込みました。\n{file_path}\n\nファイルを開きますか？")
+        response = Dialog.ask(title="保存完了", message=f'"{table_name}"シートにデータを書き込みました。\n{file_path}\n\nこのアプリを終了して、ファイルを開きますか？')
         if response == "yes":
-            open_file(file_path=file_path)
+            open_file(file_path=file_path, exit=True)
 
 def select_write_file(entry):
     filepath = filedialog.askopenfilename(defaultextension=".xlsx", filetypes=[("Excel file", "*.xlsx")])
@@ -166,12 +166,15 @@ def select_write_file(entry):
         entry.delete(0, tk.END)  # 既存の内容をクリア
         entry.insert(0, filepath)  # 新しいファイルパスをセット
 
-def open_file(file_path):
+def open_file(file_path, exit:bool=False):
     if os.path.isfile(file_path):
         try:
             os.startfile(file_path)  # Windows
         except AttributeError:
             subprocess.run(["xdg-open", file_path])  # Linux/Mac
+        # 終了
+        if exit:
+            sys.exit()
     else:
         Dialog.showerror("エラー", "指定されたファイルが見つかりません")
 
