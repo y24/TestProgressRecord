@@ -176,7 +176,7 @@ def open_file(file_path, exit:bool=False):
         if exit:
             sys.exit()
     else:
-        Dialog.showerror("エラー", "指定されたファイルが見つかりません")
+        Dialog.showerror("Error", "指定されたファイルが見つかりません")
 
 def create_input_area(parent, settings):
     input_frame = ttk.LabelFrame(parent, text="データ書込")
@@ -206,10 +206,11 @@ def create_input_area(parent, settings):
 def load_data(data, errors):
     global notebook, file_selector, input_data, settings
 
+    ers = "\n".join([" - "+ f for f in errors])
+
     if not len(data):
         # 1件もデータがなかった場合はメッセージ
-        ers = "\n".join(errors)
-        Dialog.show_warning("Info", f"以下のファイルからは1件もデータが検出できませんでした。終了します。\n{ers}")
+        Dialog.show_warning("Error", f"以下のファイルからは1件もデータが検出できませんでした。終了します。\n{ers}")
         sys.exit()
 
     input_data = data
@@ -238,8 +239,7 @@ def load_data(data, errors):
         update_display(input_data[0]['selector_label'])
 
     if len(errors):
-        ers = "\n".join(errors)
-        Dialog.show_warning("Info", f"以下のファイルはデータが検出できませんでした。\n{ers}")
+        Dialog.show_warning("Error", f"以下のファイルからはデータが検出できませんでした。\n{ers}")
 
     root.protocol("WM_DELETE_WINDOW", root.quit)  # アプリ終了時に後続処理を継続
     root.mainloop()

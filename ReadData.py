@@ -245,7 +245,7 @@ if __name__ == "__main__":
             out_data.append(result)
         else:
             # 出力データがない場合
-            errors.append(file['fullpath'])
+            errors.append(Utility.get_filename_from_path(filepath=file["fullpath"]))
 
     # pprint.pprint(out_data)
 
