@@ -188,7 +188,7 @@ def console_out(data):
     logger.info("~" * 50)
 
 
-if __name__ == "__main__":
+def main():
     # 設定読み込み
     global settings
     settings = AppConfig.load_settings()
@@ -254,3 +254,6 @@ if __name__ == "__main__":
 
     # zipファイルを展開していた場合は一時フォルダを掃除
     if len(temp_dirs): Zip.cleanup_old_temp_dirs()
+
+if __name__ == "__main__":
+    main()
