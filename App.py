@@ -206,7 +206,7 @@ def create_input_area(parent, settings):
 def load_data(data, errors):
     global notebook, file_selector, input_data, settings
 
-    ers = "\n".join([" - "+ f for f in errors])
+    ers = "\n".join([" - "+ f["error"] for f in errors])
 
     if not len(data):
         # 1件もデータがなかった場合はメッセージ

@@ -2,7 +2,6 @@
 from collections import defaultdict
 
 from libs import OpenpyxlWrapper as Excel
-
 from libs import Logger
 from libs import Utility
 

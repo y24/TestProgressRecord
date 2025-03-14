@@ -1,4 +1,4 @@
-import os, sys, pprint
+import sys, pprint
 from tqdm import tqdm
 
 import ReadData
@@ -8,29 +8,9 @@ from libs import Dialog
 from libs import Zip
 from libs import AppConfig
 
-def main():
-    # 設定読み込み
-    settings = AppConfig.load_settings()
-
-    inputs = []
+def get_xlsx_paths(inputs):
     files = []
     temp_dirs = []
-    out_data = []
-    errors = []
-
-    # 引数でファイルパスを受け取る(複数可)
-    inputs = sys.argv.copy()
-
-    # 引数がない場合はファイル選択ダイアログ(複数可)
-    if len(inputs) <= 1:
-        inputs = Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))
-        if not inputs:
-            # キャンセル時は終了
-            sys.exit()
-    else:
-        del inputs[0]
-
-    # 拡張子判定
     for input in inputs:
         ext = Utility.get_ext_from_path(input)
         if ext == "xlsx":
@@ -41,30 +21,61 @@ def main():
             for f in extracted_files:
                 files.append({"fullpath": f, "temp_dir": temp_dir})
             temp_dirs.append(temp_dir)
+    return files, temp_dirs
+
+def file_processor(file, settings):
+    # 集計
+    result = ReadData.aggregate_results(filepath=file["fullpath"], settings=settings)
+    # ファイル名
+    filename = Utility.get_filename_from_path(filepath=file["fullpath"])
+    # 出力
+    if result and not Utility.is_empty(result):
+        # ファイルパス
+        result["file"] = filename
+        # zipファイル内の相対パスを取得
+        if file["temp_dir"]:
+            result["relative_path"] = Utility.get_relative_directory_path(full_path=file["fullpath"], base_dir=file["temp_dir"])
+            result["selector_label"] = ReadData.make_selector_label(result)
+        else:
+            # zipファイルではない場合
+            result["relative_path"] = ""
+            result["selector_label"] = result["file"]
+        # コンソール出力
+        # console_out(result)
+        # ビューアに渡す配列に格納
+        return result
+    else:
+        # 出力データがない場合
+        return { "error": filename }
+
+
+def main():
+    # 引数でファイルパスを受け取る(複数可)
+    inputs = sys.argv.copy()
+
+    # 引数がない場合はファイル選択ダイアログ(複数可)
+    if len(inputs) <= 1:
+        inputs = Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))
+        # キャンセル時は終了
+        if not inputs: sys.exit()
+    else:
+        del inputs[0]
+
+    # xlsxファイルのパスを抽出
+    files, temp_dirs = get_xlsx_paths(inputs=inputs)
+
+    # 設定読み込み
+    settings = AppConfig.load_settings()
 
     # ファイルを処理
+    out_data = []
+    errors = []
     for file in tqdm(files):
-        # 集計
-        result = ReadData.aggregate_results(filepath=file["fullpath"], settings=settings)
-        # 出力
-        if result and not Utility.is_empty(result):
-            # ファイルパス
-            result["file"] = Utility.get_filename_from_path(filepath=file["fullpath"])
-            # zipファイル内の相対パスを取得
-            if file["temp_dir"]:
-                result["relative_path"] = Utility.get_relative_directory_path(full_path=file["fullpath"], base_dir=file["temp_dir"])
-                result["selector_label"] = ReadData.make_selector_label(result)
-            else:
-                # zipファイルではない場合
-                result["relative_path"] = ""
-                result["selector_label"] = result["file"]
-            # コンソール出力
-            # console_out(result)
-            # ビューアに渡す配列に格納
-            out_data.append(result)
+        res = file_processor(file=file, settings=settings)
+        if not 'error' in res.keys():
+            out_data.append(res)
         else:
-            # 出力データがない場合
-            errors.append(Utility.get_filename_from_path(filepath=file["fullpath"]))
+            errors.append(res)
 
     # pprint.pprint(out_data)
 
