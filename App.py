@@ -135,7 +135,7 @@ def update_display(selected_file):
     notebook.add(frame_name, text=settings["write"]["structures"]["by_name"])
     create_treeview(frame_name, data['by_name'], 'by_name', data["file"])
 
-    update_count_label(data["count"])
+    update_info_label(data["count"])
     update_bar_chart(data['total'], data["count"]["incompleted"])
     notebook.select(current_tab)
 
@@ -209,9 +209,24 @@ def create_input_area(parent, settings):
     ttk.Button(submit_frame, text="データ書込", command=lambda: write_data(field_data)).pack(side=tk.LEFT, pady=5)
     ttk.Button(submit_frame, text="開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=5, pady=5)
 
-def update_count_label(data):
-    count_text = f'テストケース数: {data["available"]} (総数: {data["all"]} / 対象外: {data["excluded"]})'
+def update_info_label(data):
+    # 値
+    available = data["available"]
+    completed = data["completed"]
+    filled = data["filled"]
+
+    # ケース数テキスト
+    count_text = f'テストケース数: {available} (総数: {data["all"]} / 対象外: {data["excluded"]})'
+    # 完了率テキスト
+    completed_percentage = (completed / available) * 100
+    completed_rate_text = f'完了率: {completed_percentage:.1f}% [{completed}/{available}]'
+    # 消化率テキスト
+    filled_percentage = (filled / available) * 100
+    filled_rate_text = f'消化率: {filled_percentage:.1f}% [{filled}/{available}]'
+
+    # 表示を更新
     count_label.config(text=count_text)
+    rate_label.config(text=f'{completed_rate_text}  |  {filled_rate_text}')
 
 def update_bar_chart(data, incompleted_count):
     # 表示順を固定
@@ -273,7 +288,7 @@ def update_bar_chart(data, incompleted_count):
         canvas.draw()
 
 def load_data(data, errors):
-    global notebook, file_selector, input_data, settings, count_label, fig, ax, canvas
+    global notebook, file_selector, input_data, settings, count_label, rate_label, fig, ax, canvas
 
     ers = "\n".join([" - "+ f["error"] for f in errors])
 
@@ -303,7 +318,11 @@ def load_data(data, errors):
 
     # テストケース数
     count_label = ttk.Label(info_frame, anchor="w")
-    count_label.pack(fill=tk.X, padx=5, pady=5)
+    count_label.pack(fill=tk.X, padx=5)
+
+    # 完了率
+    rate_label = ttk.Label(info_frame, anchor="w")
+    rate_label.pack(fill=tk.X, padx=5)
 
     # グラフ表示
     fig, ax = plt.subplots(figsize=(8, 0.35))
