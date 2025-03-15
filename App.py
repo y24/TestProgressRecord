@@ -141,8 +141,8 @@ def save_to_csv_all():
 
 def update_display(selected_file):
     # 全ファイル集計
-    update_info_label(sum_values(input_data, "count"), total_count_label, total_rate_label)
-    update_bar_chart(data=sum_values(input_data, "total"), incompleted_count=sum_values(input_data, "count")["incompleted"], ax=total_ax, canvas=total_canvas)
+    update_info_label(sum_values(input_data, "count"), count_label=total_count_label, rate_label=total_rate_label, detail=False)
+    update_bar_chart(data=sum_values(input_data, "total"), incompleted_count=sum_values(input_data, "count")["incompleted"], ax=total_ax, canvas=total_canvas, show_label=True)
 
     # タブ切り替え
     current_tab = notebook.index(notebook.select()) if notebook.tabs() else 0
@@ -152,8 +152,8 @@ def update_display(selected_file):
     data = next(item for item in input_data if item['selector_label'] == selected_file)
 
     # ファイル別集計
-    update_info_label(data["count"], file_count_label, file_rate_label)
-    update_bar_chart(data=data['total'], incompleted_count=data["count"]["incompleted"], ax=file_ax, canvas=file_canvas)
+    update_info_label(data["count"], count_label=file_count_label, rate_label=file_rate_label, detail=True)
+    update_bar_chart(data=data['total'], incompleted_count=data["count"]["incompleted"], ax=file_ax, canvas=file_canvas, show_label=False)
 
     # タブ内情報の更新
     frame_total = ttk.Frame(notebook)
@@ -267,7 +267,7 @@ def meke_rate_text(value1, value2):
     else:
         return "--"
 
-def update_info_label(data, count_label, rate_label):
+def update_info_label(data, count_label, rate_label, detail=True):
     # 値
     available = data["available"]
     completed = data["completed"]
@@ -275,7 +275,9 @@ def update_info_label(data, count_label, rate_label):
 
     # ケース数テキスト
     count = available if available else "--"
-    count_text = f'テストケース数: {count} (総数: {data["all"]} / 対象外: {data["excluded"]})'
+    count_text = f'テストケース数: {count}'
+    if detail:
+        count_text += f' (総数: {data["all"]} / 対象外: {data["excluded"]})'
     # 完了率テキスト
     completed_rate_text = f'完了率: {meke_rate_text(completed, available)} [{completed}/{available}]'
     # 消化率テキスト
@@ -285,7 +287,7 @@ def update_info_label(data, count_label, rate_label):
     count_label.config(text=count_text)
     rate_label.config(text=f'{completed_rate_text}  |  {filled_rate_text}')
 
-def update_bar_chart(data, incompleted_count, ax, canvas):
+def update_bar_chart(data, incompleted_count, ax, canvas, show_label=True):
     # 表示順を固定
     sorted_labels = settings["common"]["results"]
 
@@ -320,33 +322,34 @@ def update_bar_chart(data, incompleted_count, ax, canvas):
     ax.set_frame_on(False)  # 枠線を削除
     ax.margins(0) # 余白なし
 
-    # バーの中央にラベルを配置（幅が十分にある場合のみ）
-    for bar, size, label, color in bars:
-        percentage = (size / total) * 100  # 割合計算
-        
-        # ラベルフォーマット
-        if size > total * 0.15:  # 割合15%以上は%も表示
-            label_text = f"{label} ({percentage:.1f}%)"
-        elif size > total * 0.08:  # 割合8%以上はラベルのみ
-            label_text = label
-        else:
-            label_text = ""
+    # バーの中央にラベルを配置
+    if show_label:
+        for bar, size, label, color in bars:
+            percentage = (size / total) * 100  # 割合計算
+            
+            # ラベルフォーマット
+            if size > total * 0.15:  # 割合15%以上は%も表示
+                label_text = f"{label} ({percentage:.1f}%)"
+            elif size > total * 0.08:  # 割合8%以上はラベルのみ
+                label_text = label
+            else:
+                label_text = ""
 
-        # ラベルの色
-        if color in color_map["black_labels"]:
-            label_color = 'black'
-        elif color in color_map["gray_labels"]:
-            label_color = 'dimgrey'
-        else:
-            label_color = 'white'
+            # ラベルの色
+            if color in color_map["black_labels"]:
+                label_color = 'black'
+            elif color in color_map["gray_labels"]:
+                label_color = 'dimgrey'
+            else:
+                label_color = 'white'
 
-        ax.text(
-            bar.get_x() + bar.get_width() / 2,  # 中央位置
-            bar.get_y() + bar.get_height() / 2,  # 中央位置
-            label_text,
-            ha='center', va='center', fontsize=8, 
-            color=label_color
-        )
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,  # 中央位置
+                bar.get_y() + bar.get_height() / 2,  # 中央位置
+                label_text,
+                ha='center', va='center', fontsize=8, 
+                color=label_color
+            )
 
     if canvas:
         canvas.draw()
@@ -414,7 +417,7 @@ def launch(data, errors):
 
     # 全ファイルエリア
     total_frame = ttk.LabelFrame(root, text="全ファイル集計")
-    total_frame.pack(fill=tk.X, padx=7, pady=5)
+    total_frame.pack(fill=tk.X, padx=5, pady=10)
 
     # テストケース数
     total_count_label = ttk.Label(total_frame, anchor="w")
@@ -425,10 +428,13 @@ def launch(data, errors):
     total_rate_label.pack(fill=tk.X, padx=5)
 
     # グラフ表示(全体)
-    total_fig, total_ax = plt.subplots(figsize=(8, 0.3))
+    total_fig, total_ax = plt.subplots(figsize=(8, 0.25))
     total_canvas = FigureCanvasTkAgg(total_fig, master=total_frame)
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
     total_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+    # ファイル書き込みエリア
+    create_input_area(parent=total_frame, settings=settings)
 
     # ファイル別エリア
     file_frame = ttk.LabelFrame(root, text="ファイル別集計")
@@ -436,19 +442,19 @@ def launch(data, errors):
 
     # ファイル選択プルダウン
     file_selector = ttk.Combobox(file_frame, values=[file["selector_label"] for file in input_data], state="readonly")
-    file_selector.pack(fill=tk.X, padx=5, pady=5)
+    file_selector.pack(fill=tk.X, padx=20, pady=5)
     file_selector.bind("<<ComboboxSelected>>", lambda event: update_display(file_selector.get()))
 
     # テストケース数
     file_count_label = ttk.Label(file_frame, anchor="w")
-    file_count_label.pack(fill=tk.X, padx=5)
+    file_count_label.pack(fill=tk.X, padx=20)
 
     # 完了率
     file_rate_label = ttk.Label(file_frame, anchor="w")
-    file_rate_label.pack(fill=tk.X, padx=5)
+    file_rate_label.pack(fill=tk.X, padx=20)
 
     # グラフ表示(ファイル別)
-    file_fig, file_ax = plt.subplots(figsize=(6, 0.2))
+    file_fig, file_ax = plt.subplots(figsize=(6, 0.1))
     file_canvas = FigureCanvasTkAgg(file_fig, master=file_frame)
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
     file_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
@@ -456,9 +462,6 @@ def launch(data, errors):
     # タブ表示
     notebook = ttk.Notebook(file_frame, height=300)
     notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-
-    # ファイル書き込みエリア
-    create_input_area(parent=root, settings=settings)
 
     # グリッド表示
     if input_data:
