@@ -218,7 +218,7 @@ def update_bar_chart(data, incompleted_count):
     sizes = [data[label] for label in labels]
 
     # 未実施数を追加
-    labels += ["Not Run"]
+    labels += [settings["common"]["not_run"]]
     sizes += [incompleted_count]
 
     # 合計値
@@ -230,15 +230,7 @@ def update_bar_chart(data, incompleted_count):
     bars = []  # 各バーのオブジェクトを保存
 
     # ラベルごとの色設定
-    color_map = {
-        "Pass": "green",
-        "Fail": "red",
-        "Blocked": "deepskyblue",  # 水色
-        "Fixed": "darkgreen",  # 濃い緑
-        "Suspend": "yellow",
-        "N/A": "gray",
-        "Not Run": "lightgray"
-    }
+    color_map = settings["common"]["colors"]
 
     for size, label in zip(sizes, labels):
         color = color_map.get(label, "gray")  # ラベルの色を取得（デフォルトは灰色）

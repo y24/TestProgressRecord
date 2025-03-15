@@ -15,6 +15,16 @@
     },
     "common": {
         "results": ["Pass", "Fail", "Blocked", "Fixed", "Suspend", "N/A"],
-        "completed_results": ["Pass", "Fixed", "Suspend", "N/A"]
+        "completed_results": ["Pass", "Fixed", "Suspend", "N/A"],
+        "not_run": "Not Run",
+        "colors": {
+            "Pass": "forestgreen",
+            "Fail": "orangered",
+            "Blocked": "skyblue",
+            "Fixed": "darkgreen",
+            "Suspend": "gold",
+            "N/A": "gray",
+            "Not Run": "silver"
+        }
     }
 }
