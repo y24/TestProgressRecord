@@ -159,8 +159,10 @@ def update_display(selected_file):
     notebook.add(frame_name, text=settings["app"]["structures"]["by_name"])
     create_treeview(frame_name, data['by_name'], 'by_name', data["file"])
 
-    update_info_label(data["file"], data["count"])
+    update_info_label(sum_values(input_data, "count"), total_count_label, total_rate_label)
     update_total_bar_chart(input_data)
+
+    update_info_label(data["count"], file_count_label, file_rate_label)
     update_bar_chart(data['total'], data["count"]["incompleted"])
     notebook.select(current_tab)
 
@@ -260,10 +262,7 @@ def meke_rate_text(value1, value2):
     else:
         return "--"
 
-def update_info_label(file:str, data):
-    # フレームタイトル
-    info_frame.config(text=f"{file}")
-
+def update_info_label(data, count_label, rate_label):
     # 値
     available = data["available"]
     completed = data["completed"]
@@ -355,7 +354,7 @@ def sum_values(data, param):
     return result
 
 def update_total_bar_chart(data_files):
-    # 全ファイルの結果を取得
+    # 全ファイル合計
     data = sum_values(data_files, "total")
     count = sum_values(data_files, "count")
     incompleted_count = count["incompleted"]
@@ -448,7 +447,9 @@ def reload_files():
     sys.exit()
 
 def launch(data, errors):
-    global root, notebook, file_selector, input_data, settings, info_frame, count_label, rate_label, fig, ax, canvas, fig_total, ax_total, canvas_total
+    global root, notebook, file_selector, input_data, settings
+    global file_count_label, file_rate_label, fig, ax, canvas
+    global total_count_label, total_rate_label, fig_total, ax_total, canvas_total
 
     # 読込データ
     input_data = data
@@ -477,38 +478,50 @@ def launch(data, errors):
     # メニューバー
     create_menubar(parent=root)
 
+    # 全ファイルエリア
+    total_frame = ttk.LabelFrame(root, text="全ファイル集計")
+    total_frame.pack(fill=tk.X, padx=7, pady=5)
+
+    # テストケース数
+    total_count_label = ttk.Label(total_frame, anchor="w")
+    total_count_label.pack(fill=tk.X, padx=5)
+
+    # 完了率
+    total_rate_label = ttk.Label(total_frame, anchor="w")
+    total_rate_label.pack(fill=tk.X, padx=5)
+
     # グラフ表示(全体)
     fig_total, ax_total = plt.subplots(figsize=(8, 0.3))
-    canvas_total = FigureCanvasTkAgg(fig_total, master=root)
+    canvas_total = FigureCanvasTkAgg(fig_total, master=total_frame)
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
     canvas_total.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
+    # ファイル別エリア
+    file_frame = ttk.LabelFrame(root, text="ファイル別集計")
+    file_frame.pack(fill=tk.X, padx=5, pady=5)
+
     # ファイル選択プルダウン
-    file_selector = ttk.Combobox(root, values=[file["selector_label"] for file in input_data], state="readonly")
+    file_selector = ttk.Combobox(file_frame, values=[file["selector_label"] for file in input_data], state="readonly")
     file_selector.pack(fill=tk.X, padx=5, pady=5)
     file_selector.bind("<<ComboboxSelected>>", lambda event: update_display(file_selector.get()))
 
-    # 情報表示エリア
-    info_frame = ttk.LabelFrame(root)
-    info_frame.pack(fill=tk.X, padx=5, pady=5)
-
     # テストケース数
-    count_label = ttk.Label(info_frame, anchor="w")
-    count_label.pack(fill=tk.X, padx=5)
+    file_count_label = ttk.Label(file_frame, anchor="w")
+    file_count_label.pack(fill=tk.X, padx=5)
 
     # 完了率
-    rate_label = ttk.Label(info_frame, anchor="w")
-    rate_label.pack(fill=tk.X, padx=5)
+    file_rate_label = ttk.Label(file_frame, anchor="w")
+    file_rate_label.pack(fill=tk.X, padx=5)
 
     # グラフ表示(ファイル別)
-    fig, ax = plt.subplots(figsize=(8, 0.3))
-    canvas = FigureCanvasTkAgg(fig, master=info_frame)
+    fig, ax = plt.subplots(figsize=(6, 0.2))
+    canvas = FigureCanvasTkAgg(fig, master=file_frame)
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-    canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+    canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
 
     # タブ表示
-    notebook = ttk.Notebook(root, height=300)
-    notebook.pack(fill=tk.BOTH, expand=True)
+    notebook = ttk.Notebook(file_frame, height=300)
+    notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     # ファイル書き込みエリア
     create_input_area(parent=root, settings=settings)
