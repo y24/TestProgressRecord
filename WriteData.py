@@ -16,7 +16,7 @@ width_dict = {
 Font_depend = 1.2
 base_header = ["フォルダ", "ファイル名", "環境名", "日付"]
 
-def convert_to_2d_array(data):
+def convert_to_2d_array(data, settings):
     results = settings["common"]["results"] + ["Completed"]
     header = base_header + results
     out_arr = [header]
@@ -88,13 +88,11 @@ def adjust_colwidth_by_headername(sheet, target_headers:list[str], header_row:in
                 sheet.column_dimensions[column].width= max_length*max_diameter*0.9
 
 def execute(data, file_path, sheet_name):
-    global settings
-
     # 設定読み込み
     settings = AppConfig.load_settings()
 
     # データを書込用に変換
-    converted_data = convert_to_2d_array(data)
+    converted_data = convert_to_2d_array(data=data, settings=settings)
 
     # ブック読み込み
     wb = Excel.load(file_path=file_path)

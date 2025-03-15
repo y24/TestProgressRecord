@@ -24,7 +24,7 @@ def create_treeview(parent, data, structure, file_name):
     elif structure == 'by_name':
         columns = ["日付", "担当者", "Completed"]
         data = dict(sorted(data.items(), reverse=True))
-    elif structure == 'total':
+    elif structure == 'daily':
         all_keys = set()
         for values in data.values():
             all_keys.update(values.keys())
@@ -61,7 +61,7 @@ def create_treeview(parent, data, structure, file_name):
     alternating_colors = ["#ffffff", "#f0f0f0"]
     highlight_color = "#d0f0ff"
     
-    if structure == 'total':
+    if structure == 'daily':
         for index, (date, values) in enumerate(data.items()):
             bg_color = alternating_colors[index % 2]
             row = [date] + [values.get(k, 0) for k in Utility.sort_by_master(master_list=settings["common"]["results"]+["completed"], input_list=all_keys)]
@@ -88,18 +88,19 @@ def create_treeview(parent, data, structure, file_name):
     
     tree.pack(fill=tk.BOTH, expand=True)
     
-    save_button = ttk.Button(frame, text="CSV保存", command=lambda: save_to_csv(tree, columns, file_name, structure))
+    save_button = ttk.Button(frame, text="CSV保存", command=lambda: save_to_csv_tab(tree, columns, file_name, structure))
     save_button.pack(pady=5)
     
     return tree
 
-def save_to_csv(tree, columns, file_name, structure):
+def save_to_csv_tab(tree, columns, file_name, structure):
     # デフォルトファイル名
     basename = os.path.splitext(file_name)[0]
     tab = settings["app"]["structures"][structure]
+    initial_filename = f"{basename}_{tab}"
 
     # 保存先の選択
-    file_path = filedialog.asksaveasfilename(initialfile=f"{basename}_{tab}", defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
+    file_path = filedialog.asksaveasfilename(initialfile=initial_filename, defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
     if not file_path:
         return
 
@@ -109,6 +110,28 @@ def save_to_csv(tree, columns, file_name, structure):
         writer.writerow(columns)
         for item in tree.get_children():
             writer.writerow(tree.item(item)['values'])
+
+    # 保存完了
+    response = Dialog.ask(title="保存完了", message=f"CSVデータを保存しました。\n{file_path}\n\nファイルを開きますか？")
+    if response == "yes":
+        open_file(file_path=file_path)
+
+def save_to_csv_all():
+    # データ変換
+    converted_data = WriteData.convert_to_2d_array(data=input_data, settings=settings)
+
+    #  デフォルトファイル名
+    initial_filename = f'進捗集計_{datetime.today().strftime("%Y-%m-%d")}'
+
+    # 保存先の選択
+    file_path = filedialog.asksaveasfilename(initialfile=initial_filename, defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
+    if not file_path:
+        return
+    
+    # 保存
+    with open(file_path, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        writer.writerows(converted_data)
 
     # 保存完了
     response = Dialog.ask(title="保存完了", message=f"CSVデータを保存しました。\n{file_path}\n\nファイルを開きますか？")
@@ -125,7 +148,7 @@ def update_display(selected_file):
 
     frame_total = ttk.Frame(notebook)
     notebook.add(frame_total, text=settings["app"]["structures"]["daily"])
-    create_treeview(frame_total, data['total_daily'], 'total', data["file"])
+    create_treeview(frame_total, data['total_daily'], 'daily', data["file"])
 
     frame_env = ttk.Frame(notebook)
     notebook.add(frame_env, text=settings["app"]["structures"]["by_env"])
@@ -224,7 +247,8 @@ def create_input_area(parent, settings):
     submit_frame = ttk.Frame(input_frame)
     submit_frame.grid(row=2, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W)
     ttk.Button(submit_frame, text="データ書込", command=lambda: write_data(field_data)).pack(side=tk.LEFT, pady=5)
-    ttk.Button(submit_frame, text="開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=5, pady=5)
+    ttk.Button(submit_frame, text="書込先を開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=5, pady=5)
+    ttk.Button(submit_frame, text="CSV保存", command=lambda: save_to_csv_all()).pack(side=tk.LEFT, padx=5, pady=5)
 
 def meke_rate_text(value1, value2):
     if value2:
