@@ -326,12 +326,21 @@ def update_bar_chart(data, incompleted_count):
         else:
             label_text = ""
 
+        # ラベルの色
+        print(color)
+        if color in color_map["black_labels"]:
+            label_color = 'black'
+        elif color in color_map["gray_labels"]:
+            label_color = 'dimgrey'
+        else:
+            label_color = 'white'
+
         ax.text(
             bar.get_x() + bar.get_width() / 2,  # 中央位置
             bar.get_y() + bar.get_height() / 2,  # 中央位置
             label_text,
-            ha='center', va='center', fontsize=10, 
-            color='black' if color == "yellow" else 'white'
+            ha='center', va='center', fontsize=8, 
+            color=label_color
         )
 
     if canvas:

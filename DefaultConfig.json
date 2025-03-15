@@ -21,7 +21,9 @@
             "Fixed": "darkgreen",
             "Suspend": "gold",
             "N/A": "gray",
-            "Not Run": "silver"
+            "Not Run": "silver",
+            "black_labels": ["skyblue", "gold"],
+            "gray_labels": ["silver"]
         }
     },
     "app": {
