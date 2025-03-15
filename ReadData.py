@@ -88,6 +88,7 @@ def aggregate_results(filepath:str, settings):
     # 各シート処理
     all_data = []
     data_by_env = {}
+    counts_by_sheet = []
     for sheet_name in sheet_names:
         # シート取得
         sheet = Excel.get_sheet_by_name(workbook=workbook, sheet_name=sheet_name)
@@ -133,43 +134,57 @@ def aggregate_results(filepath:str, settings):
             # 環境ごとのデータ集計
             data_by_env[env_name] = get_daily(data=set_data, results=settings["common"]["results"], completed_results=settings["common"]["completed_results"])
 
+        # 環境数
+        env_count = len(sets)
+
+        # テストケース数
+        # 期待結果列の番号
+        tobe_rownunms = Utility.find_rownum_by_keyword(list=header, keyword=settings["read"]["tobe_row"]["key"])
+        tobe_data = Excel.get_column_values(sheet=sheet, col_nums=tobe_rownunms,header_row=header_rownum, ignore_header=True)
+        # ケース数
+        case_count = sum(1 for item in tobe_data if any(x is not None for x in item))
+
+        # シート毎に格納
+        counts_by_sheet.append({
+            "env_count": env_count,
+            "case_count": case_count
+        })
+
     # 全セット集計(日付別)
     data_daily_total = get_daily(data=all_data, results=settings["common"]["results"], completed_results=settings["common"]["completed_results"])
 
     # 全セット集計(担当者別)
     data_by_name = get_daily_by_name(data=all_data)
 
-    # テストケース数カウント
-    # 期待結果列の番号
-    tobe_rows = Utility.find_rownum_by_keyword(list=header, keyword=settings["read"]["tobe_row"]["key"])
-    # 期待結果列を取得
-    tobe_data = Excel.get_column_values(sheet=sheet, col_nums=tobe_rows,header_row=header_rownum, ignore_header=True)
-    # テストケース数
-    case_count = sum(1 for item in tobe_data if any(x is not None for x in item))
-    # 環境数
-    env_count = len(data_by_env)
-    # テストケース数(全環境)
-    case_count_all = case_count * len(data_by_env)
+    # 全セット集計(全日付)
+    data_total = get_total_all_date(data=data_daily_total)
+
+    # 総テストケース数
+    case_count_all = sum(item['env_count'] * item['case_count'] for item in counts_by_sheet)
+
     # 対象外テストケース数
     excluded_count = get_excluded_count(data=all_data, targets=settings["read"]["excluded"])
-    # 実施済みテストケース数(全環境)
-    data_total = get_total_all_date(data=data_daily_total)
-    # 完了数
-    completed_count = sum(data_total.values())
+
+    # 有効テストケース数
+    available_count = case_count_all - excluded_count
+
+    # 消化テストケース数
+    filled_count = sum(data_total.values())
+
     # 未完了数(マイナスは0)
-    incompleted_count = max(0, case_count_all - completed_count)
+    incompleted_count = max(0, available_count - filled_count)
 
     # 結果返却
     return {
-        "case_count": {
-            "all": case_count,
-            "completed": completed_count,
-            "incompleted": incompleted_count,
-            "excluded": excluded_count
+        "count": {
+            "all": case_count_all,
+            "excluded": excluded_count,
+            "available": available_count,
+            "completed": filled_count,
+            "incompleted": incompleted_count
         },
-        "environment_count": env_count,
         "total_daily": data_daily_total,
-        "total_all": data_total,
+        "total": data_total,
         "by_name": data_by_name,
         "by_env": data_by_env
     }
@@ -183,7 +198,7 @@ def make_selector_label(file, id):
 def console_out(data):
     filename = data["file"]
     logger.info(f"FILE: {filename}")
-    logger.info(f"CASES COUNT: {data['case_count']}")
+    logger.info(f"CASES COUNT: {data['count']}")
     logger.debug(" ")
 
     # インデント

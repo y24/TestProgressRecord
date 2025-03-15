@@ -135,7 +135,8 @@ def update_display(selected_file):
     notebook.add(frame_name, text=settings["write"]["structures"]["by_name"])
     create_treeview(frame_name, data['by_name'], 'by_name', data["file"])
 
-    update_bar_chart(data['total_all'], data["case_count"]["incompleted"])
+    update_count_label(data["count"])
+    update_bar_chart(data['total'], data["count"]["incompleted"])
     notebook.select(current_tab)
 
 def write_data(field_data):    
@@ -208,6 +209,9 @@ def create_input_area(parent, settings):
     ttk.Button(submit_frame, text="データ書込", command=lambda: write_data(field_data)).pack(side=tk.LEFT, pady=5)
     ttk.Button(submit_frame, text="開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=5, pady=5)
 
+def update_count_label(data):
+    count_text = f'テストケース数: {data["available"]} (総数: {data["all"]} / 対象外: {data["excluded"]})'
+    count_label.config(text=count_text)
 
 def update_bar_chart(data, incompleted_count):
     # 表示順を固定
@@ -250,9 +254,9 @@ def update_bar_chart(data, incompleted_count):
         percentage = (size / total) * 100  # 割合計算
         
         # ラベルフォーマット
-        if size > total * 0.12:  # 割合15%以上は%も表示
+        if size > total * 0.15:  # 割合15%以上は%も表示
             label_text = f"{label} ({percentage:.1f}%)"
-        elif size > total * 0.8:  # 割合15%以上はラベルのみ
+        elif size > total * 0.08:  # 割合8%以上はラベルのみ
             label_text = label
         else:
             label_text = ""
@@ -268,52 +272,59 @@ def update_bar_chart(data, incompleted_count):
     if canvas:
         canvas.draw()
 
-
-
 def load_data(data, errors):
-    global notebook, file_selector, input_data, settings, fig, ax, canvas
+    global notebook, file_selector, input_data, settings, count_label, fig, ax, canvas
 
     ers = "\n".join([" - "+ f["error"] for f in errors])
 
     if not len(data):
         # 1件もデータがなかった場合はメッセージ
-        Dialog.show_warning("Error", f"以下のファイルからは1件もデータが検出できませんでした。終了します。\n{ers}")
+        Dialog.show_warning("Error", f"1件もデータが検出できませんでした。終了します。\n{ers}")
         sys.exit()
 
     input_data = data
 
+    # 親ウインドウ
     root = tk.Tk()
     root.title("TestProgressTracker")
-    root.geometry("780x540")
+    root.geometry("780x560")
 
     # 設定読み込み
     settings = AppConfig.load_settings()
-
-    # ファイル書き込みエリア
-    create_input_area(root, settings)
 
     # ファイル選択プルダウン
     file_selector = ttk.Combobox(root, values=[file["selector_label"] for file in input_data], state="readonly")
     file_selector.pack(fill=tk.X, padx=5, pady=5)
     file_selector.bind("<<ComboboxSelected>>", lambda event: update_display(file_selector.get()))
     
-    # グリッド表示エリア
-    notebook = ttk.Notebook(root, height=300)
-    notebook.pack(fill=tk.BOTH, expand=True)
-    
-    # グラフ表示エリア
-    fig, ax = plt.subplots(figsize=(8, 1))
-    canvas = FigureCanvasTkAgg(fig, master=root)
+    # 情報表示エリア
+    info_frame = ttk.LabelFrame(root, text="進捗情報")
+    info_frame.pack(fill=tk.X, padx=5, pady=5)
+
+    # テストケース数
+    count_label = ttk.Label(info_frame, anchor="w")
+    count_label.pack(fill=tk.X, padx=5, pady=5)
+
+    # グラフ表示
+    fig, ax = plt.subplots(figsize=(8, 0.35))
+    canvas = FigureCanvasTkAgg(fig, master=info_frame)
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
     canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-    # データ表示
+    # タブ表示
+    notebook = ttk.Notebook(root, height=300)
+    notebook.pack(fill=tk.BOTH, expand=True)
+
+    # ファイル書き込みエリア
+    create_input_area(root, settings)
+
+    # グリッド表示
     if input_data:
         file_selector.current(0)
         update_display(input_data[0]['selector_label'])
 
     if len(errors):
-        Dialog.show_warning("Error", f"以下のファイルからはデータが検出できませんでした。\n{ers}")
+        Dialog.show_warning("Error", f"データが検出できませんでした。\n{ers}")
 
     root.protocol("WM_DELETE_WINDOW", root.quit)  # アプリ終了時に後続処理を継続
     root.mainloop()
