@@ -71,7 +71,7 @@ def get_total_all_date(data, exclude:str):
         for key, count in values.items():
             result[key] = result.get(key, 0) + count
     # Completedは除く
-    result.pop(exclude)
+    result.pop(exclude, None)
     return result
 
 def sum_completed_results(data: dict, completed_results: list) -> int:

@@ -69,7 +69,7 @@ def create_treeview(parent, data, structure, file_name):
             tree.tag_configure(date, background=highlight_color if date == today else bg_color)
     elif structure == 'by_env':
         if not data:
-            tree.insert('', 'end', values=["取得失敗", "-"] + ["-" for _ in Utility.sort_by_master(master_list=settings["common"]["results"]+["completed"], input_list=all_keys)])
+            tree.insert('', 'end', values=["取得できませんでした", "-"] + ["-" for _ in Utility.sort_by_master(master_list=settings["common"]["results"]+["completed"], input_list=all_keys)])
         else:
             for index, (env, dates) in enumerate(data.items()):
                 bg_color = alternating_colors[index % 2]
@@ -209,6 +209,14 @@ def create_input_area(parent, settings):
     ttk.Button(submit_frame, text="データ書込", command=lambda: write_data(field_data)).pack(side=tk.LEFT, pady=5)
     ttk.Button(submit_frame, text="開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=5, pady=5)
 
+def meke_rate_text(value1, value2):
+    if value2:
+        rate = (value1 / value2) * 100
+        # rate = rate if rate < 100 else 100
+        return f"{rate:.1f}%"
+    else:
+        return "--"
+
 def update_info_label(file:str, data):
     # フレームタイトル
     info_frame.config(text=f"{file}")
@@ -219,13 +227,12 @@ def update_info_label(file:str, data):
     filled = data["filled"]
 
     # ケース数テキスト
-    count_text = f'テストケース数: {available} (総数: {data["all"]} / 対象外: {data["excluded"]})'
+    count = available if available else "--"
+    count_text = f'テストケース数: {count} (総数: {data["all"]} / 対象外: {data["excluded"]})'
     # 完了率テキスト
-    completed_percentage = (completed / available) * 100
-    completed_rate_text = f'完了率: {completed_percentage:.1f}% [{completed}/{available}]'
+    completed_rate_text = f'完了率: {meke_rate_text(completed, available)} [{completed}/{available}]'
     # 消化率テキスト
-    filled_percentage = (filled / available) * 100
-    filled_rate_text = f'消化率: {filled_percentage:.1f}% [{filled}/{available}]'
+    filled_rate_text = f'消化率: {meke_rate_text(filled, available)} [{filled}/{available}]'
 
     # 表示を更新
     count_label.config(text=count_text)
@@ -261,7 +268,6 @@ def update_bar_chart(data, incompleted_count):
         left += size  # 次のバーの開始位置を更新
 
     ax.set_xlim(0, total)  # 左右いっぱい
-    ax.set_ylim(-0.5, 0.5)  # 縦の高さをコンパクトにする
     ax.set_yticks([])  # y軸ラベルを非表示
     ax.set_xticks([])  # x軸の目盛りを非表示
     ax.set_frame_on(False)  # 枠線を削除
@@ -328,7 +334,7 @@ def load_data(data, errors):
     rate_label.pack(fill=tk.X, padx=5)
 
     # グラフ表示
-    fig, ax = plt.subplots(figsize=(8, 0.35))
+    fig, ax = plt.subplots(figsize=(8, 0.3))
     canvas = FigureCanvasTkAgg(fig, master=info_frame)
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
     canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
@@ -346,7 +352,7 @@ def load_data(data, errors):
         update_display(input_data[0]['selector_label'])
 
     if len(errors):
-        Dialog.show_warning("Error", f"データが検出できませんでした。\n{ers}")
+        Dialog.show_warning("Error", f"以下のファイルはデータが検出できませんでした。\n{ers}")
 
     root.protocol("WM_DELETE_WINDOW", root.quit)  # アプリ終了時に後続処理を継続
     root.mainloop()

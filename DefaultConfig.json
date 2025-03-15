@@ -15,7 +15,7 @@
         "structures": {"daily": "日付別", "by_env": "環境別", "by_name": "担当者別"}
     },
     "common": {
-        "results": ["Pass", "Fail", "Blocked", "Fixed", "Suspend", "N/A"],
+        "results": ["Pass", "Fixed", "Fail", "Blocked", "Suspend", "N/A"],
         "completed": "Completed",
         "completed_results": ["Pass", "Fixed", "Suspend", "N/A"],
         "not_run": "Not Run",
