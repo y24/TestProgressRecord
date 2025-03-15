@@ -89,10 +89,29 @@ def create_treeview(parent, data, structure, file_name):
     
     tree.pack(fill=tk.BOTH, expand=True)
     
-    save_button = ttk.Button(frame, text="CSV保存", command=lambda: save_to_csv_tab(tree, columns, file_name, structure))
-    save_button.pack(pady=5)
+    ttk.Button(frame, text="CSV保存", command=lambda: save_to_csv_tab(tree, columns, file_name, structure)).pack(pady=5)
+    ttk.Button(frame, text="クリップボードにコピー", command=lambda: copy_to_clipboard_all(treeview_to_array(tree))).pack(pady=5)
     
     return tree
+
+def treeview_to_array(treeview):
+    """
+    TkinterのTreeviewのデータを2次元配列に変換する関数
+
+    :param treeview: TkinterのTreeviewウィジェット
+    :return: 2次元配列（リストのリスト）
+    """
+    # ヘッダー取得
+    columns = treeview["columns"]
+    headers = [treeview.heading(col)["text"] for col in columns]
+
+    # データ取得
+    data = []
+    for item in treeview.get_children():
+        row = [treeview.item(item)["values"][i] for i in range(len(columns))]
+        data.append(row)
+
+    return [headers] + data  # ヘッダーとデータを結合
 
 def save_to_csv_tab(tree, columns, file_name, structure):
     # デフォルトファイル名
@@ -152,8 +171,9 @@ def update_display(selected_file):
     data = next(item for item in input_data if item['selector_label'] == selected_file)
 
     # ファイル別集計
-    update_info_label(data["count"], count_label=file_count_label, rate_label=file_rate_label, detail=True)
-    update_bar_chart(data=data['total'], incompleted_count=data["count"]["incompleted"], ax=file_ax, canvas=file_canvas, show_label=False)
+    if len(input_data) > 1:
+        update_info_label(data["count"], count_label=file_count_label, rate_label=file_rate_label, detail=True)
+        update_bar_chart(data=data['total'], incompleted_count=data["count"]["incompleted"], ax=file_ax, canvas=file_canvas, show_label=False)
 
     # タブ内情報の更新
     frame_total = ttk.Frame(notebook)
@@ -224,6 +244,26 @@ def open_file(file_path, exit:bool=False):
     else:
         Dialog.show_messagebox(root, type="error", title="Error", message="指定されたファイルが見つかりません")
 
+def copy_to_clipboard_all(data):
+    # 2次元配列をタブ区切りのテキストに変換
+    text = "\n".join(["\t".join(map(str, row)) for row in data])
+    
+    # クリップボードにコピー
+    root.clipboard_clear()
+    root.clipboard_append(text)
+    root.update()
+
+def copy_to_clipboard_tab():
+    converted_data = WriteData.convert_to_2d_array(data=input_data, settings=settings)
+
+    # 2次元配列をタブ区切りのテキストに変換
+    text = "\n".join(["\t".join(map(str, row)) for row in converted_data])
+    
+    # クリップボードにコピー
+    root.clipboard_clear()
+    root.clipboard_append(text)
+    root.update()
+
 def create_menubar(parent):
     menubar = tk.Menu(parent)
     parent.config(menu=menubar)
@@ -258,6 +298,7 @@ def create_input_area(parent, settings):
     ttk.Button(submit_frame, text="データ書込", command=lambda: write_data(field_data)).pack(side=tk.LEFT, pady=5)
     ttk.Button(submit_frame, text="書込先を開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=5, pady=5)
     ttk.Button(submit_frame, text="CSV保存", command=lambda: save_to_csv_all()).pack(side=tk.LEFT, padx=5, pady=5)
+    ttk.Button(submit_frame, text="クリップボードにコピー", command=lambda: copy_to_clipboard_all(WriteData.convert_to_2d_array(data=input_data, settings=settings))).pack(side=tk.LEFT, padx=5, pady=5)
 
 def meke_rate_text(value1, value2):
     if value2:
@@ -419,11 +460,11 @@ def launch(data, errors):
     total_frame = ttk.LabelFrame(root, text="全ファイル集計")
     total_frame.pack(fill=tk.X, padx=5, pady=10)
 
-    # テストケース数
+    # テストケース数(全体)
     total_count_label = ttk.Label(total_frame, anchor="w")
     total_count_label.pack(fill=tk.X, padx=5)
 
-    # 完了率
+    # 完了率(全体)
     total_rate_label = ttk.Label(total_frame, anchor="w")
     total_rate_label.pack(fill=tk.X, padx=5)
 
@@ -445,22 +486,24 @@ def launch(data, errors):
     file_selector.pack(fill=tk.X, padx=20, pady=5)
     file_selector.bind("<<ComboboxSelected>>", lambda event: update_display(file_selector.get()))
 
-    # テストケース数
-    file_count_label = ttk.Label(file_frame, anchor="w")
-    file_count_label.pack(fill=tk.X, padx=20)
+    if len(input_data) > 1:
+        # テストケース数(ファイル別)
+        file_count_label = ttk.Label(file_frame, anchor="w")
+        file_count_label.pack(fill=tk.X, padx=20)
 
-    # 完了率
-    file_rate_label = ttk.Label(file_frame, anchor="w")
-    file_rate_label.pack(fill=tk.X, padx=20)
+        # 完了率(ファイル別)
+        file_rate_label = ttk.Label(file_frame, anchor="w")
+        file_rate_label.pack(fill=tk.X, padx=20)
 
-    # グラフ表示(ファイル別)
-    file_fig, file_ax = plt.subplots(figsize=(6, 0.1))
-    file_canvas = FigureCanvasTkAgg(file_fig, master=file_frame)
-    plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-    file_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
+        # グラフ表示(ファイル別)
+        file_fig, file_ax = plt.subplots(figsize=(6, 0.1))
+        file_canvas = FigureCanvasTkAgg(file_fig, master=file_frame)
+        plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+        file_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
 
     # タブ表示
-    notebook = ttk.Notebook(file_frame, height=300)
+    notebook_height = 300 if len(input_data) > 1 else 355
+    notebook = ttk.Notebook(file_frame, height=notebook_height)
     notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     # グリッド表示

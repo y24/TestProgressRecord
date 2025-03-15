@@ -30,6 +30,6 @@
         "filepath": "",
         "table_name": "DATA",
         "structures": {"daily": "日付別", "by_env": "環境別", "by_name": "担当者別"},
-        "window_position": "780x710+200+200"
+        "window_position": "780x695+200+200"
     }
 }
