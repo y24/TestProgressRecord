@@ -148,6 +148,11 @@ def write_data(field_data):
         Dialog.show_warning("Error", f"書込先のファイルを選択してください。")
         return
 
+    # 確認
+    response = Dialog.ask(title="保存確認", message=f'{len(input_data)}件のファイルから取得したデータをすべて書き込みます。よろしいですか？')
+    if response == "no":
+        return
+
     # フィールドの設定値をグローバルに反映
     settings["write"]["filepath"] = file_path
     settings["write"]["table_name"] = table_name
@@ -155,14 +160,17 @@ def write_data(field_data):
     # データ書込
     try:
         result = WriteData.execute(input_data, file_path, table_name)
-    except Exception as e:
-        Dialog.show_warning(title="Error", message=f"保存失敗：ファイルが読み取り専用の可能性があります。\n{e}")
+    except ValueError as e:
+        Dialog.show_messagebox(root, type="warn", title="データなし", message=e)
+        return
+    except PermissionError as e:
+        Dialog.show_messagebox(root, type="error", title="保存失敗", message=e)
         return
 
     # 成功したら設定を保存
     if result:
         AppConfig.save_settings(settings)
-        response = Dialog.ask(title="保存完了", message=f'"{table_name}"シートにデータを書き込みました。\n{file_path}\n\nこのアプリを終了して、ファイルを開きますか？')
+        response = Dialog.ask(title="保存完了", message=f'"{table_name}"シートにデータを書き込みました。\n{file_path}\n\nこのアプリを終了して、書込先ファイルを開きますか？')
         if response == "yes":
             open_file(file_path=file_path, exit=True)
 
@@ -182,10 +190,10 @@ def open_file(file_path, exit:bool=False):
         if exit:
             sys.exit()
     else:
-        Dialog.showerror("Error", "指定されたファイルが見つかりません")
+        Dialog.show_messagebox(root, type="error", title="Error", message="指定されたファイルが見つかりません")
 
 def create_input_area(parent, settings):
-    input_frame = ttk.LabelFrame(parent, text="データ書込")
+    input_frame = ttk.LabelFrame(parent, text="進捗表へデータ書込")
     input_frame.pack(fill=tk.X, padx=5, pady=5)
     
     ttk.Label(input_frame, text="書込先:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=3)
@@ -297,21 +305,22 @@ def update_bar_chart(data, incompleted_count):
         canvas.draw()
 
 def load_data(data, errors):
-    global notebook, file_selector, input_data, settings, info_frame, count_label, rate_label, fig, ax, canvas
-
-    ers = "\n".join([" - "+ f["error"] for f in errors])
-
-    if not len(data):
-        # 1件もデータがなかった場合はメッセージ
-        Dialog.show_warning("Error", f"1件もデータが検出できませんでした。終了します。\n{ers}")
-        sys.exit()
-
-    input_data = data
+    global root, notebook, file_selector, input_data, settings, info_frame, count_label, rate_label, fig, ax, canvas
 
     # 親ウインドウ
     root = tk.Tk()
     root.title("TestProgressTracker")
-    root.geometry("780x560")
+    root.geometry("780x590")
+
+    # データ抽出に失敗したファイルのリスト
+    ers = "\n".join(["  "+ f["error"] for f in errors])
+
+    # 1件もデータがなかった場合は終了
+    if not len(data):
+        Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"1件もデータが抽出できませんでした。終了します。\n\nFile(s):\n{ers}")
+        sys.exit()
+
+    input_data = data
 
     # 設定読み込み
     settings = AppConfig.load_settings()
@@ -352,7 +361,7 @@ def load_data(data, errors):
         update_display(input_data[0]['selector_label'])
 
     if len(errors):
-        Dialog.show_warning("Error", f"以下のファイルはデータが検出できませんでした。\n{ers}")
+        Dialog.show_messagebox(root, type="warn", title="一部エラー", message=f"以下のファイルはデータが抽出できませんでした。\n\nFile(s):\n{ers}")
 
     root.protocol("WM_DELETE_WINDOW", root.quit)  # アプリ終了時に後続処理を継続
     root.mainloop()

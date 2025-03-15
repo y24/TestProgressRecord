@@ -28,7 +28,7 @@ def convert_to_2d_array(data):
                     out_arr.append([entry["relative_path"], file_name, env, date] + [values.get(v, 0) for v in results])
         else:
             # 環境別データがない場合は合計データを使用して、環境名は空で出力
-            for date, values in entry.get("total", {}).items():
+            for date, values in entry.get("total_daily", {}).items():
                 out_arr.append([entry["relative_path"], file_name, "", date] + [values.get(v, 0) for v in results])
     return out_arr
 
@@ -64,11 +64,14 @@ def adjust_colwidth_by_headername(sheet, target_headers:list[str], header_row:in
     for col in sheet.columns:
         # ヘッダ行の値（header_row=1：1行目をヘッダとする）
         header = col[header_row-1].value
-        # target_headersに合致するヘッダがあれば調整
+        # ヘッダがtarget_headersに合致する列を調整
         if header in target_headers:
             max_length= 1
             max_diameter = 1
-            column= col[1].column_letter
+            if len(col) > 1:
+                column= col[1].column_letter
+            else:
+                return
             for cell in col:
                 diameter = (cell.font.size*Font_depend)/10
                 if diameter > max_diameter:
@@ -98,16 +101,19 @@ def execute(data, file_path, sheet_name):
     
     # 既存のデータシートを削除して新規作成
     ws = Excel.create_sheet(workbook=wb, sheet_name=sheet_name, overwrite=True)
-    
-    # データを書き込んでテーブルを作成
-    create_datatable(ws, sheet_name, converted_data)
-    
-    # 列幅の調整
-    adjust_colwidth_by_headername(sheet=ws, target_headers=base_header, header_row=1)
+
+    # データがあれば書き込み
+    if len(converted_data) > 1:        
+        # データを書き込んでテーブルを作成
+        create_datatable(ws, sheet_name, converted_data)
+        # 列幅の調整
+        adjust_colwidth_by_headername(sheet=ws, target_headers=base_header, header_row=1)
+    else:
+        raise ValueError("書き込み可能なデータが1件もありません。")
 
     # 保存
     try:
         wb.save(file_path)
         return True
     except PermissionError:
-        raise
+        raise PermissionError("書込先のファイルに権限がないか、読み取り専用の可能性があります。\nファイルを開いている場合は閉じてやり直してください。")
