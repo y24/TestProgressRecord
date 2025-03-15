@@ -192,8 +192,17 @@ def open_file(file_path, exit:bool=False):
     else:
         Dialog.show_messagebox(root, type="error", title="Error", message="指定されたファイルが見つかりません")
 
+def create_menubar(parent):
+    menubar = tk.Menu(parent)
+    parent.config(menu=menubar)
+    filemenu = tk.Menu(menubar, tearoff=0)
+    filemenu.add_command(label="開く", command=reload_files)
+    filemenu.add_separator()
+    filemenu.add_command(label="終了", command=parent.quit)
+    menubar.add_cascade(label="File", menu=filemenu)
+
 def create_input_area(parent, settings):
-    input_frame = ttk.LabelFrame(parent, text="進捗表へデータ書込")
+    input_frame = ttk.LabelFrame(parent, text="集計データ書込")
     input_frame.pack(fill=tk.X, padx=5, pady=5)
     
     ttk.Label(input_frame, text="書込先:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=3)
@@ -354,13 +363,7 @@ def launch(data, errors):
     # ttk.Button(root, text="ファイルを再読込", command=reload_files).pack(fill=tk.X)
 
     # メニューバー
-    menubar = tk.Menu(root)
-    root.config(menu=menubar)
-    filemenu = tk.Menu(menubar, tearoff=0)
-    filemenu.add_command(label="Open", command=reload_files)
-    filemenu.add_separator()
-    filemenu.add_command(label="Exit", command=root.quit)
-    menubar.add_cascade(label="File", menu=filemenu)
+    create_menubar(parent=root)
 
     # ファイル選択プルダウン
     file_selector = ttk.Combobox(root, values=[file["selector_label"] for file in input_data], state="readonly")
@@ -390,7 +393,7 @@ def launch(data, errors):
     notebook.pack(fill=tk.BOTH, expand=True)
 
     # ファイル書き込みエリア
-    create_input_area(root, settings)
+    create_input_area(parent=root, settings=settings)
 
     # グリッド表示
     if input_data:
