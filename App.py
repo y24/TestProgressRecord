@@ -327,7 +327,6 @@ def update_bar_chart(data, incompleted_count):
             label_text = ""
 
         # ラベルの色
-        print(color)
         if color in color_map["black_labels"]:
             label_color = 'black'
         elif color in color_map["gray_labels"]:
