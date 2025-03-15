@@ -49,7 +49,7 @@ def file_processor(file, settings, id):
         return { "error": filename }
 
 
-def main():
+def start():
     # 引数でファイルパスを受け取る(複数可)
     inputs = sys.argv.copy()
 
@@ -78,14 +78,14 @@ def main():
         else:
             errors.append(res)
 
-    pprint.pprint(out_data)
+    # pprint.pprint(out_data)
 
     # ビューア起動
-    App.load_data(out_data, errors)
+    App.launch(out_data, errors)
 
     # zipファイルを展開していた場合は一時フォルダを掃除
     if len(temp_dirs): Zip.cleanup_old_temp_dirs()
 
 
 if __name__ == "__main__":
-    main()
+    start()

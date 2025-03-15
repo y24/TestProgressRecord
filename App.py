@@ -314,7 +314,19 @@ def on_closing():
     save_window_position()
     root.quit()
 
-def load_data(data, errors):
+def close_all_dialogs():
+    """開いている全てのToplevelウィンドウ（ダイアログ含む）を閉じる"""
+    for widget in root.winfo_children():
+        if isinstance(widget, tk.Toplevel):
+            widget.destroy()
+
+def reload_files():
+    python = sys.executable
+    close_all_dialogs()
+    subprocess.Popen([python, *sys.argv])
+    sys.exit()
+
+def launch(data, errors):
     global root, notebook, file_selector, input_data, settings, info_frame, count_label, rate_label, fig, ax, canvas
 
     # 読込データ
@@ -338,11 +350,23 @@ def load_data(data, errors):
         Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"1件もデータが抽出できませんでした。終了します。\n\nFile(s):\n{ers}")
         sys.exit()
 
+    # 再読み込みボタン
+    # ttk.Button(root, text="ファイルを再読込", command=reload_files).pack(fill=tk.X)
+
+    # メニューバー
+    menubar = tk.Menu(root)
+    root.config(menu=menubar)
+    filemenu = tk.Menu(menubar, tearoff=0)
+    filemenu.add_command(label="Open", command=reload_files)
+    filemenu.add_separator()
+    filemenu.add_command(label="Exit", command=root.quit)
+    menubar.add_cascade(label="File", menu=filemenu)
+
     # ファイル選択プルダウン
     file_selector = ttk.Combobox(root, values=[file["selector_label"] for file in input_data], state="readonly")
     file_selector.pack(fill=tk.X, padx=5, pady=5)
     file_selector.bind("<<ComboboxSelected>>", lambda event: update_display(file_selector.get()))
-    
+
     # 情報表示エリア
     info_frame = ttk.LabelFrame(root)
     info_frame.pack(fill=tk.X, padx=5, pady=5)
