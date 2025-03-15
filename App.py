@@ -6,6 +6,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
+from collections import defaultdict
 
 import WriteData
 from libs import Utility
@@ -159,6 +160,7 @@ def update_display(selected_file):
     create_treeview(frame_name, data['by_name'], 'by_name', data["file"])
 
     update_info_label(data["file"], data["count"])
+    update_total_bar_chart(input_data)
     update_bar_chart(data['total'], data["count"]["incompleted"])
     notebook.select(current_tab)
 
@@ -345,6 +347,84 @@ def update_bar_chart(data, incompleted_count):
     if canvas:
         canvas.draw()
 
+def sum_values(data, param):
+    result = defaultdict(int)
+    for entry in data:
+        for key, value in entry[param].items():
+            result[key] += value
+    return result
+
+def update_total_bar_chart(data_files):
+    # 全ファイルの結果を取得
+    data = sum_values(data_files, "total")
+    count = sum_values(data_files, "count")
+    incompleted_count = count["incompleted"]
+
+    # 表示順を固定
+    sorted_labels = settings["common"]["results"]
+
+    # 各ラベルとサイズ
+    labels = [label for label in sorted_labels if label in data]
+    sizes = [data[label] for label in labels]
+
+    # 未実施数を追加
+    labels += [settings["common"]["not_run"]]
+    sizes += [incompleted_count]
+
+    # 合計値
+    total = sum(sizes)
+
+    # 積み上げ横棒グラフ
+    ax_total.clear()
+    left = np.zeros(1)  # 初期の左端位置
+    bars = []  # 各バーのオブジェクトを保存
+
+    # ラベルごとの色設定
+    color_map = settings["common"]["colors"]
+
+    for size, label in zip(sizes, labels):
+        color = color_map.get(label, "gray")  # ラベルの色を取得（デフォルトは灰色）
+        bar = ax_total.barh(0, size, left=left, color=color, label=label)  # 横棒グラフを描画
+        bars.append((bar[0], size, label, color))  # バー情報を記録
+        left += size  # 次のバーの開始位置を更新
+
+    ax_total.set_xlim(0, total)  # 左右いっぱい
+    ax_total.set_yticks([])  # y軸ラベルを非表示
+    ax_total.set_xticks([])  # x軸の目盛りを非表示
+    ax_total.set_frame_on(False)  # 枠線を削除
+    ax_total.margins(0) # 余白なし
+
+    # バーの中央にラベルを配置（幅が十分にある場合のみ）
+    for bar, size, label, color in bars:
+        percentage = (size / total) * 100  # 割合計算
+        
+        # ラベルフォーマット
+        if size > total * 0.15:  # 割合15%以上は%も表示
+            label_text = f"{label} ({percentage:.1f}%)"
+        elif size > total * 0.08:  # 割合8%以上はラベルのみ
+            label_text = label
+        else:
+            label_text = ""
+
+        # ラベルの色
+        if color in color_map["black_labels"]:
+            label_color = 'black'
+        elif color in color_map["gray_labels"]:
+            label_color = 'dimgrey'
+        else:
+            label_color = 'white'
+
+        ax_total.text(
+            bar.get_x() + bar.get_width() / 2,  # 中央位置
+            bar.get_y() + bar.get_height() / 2,  # 中央位置
+            label_text,
+            ha='center', va='center', fontsize=8, 
+            color=label_color
+        )
+
+    if canvas_total:
+        canvas_total.draw()
+
 def save_window_position():
     # ウインドウの位置情報を保存
     settings["app"]["window_position"] = root.geometry()
@@ -368,7 +448,7 @@ def reload_files():
     sys.exit()
 
 def launch(data, errors):
-    global root, notebook, file_selector, input_data, settings, info_frame, count_label, rate_label, fig, ax, canvas
+    global root, notebook, file_selector, input_data, settings, info_frame, count_label, rate_label, fig, ax, canvas, fig_total, ax_total, canvas_total
 
     # 読込データ
     input_data = data
@@ -397,6 +477,12 @@ def launch(data, errors):
     # メニューバー
     create_menubar(parent=root)
 
+    # グラフ表示(全体)
+    fig_total, ax_total = plt.subplots(figsize=(8, 0.3))
+    canvas_total = FigureCanvasTkAgg(fig_total, master=root)
+    plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    canvas_total.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
     # ファイル選択プルダウン
     file_selector = ttk.Combobox(root, values=[file["selector_label"] for file in input_data], state="readonly")
     file_selector.pack(fill=tk.X, padx=5, pady=5)
@@ -414,7 +500,7 @@ def launch(data, errors):
     rate_label = ttk.Label(info_frame, anchor="w")
     rate_label.pack(fill=tk.X, padx=5)
 
-    # グラフ表示
+    # グラフ表示(ファイル別)
     fig, ax = plt.subplots(figsize=(8, 0.3))
     canvas = FigureCanvasTkAgg(fig, master=info_frame)
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)

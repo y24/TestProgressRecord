@@ -78,7 +78,7 @@ def start():
         else:
             errors.append(res)
 
-    # pprint.pprint(out_data)
+    pprint.pprint(out_data)
 
     # ビューア起動
     App.launch(out_data, errors)
