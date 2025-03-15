@@ -1,2 +1,2 @@
 cd /d %~dp0
-python ReadData.py %*
+python StartProcess.py %*
