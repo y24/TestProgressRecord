@@ -89,8 +89,8 @@ def create_treeview(parent, data, structure, file_name):
     
     tree.pack(fill=tk.BOTH, expand=True)
     
-    ttk.Button(parent, text="CSV保存", command=lambda: save_to_csv_tab(tree, columns, file_name, structure)).pack(side=tk.LEFT, padx=2, pady=5)
-    ttk.Button(parent, text="クリップボードにコピー", command=lambda: copy_to_clipboard_all(treeview_to_array(tree))).pack(side=tk.LEFT, padx=2, pady=5)
+    ttk.Button(parent, text="CSV保存", command=lambda: save_to_csv(treeview_to_array(tree), f'{os.path.splitext(file_name)[0]}_{settings["app"]["structures"][structure]}')).pack(side=tk.LEFT, padx=2, pady=5)
+    ttk.Button(parent, text="クリップボードにコピー", command=lambda: copy_to_clipboard(treeview_to_array(tree))).pack(side=tk.LEFT, padx=2, pady=5)
     
     return tree
 
@@ -113,45 +113,16 @@ def treeview_to_array(treeview):
 
     return [headers] + data  # ヘッダーとデータを結合
 
-def save_to_csv_tab(tree, columns, file_name, structure):
-    # デフォルトファイル名
-    basename = os.path.splitext(file_name)[0]
-    tab = settings["app"]["structures"][structure]
-    initial_filename = f"{basename}_{tab}"
-
+def save_to_csv(data, filename):
     # 保存先の選択
-    file_path = filedialog.asksaveasfilename(initialfile=initial_filename, defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
-    if not file_path:
-        return
-
-    # 保存
-    with open(file_path, mode='w', newline='', encoding='utf-8') as file:
-        writer = csv.writer(file)
-        writer.writerow(columns)
-        for item in tree.get_children():
-            writer.writerow(tree.item(item)['values'])
-
-    # 保存完了
-    response = Dialog.ask(title="保存完了", message=f"CSVデータを保存しました。\n{file_path}\n\nファイルを開きますか？")
-    if response == "yes":
-        open_file(file_path=file_path)
-
-def save_to_csv_all():
-    # データ変換
-    converted_data = WriteData.convert_to_2d_array(data=input_data, settings=settings)
-
-    #  デフォルトファイル名
-    initial_filename = f'進捗集計_{datetime.today().strftime("%Y-%m-%d")}'
-
-    # 保存先の選択
-    file_path = filedialog.asksaveasfilename(initialfile=initial_filename, defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
+    file_path = filedialog.asksaveasfilename(initialfile=filename, defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
     if not file_path:
         return
     
     # 保存
     with open(file_path, mode='w', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
-        writer.writerows(converted_data)
+        writer.writerows(data)
 
     # 保存完了
     response = Dialog.ask(title="保存完了", message=f"CSVデータを保存しました。\n{file_path}\n\nファイルを開きますか？")
@@ -244,20 +215,9 @@ def open_file(file_path, exit:bool=False):
     else:
         Dialog.show_messagebox(root, type="error", title="Error", message="指定されたファイルが見つかりません")
 
-def copy_to_clipboard_all(data):
+def copy_to_clipboard(data):
     # 2次元配列をタブ区切りのテキストに変換
     text = "\n".join(["\t".join(map(str, row)) for row in data])
-    
-    # クリップボードにコピー
-    root.clipboard_clear()
-    root.clipboard_append(text)
-    root.update()
-
-def copy_to_clipboard_tab():
-    converted_data = WriteData.convert_to_2d_array(data=input_data, settings=settings)
-
-    # 2次元配列をタブ区切りのテキストに変換
-    text = "\n".join(["\t".join(map(str, row)) for row in converted_data])
     
     # クリップボードにコピー
     root.clipboard_clear()
@@ -297,8 +257,8 @@ def create_input_area(parent, settings):
     submit_frame.grid(row=2, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W)
     ttk.Button(submit_frame, text="Excelへ書込", command=lambda: write_data(field_data)).pack(side=tk.LEFT, padx=2,pady=5)
     # ttk.Button(submit_frame, text="書込先を開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=2, pady=5)
-    ttk.Button(submit_frame, text="CSV保存", command=lambda: save_to_csv_all()).pack(side=tk.LEFT, padx=2, pady=5)
-    ttk.Button(submit_frame, text="クリップボードにコピー", command=lambda: copy_to_clipboard_all(WriteData.convert_to_2d_array(data=input_data, settings=settings))).pack(side=tk.LEFT, padx=2, pady=5)
+    ttk.Button(submit_frame, text="CSV保存", command=lambda: save_to_csv(WriteData.convert_to_2d_array(data=input_data, settings=settings), f'進捗集計_{datetime.today().strftime("%Y-%m-%d")}')).pack(side=tk.LEFT, padx=2, pady=5)
+    ttk.Button(submit_frame, text="クリップボードにコピー", command=lambda: copy_to_clipboard(WriteData.convert_to_2d_array(data=input_data, settings=settings))).pack(side=tk.LEFT, padx=2, pady=5)
 
 def meke_rate_text(value1, value2):
     if value2:
