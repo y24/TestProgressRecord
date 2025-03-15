@@ -3,6 +3,9 @@ from tkinter import ttk, filedialog
 import subprocess
 import csv, os, sys, pprint
 from datetime import datetime
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import numpy as np
 
 import WriteData
 from libs import Utility
@@ -131,6 +134,8 @@ def update_display(selected_file):
     frame_name = ttk.Frame(notebook)
     notebook.add(frame_name, text=settings["write"]["structures"]["by_name"])
     create_treeview(frame_name, data['by_name'], 'by_name', data["file"])
+
+    update_bar_chart(data['total'])
     notebook.select(current_tab)
 
 def write_data(field_data):    
@@ -203,8 +208,74 @@ def create_input_area(parent, settings):
     ttk.Button(submit_frame, text="データ書込", command=lambda: write_data(field_data)).pack(side=tk.LEFT, pady=5)
     ttk.Button(submit_frame, text="開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=5, pady=5)
 
+
+def update_bar_chart(data):
+    total_counts = {}
+    for values in data.values():
+        for key, count in values.items():
+            total_counts[key] = total_counts.get(key, 0) + count
+
+    # 表示順を固定
+    sorted_labels = ["Pass", "Fail", "Blocked", "Fixed", "Suspend", "N/A"]
+    labels = [label for label in sorted_labels if label in total_counts]
+    sizes = [total_counts[label] for label in labels]
+    total = sum(sizes)  # 合計値を取得
+
+    # 積み上げ横棒グラフ
+    ax.clear()
+    left = np.zeros(1)  # 初期の左端位置
+    bars = []  # 各バーのオブジェクトを保存
+
+    # ラベルごとの色設定
+    color_map = {
+        "Pass": "green",
+        "Fail": "red",
+        "Blocked": "deepskyblue",  # 水色
+        "Fixed": "darkgreen",  # 濃い緑
+        "Suspend": "yellow",
+        "N/A": "gray"
+    }
+
+    for size, label in zip(sizes, labels):
+        color = color_map.get(label, "gray")  # ラベルの色を取得（デフォルトは灰色）
+        bar = ax.barh(0, size, left=left, color=color, label=label)  # 横棒グラフを描画
+        bars.append((bar[0], size, label, color))  # バー情報を記録
+        left += size  # 次のバーの開始位置を更新
+
+    ax.set_xlim(0, total)  # 左右いっぱい
+    ax.set_ylim(-0.5, 0.5)  # 縦の高さをコンパクトにする
+    ax.set_yticks([])  # y軸ラベルを非表示
+    ax.set_xticks([])  # x軸の目盛りを非表示
+    ax.set_frame_on(False)  # 枠線を削除
+    ax.margins(0) # 余白なし
+
+    # バーの中央にラベルを配置（幅が十分にある場合のみ）
+    for bar, size, label, color in bars:
+        percentage = (size / total) * 100  # 割合計算
+        
+        # ラベルフォーマット
+        if size > total * 0.12:  # 割合15%以上は%も表示
+            label_text = f"{label} ({percentage:.1f}%)"
+        elif size > total * 0.8:  # 割合15%以上はラベルのみ
+            label_text = label
+        else:
+            label_text = ""
+
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,  # 中央位置
+            bar.get_y() + bar.get_height() / 2,  # 中央位置
+            label_text,
+            ha='center', va='center', fontsize=10, 
+            color='black' if color == "yellow" else 'white'
+        )
+
+    if canvas:
+        canvas.draw()
+
+
+
 def load_data(data, errors):
-    global notebook, file_selector, input_data, settings
+    global notebook, file_selector, input_data, settings, fig, ax, canvas
 
     ers = "\n".join([" - "+ f["error"] for f in errors])
 
@@ -217,7 +288,7 @@ def load_data(data, errors):
 
     root = tk.Tk()
     root.title("TestProgressTracker")
-    root.geometry("780x500")
+    root.geometry("780x540")
 
     # 設定読み込み
     settings = AppConfig.load_settings()
@@ -230,10 +301,17 @@ def load_data(data, errors):
     file_selector.pack(fill=tk.X, padx=5, pady=5)
     file_selector.bind("<<ComboboxSelected>>", lambda event: update_display(file_selector.get()))
     
-    # グリッド表示部分
-    notebook = ttk.Notebook(root)
+    # グリッド表示エリア
+    notebook = ttk.Notebook(root, height=300)
     notebook.pack(fill=tk.BOTH, expand=True)
     
+    # グラフ表示エリア
+    fig, ax = plt.subplots(figsize=(8, 1))
+    canvas = FigureCanvasTkAgg(fig, master=root)
+    plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+    # データ表示
     if input_data:
         file_selector.current(0)
         update_display(input_data[0]['selector_label'])
