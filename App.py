@@ -135,7 +135,7 @@ def update_display(selected_file):
     notebook.add(frame_name, text=settings["write"]["structures"]["by_name"])
     create_treeview(frame_name, data['by_name'], 'by_name', data["file"])
 
-    update_info_label(data["count"])
+    update_info_label(data["file"], data["count"])
     update_bar_chart(data['total'], data["count"]["incompleted"])
     notebook.select(current_tab)
 
@@ -209,7 +209,10 @@ def create_input_area(parent, settings):
     ttk.Button(submit_frame, text="データ書込", command=lambda: write_data(field_data)).pack(side=tk.LEFT, pady=5)
     ttk.Button(submit_frame, text="開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=5, pady=5)
 
-def update_info_label(data):
+def update_info_label(file:str, data):
+    # フレームタイトル
+    info_frame.config(text=f"{file}")
+
     # 値
     available = data["available"]
     completed = data["completed"]
@@ -288,7 +291,7 @@ def update_bar_chart(data, incompleted_count):
         canvas.draw()
 
 def load_data(data, errors):
-    global notebook, file_selector, input_data, settings, count_label, rate_label, fig, ax, canvas
+    global notebook, file_selector, input_data, settings, info_frame, count_label, rate_label, fig, ax, canvas
 
     ers = "\n".join([" - "+ f["error"] for f in errors])
 
@@ -313,7 +316,7 @@ def load_data(data, errors):
     file_selector.bind("<<ComboboxSelected>>", lambda event: update_display(file_selector.get()))
     
     # 情報表示エリア
-    info_frame = ttk.LabelFrame(root, text="進捗情報")
+    info_frame = ttk.LabelFrame(root)
     info_frame.pack(fill=tk.X, padx=5, pady=5)
 
     # テストケース数
