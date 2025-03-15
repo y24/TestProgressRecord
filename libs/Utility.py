@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from collections import OrderedDict
+from collections import defaultdict
 
 def find_rownum_by_keyword(list, keyword, ignore_words=None):
     if ignore_words is None:
@@ -107,3 +108,20 @@ def sort_by_master(master_list, input_list):
     指定されたマスタリストの順番に基づいて、入力リストを並び替える。
     """
     return sorted(input_list, key=lambda x: master_list.index(x) if x in master_list else float('inf'))
+
+def meke_rate_text(value1, value2):
+    # パーセンテージ表示用の文字列を生成
+    if value2:
+        rate = (value1 / value2) * 100
+        # rate = rate if rate < 100 else 100
+        return f"{rate:.1f}%"
+    else:
+        return "--"
+
+def sum_values(list, param):
+    # オブジェクト配列の各キーごとに合計値を計算
+    result = defaultdict(int)
+    for entry in list:
+        for key, value in entry[param].items():
+            result[key] += value
+    return result

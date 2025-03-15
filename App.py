@@ -6,7 +6,6 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
-from collections import defaultdict
 
 import WriteData
 from libs import Utility
@@ -131,8 +130,8 @@ def save_to_csv(data, filename):
 
 def update_display(selected_file):
     # 全ファイル集計
-    update_info_label(sum_values(input_data, "count"), count_label=total_count_label, rate_label=total_rate_label, detail=False)
-    update_bar_chart(data=sum_values(input_data, "total"), incompleted_count=sum_values(input_data, "count")["incompleted"], ax=total_ax, canvas=total_canvas, show_label=True)
+    update_info_label(Utility.sum_values(input_data, "count"), count_label=total_count_label, rate_label=total_rate_label, detail=False)
+    update_bar_chart(data=Utility.sum_values(input_data, "total"), incompleted_count=Utility.sum_values(input_data, "count")["incompleted"], ax=total_ax, canvas=total_canvas, show_label=True)
 
     # タブ切り替え
     current_tab = notebook.index(notebook.select()) if notebook.tabs() else 0
@@ -162,7 +161,7 @@ def update_display(selected_file):
     # プルダウン切替時にタブの選択状態を保持
     notebook.select(current_tab)
 
-def write_data(field_data):    
+def write_to_excel(field_data):    
     file_path = field_data["filepath"].get()
     table_name = field_data["table_name"].get()
 
@@ -228,7 +227,7 @@ def create_menubar(parent):
     menubar = tk.Menu(parent)
     parent.config(menu=menubar)
     filemenu = tk.Menu(menubar, tearoff=0)
-    filemenu.add_command(label="開く", command=reload_files)
+    filemenu.add_command(label="開く", command=load_files)
     filemenu.add_separator()
     filemenu.add_command(label="終了", command=parent.quit)
     menubar.add_cascade(label="File", menu=filemenu)
@@ -255,18 +254,10 @@ def create_input_area(parent, settings):
 
     submit_frame = ttk.Frame(input_frame)
     submit_frame.grid(row=2, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W)
-    ttk.Button(submit_frame, text="Excelへ書込", command=lambda: write_data(field_data)).pack(side=tk.LEFT, padx=2,pady=5)
+    ttk.Button(submit_frame, text="Excelへ書込", command=lambda: write_to_excel(field_data)).pack(side=tk.LEFT, padx=2,pady=5)
     # ttk.Button(submit_frame, text="書込先を開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=2, pady=5)
     ttk.Button(submit_frame, text="CSV保存", command=lambda: save_to_csv(WriteData.convert_to_2d_array(data=input_data, settings=settings), f'進捗集計_{datetime.today().strftime("%Y-%m-%d")}')).pack(side=tk.LEFT, padx=2, pady=5)
     ttk.Button(submit_frame, text="クリップボードにコピー", command=lambda: copy_to_clipboard(WriteData.convert_to_2d_array(data=input_data, settings=settings))).pack(side=tk.LEFT, padx=2, pady=5)
-
-def meke_rate_text(value1, value2):
-    if value2:
-        rate = (value1 / value2) * 100
-        # rate = rate if rate < 100 else 100
-        return f"{rate:.1f}%"
-    else:
-        return "--"
 
 def update_info_label(data, count_label, rate_label, detail=True):
     # 値
@@ -280,9 +271,9 @@ def update_info_label(data, count_label, rate_label, detail=True):
     if detail:
         count_text += f' (総数: {data["all"]} / 対象外: {data["excluded"]})'
     # 完了率テキスト
-    completed_rate_text = f'完了率: {meke_rate_text(completed, available)} [{completed}/{available}]'
+    completed_rate_text = f'完了率: {Utility.meke_rate_text(completed, available)} [{completed}/{available}]'
     # 消化率テキスト
-    filled_rate_text = f'消化率: {meke_rate_text(filled, available)} [{filled}/{available}]'
+    filled_rate_text = f'消化率: {Utility.meke_rate_text(filled, available)} [{filled}/{available}]'
 
     # 表示を更新
     count_label.config(text=count_text)
@@ -355,13 +346,6 @@ def update_bar_chart(data, incompleted_count, ax, canvas, show_label=True):
     if canvas:
         canvas.draw()
 
-def sum_values(data, param):
-    result = defaultdict(int)
-    for entry in data:
-        for key, value in entry[param].items():
-            result[key] += value
-    return result
-
 def save_window_position():
     # ウインドウの位置情報を保存
     settings["app"]["window_position"] = root.geometry()
@@ -378,7 +362,7 @@ def close_all_dialogs():
         if isinstance(widget, tk.Toplevel):
             widget.destroy()
 
-def reload_files():
+def load_files():
     python = sys.executable
     close_all_dialogs()
     subprocess.Popen([python, *sys.argv])
@@ -409,9 +393,6 @@ def launch(data, errors):
     if not len(data):
         Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"1件もデータが抽出できませんでした。終了します。\n\nFile(s):\n{ers}")
         sys.exit()
-
-    # 再読み込みボタン
-    # ttk.Button(root, text="ファイルを再読込", command=reload_files).pack(fill=tk.X)
 
     # メニューバー
     create_menubar(parent=root)
