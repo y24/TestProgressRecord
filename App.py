@@ -124,8 +124,8 @@ def update_display(selected_file):
     data = next(item for item in input_data if item['selector_label'] == selected_file)
 
     frame_total = ttk.Frame(notebook)
-    notebook.add(frame_total, text=settings["write"]["structures"]["total"])
-    create_treeview(frame_total, data['total'], 'total', data["file"])
+    notebook.add(frame_total, text=settings["write"]["structures"]["daily"])
+    create_treeview(frame_total, data['total_daily'], 'total', data["file"])
 
     frame_env = ttk.Frame(notebook)
     notebook.add(frame_env, text=settings["write"]["structures"]["by_env"])

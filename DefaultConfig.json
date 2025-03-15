@@ -12,7 +12,7 @@
     "write": {
         "filepath": "",
         "table_name": "DATA",
-        "structures": {"total": "合計", "by_env": "環境別", "by_name": "担当者別"}
+        "structures": {"daily": "日付別", "by_env": "環境別", "by_name": "担当者別"}
     },
     "common": {
         "results": ["Pass", "Fail", "Blocked", "Fixed", "Suspend", "N/A"],

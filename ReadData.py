@@ -167,8 +167,8 @@ def aggregate_results(filepath:str, settings):
             "incompleted": incompleted_count,
             "excluded": excluded_count
         },
-        "env_count": env_count,
-        "total": data_daily_total,
+        "environment_count": env_count,
+        "total_daily": data_daily_total,
         "total_all": data_total,
         "by_name": data_by_name,
         "by_env": data_by_env
