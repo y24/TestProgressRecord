@@ -89,8 +89,8 @@ def create_treeview(parent, data, structure, file_name):
     
     tree.pack(fill=tk.BOTH, expand=True)
     
-    ttk.Button(frame, text="CSV保存", command=lambda: save_to_csv_tab(tree, columns, file_name, structure)).pack(pady=5)
-    ttk.Button(frame, text="クリップボードにコピー", command=lambda: copy_to_clipboard_all(treeview_to_array(tree))).pack(pady=5)
+    ttk.Button(parent, text="CSV保存", command=lambda: save_to_csv_tab(tree, columns, file_name, structure)).pack(side=tk.LEFT, padx=2, pady=5)
+    ttk.Button(parent, text="クリップボードにコピー", command=lambda: copy_to_clipboard_all(treeview_to_array(tree))).pack(side=tk.LEFT, padx=2, pady=5)
     
     return tree
 
@@ -274,7 +274,7 @@ def create_menubar(parent):
     menubar.add_cascade(label="File", menu=filemenu)
 
 def create_input_area(parent, settings):
-    input_frame = ttk.LabelFrame(parent, text="集計データ書込")
+    input_frame = ttk.LabelFrame(parent, text="集計データ出力")
     input_frame.pack(fill=tk.X, padx=5, pady=5)
     
     ttk.Label(input_frame, text="書込先:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=3)
@@ -295,10 +295,10 @@ def create_input_area(parent, settings):
 
     submit_frame = ttk.Frame(input_frame)
     submit_frame.grid(row=2, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W)
-    ttk.Button(submit_frame, text="データ書込", command=lambda: write_data(field_data)).pack(side=tk.LEFT, pady=5)
-    ttk.Button(submit_frame, text="書込先を開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=5, pady=5)
-    ttk.Button(submit_frame, text="CSV保存", command=lambda: save_to_csv_all()).pack(side=tk.LEFT, padx=5, pady=5)
-    ttk.Button(submit_frame, text="クリップボードにコピー", command=lambda: copy_to_clipboard_all(WriteData.convert_to_2d_array(data=input_data, settings=settings))).pack(side=tk.LEFT, padx=5, pady=5)
+    ttk.Button(submit_frame, text="Excelへ書込", command=lambda: write_data(field_data)).pack(side=tk.LEFT, padx=2,pady=5)
+    # ttk.Button(submit_frame, text="書込先を開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=2, pady=5)
+    ttk.Button(submit_frame, text="CSV保存", command=lambda: save_to_csv_all()).pack(side=tk.LEFT, padx=2, pady=5)
+    ttk.Button(submit_frame, text="クリップボードにコピー", command=lambda: copy_to_clipboard_all(WriteData.convert_to_2d_array(data=input_data, settings=settings))).pack(side=tk.LEFT, padx=2, pady=5)
 
 def meke_rate_text(value1, value2):
     if value2:
