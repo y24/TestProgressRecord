@@ -12,12 +12,6 @@ def select_files(ext:tuple):
     root.withdraw()
     return filedialog.askopenfilenames(filetypes=[(ext)])
 
-def show_warning(title, message):
-    messagebox.showwarning(title=title, message=message)
-
-def show_info(title, message):
-    messagebox.showinfo(title=title, message=message)
-
 def show_messagebox(root, type:str, title:str, message):
     # 一時的な Toplevel を作成（非表示）
     temp_window = Toplevel(root)
@@ -27,10 +21,12 @@ def show_messagebox(root, type:str, title:str, message):
     # そのウィンドウを親にして messagebox を表示
     if type == "info":
         messagebox.showinfo(title, message, parent=temp_window)
-    elif type == "warn":
+    elif type == "warning":
         messagebox.showwarning(title=title, message=message, parent=temp_window)
     elif type == "error":
         messagebox.showerror(title=title, message=message, parent=temp_window)
+    else:
+        print("Error: 該当するタイプなし")
 
     # 一時ウィンドウを削除
     temp_window.destroy()

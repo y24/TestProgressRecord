@@ -145,7 +145,7 @@ def write_data(field_data):
 
     # ファイルパス未入力
     if not file_path:
-        Dialog.show_warning("Error", f"書込先のファイルを選択してください。")
+        Dialog.show_messagebox(root, type="warning", title="Error", message=f"書込先のファイルを選択してください。")
         return
 
     # 確認
@@ -161,7 +161,7 @@ def write_data(field_data):
     try:
         result = WriteData.execute(input_data, file_path, table_name)
     except ValueError as e:
-        Dialog.show_messagebox(root, type="warn", title="データなし", message=e)
+        Dialog.show_messagebox(root, type="warning", title="データなし", message=e)
         return
     except PermissionError as e:
         Dialog.show_messagebox(root, type="error", title="保存失敗", message=e)
@@ -374,7 +374,7 @@ def load_data(data, errors):
         update_display(input_data[0]['selector_label'])
 
     if len(errors):
-        Dialog.show_messagebox(root, type="warn", title="一部エラー", message=f"以下のファイルはデータが抽出できませんでした。\n\nFile(s):\n{ers}")
+        Dialog.show_messagebox(root, type="warning", title="一部エラー", message=f"以下のファイルはデータが抽出できませんでした。\n\nFile(s):\n{ers}")
 
     root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()
