@@ -6,7 +6,8 @@
         "tobe_row": {"key": "期待"},
         "result_row": {"key": "結果", "ignores": ["期待結果"]},
         "person_row": {"key": "担当者"},
-        "date_row": {"key":"日付"}
+        "date_row": {"key":"日付"},
+        "excluded": ["対象外"]
     },
     "write": {
         "filepath": "",

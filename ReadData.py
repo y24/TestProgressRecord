@@ -1,5 +1,6 @@
 
 from collections import defaultdict
+import pprint
 
 from libs import OpenpyxlWrapper as Excel
 from libs import Logger
@@ -60,6 +61,10 @@ def get_daily_by_name(data):
         out_data[date] = daily_count
     return out_data
 
+# 対象外の数を取得
+def get_excluded_count(data, targets:list[str]) -> int:
+    return sum(1 for row in data if row and row[0] in targets)
+
 # 全日付データ合計
 def get_total_all_date(data):
     result = {}
@@ -91,7 +96,7 @@ def aggregate_results(filepath:str, settings):
         header_rownum = Excel.find_row(sheet, search_col=settings["read"]["header"]["search_col"], search_str=settings["read"]["header"]["search_key"])
         header = Excel.get_row_values(sheet=sheet, row_num=header_rownum)
 
-        # 列セット(例:環境別)を取得
+        # 列番号(例:環境別)を取得
         # 結果
         result_rows = Utility.find_rownum_by_keyword(list=header, keyword=settings["read"]["result_row"]["key"], ignore_words=settings["read"]["result_row"]["ignores"])
         # 担当者
@@ -99,12 +104,11 @@ def aggregate_results(filepath:str, settings):
         # 日付
         date_rows = Utility.find_rownum_by_keyword(list=header, keyword=settings["read"]["date_row"]["key"])
 
-        # セットが正しく取得できない場合はスキップ
+        # 結果,担当者,日付の列セットが正しく取得できない場合はスキップ
         if Utility.check_lists_equal_length(result_rows, person_rows, date_rows) == False:
-            # logger.error(f"Failed to get result column. (Sheet: {sheet_name})")
             continue
 
-        # 行番号のセット(結果、担当者、日付)を作成
+        # 列番号のセット(結果、担当者、日付)を作成
         sets = Utility.transpose_lists(result_rows, person_rows, date_rows)
         
         # 各セット処理
@@ -144,8 +148,9 @@ def aggregate_results(filepath:str, settings):
     case_count = sum(1 for item in tobe_data if any(x is not None for x in item))
     # テストケース数(全環境)
     case_count_all = case_count * len(data_by_env)
-
-    # 全セット集計(全日付)
+    # 対象外テストケース数
+    excluded_count = get_excluded_count(data=all_data, targets=settings["read"]["excluded"])
+    # 実施済みテストケース数(全環境)
     data_total = get_total_all_date(data=data_daily_total)
     # 完了数
     completed_count = sum(data_total.values())
@@ -157,6 +162,7 @@ def aggregate_results(filepath:str, settings):
         "case_count": case_count,
         "completed_count": completed_count,
         "incompleted_count": imcompleted_count,
+        "exclueded_count": excluded_count,
         "total": data_daily_total,
         "total_all": data_total,
         "by_name": data_by_name,

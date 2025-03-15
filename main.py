@@ -78,7 +78,7 @@ def main():
         else:
             errors.append(res)
 
-    # pprint.pprint(out_data)
+    pprint.pprint(out_data)
 
     # ビューア起動
     App.load_data(out_data, errors)
