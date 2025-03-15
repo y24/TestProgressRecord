@@ -1,4 +1,4 @@
-import sys, pprint
+import sys, argparse, pprint
 from tqdm import tqdm
 
 import ReadData
@@ -50,16 +50,20 @@ def file_processor(file, settings, id):
 
 
 def start():
-    # 引数でファイルパスを受け取る(複数可)
-    inputs = sys.argv.copy()
+    # コマンドライン引数のパース
+    parser = argparse.ArgumentParser(description="zipファイル/xlsxファイルを引数として起動します。(複数可)")
+    parser.add_argument("--Debug", action="store_true", help="Enable debug mode")
+    parser.add_argument("data_files", nargs="*", help="zipファイル/xlsxファイルのパス")
+    args = parser.parse_args()
+
+    # 処理対象のファイル
+    inputs = args.data_files
 
     # 引数がない場合はファイル選択ダイアログ(複数可)
-    if len(inputs) <= 1:
+    if len(inputs) == 0:
         inputs = Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))
         # キャンセル時は終了
         if not inputs: sys.exit()
-    else:
-        del inputs[0]
 
     # xlsxファイルのパスを抽出
     files, temp_dirs = get_xlsx_paths(inputs=inputs)
@@ -78,7 +82,9 @@ def start():
         else:
             errors.append(res)
 
-    pprint.pprint(out_data)
+    # デバッグ用
+    if args.Debug:
+        pprint.pprint(out_data)
 
     # ビューア起動
     App.launch(out_data, errors)
