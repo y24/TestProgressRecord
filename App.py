@@ -135,7 +135,7 @@ def update_display(selected_file):
     notebook.add(frame_name, text=settings["write"]["structures"]["by_name"])
     create_treeview(frame_name, data['by_name'], 'by_name', data["file"])
 
-    update_bar_chart(data['total_all'], data["incompleted_count"])
+    update_bar_chart(data['total_all'], data["case_count"]["incompleted"])
     notebook.select(current_tab)
 
 def write_data(field_data):    

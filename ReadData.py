@@ -146,6 +146,8 @@ def aggregate_results(filepath:str, settings):
     tobe_data = Excel.get_column_values(sheet=sheet, col_nums=tobe_rows,header_row=header_rownum, ignore_header=True)
     # テストケース数
     case_count = sum(1 for item in tobe_data if any(x is not None for x in item))
+    # 環境数
+    env_count = len(data_by_env)
     # テストケース数(全環境)
     case_count_all = case_count * len(data_by_env)
     # 対象外テストケース数
@@ -155,14 +157,17 @@ def aggregate_results(filepath:str, settings):
     # 完了数
     completed_count = sum(data_total.values())
     # 未完了数(マイナスは0)
-    imcompleted_count = max(0, case_count_all - completed_count)
+    incompleted_count = max(0, case_count_all - completed_count)
 
     # 結果返却
     return {
-        "case_count": case_count,
-        "completed_count": completed_count,
-        "incompleted_count": imcompleted_count,
-        "exclueded_count": excluded_count,
+        "case_count": {
+            "all": case_count,
+            "completed": completed_count,
+            "incompleted": incompleted_count,
+            "excluded": excluded_count
+        },
+        "env_count": env_count,
         "total": data_daily_total,
         "total_all": data_total,
         "by_name": data_by_name,
