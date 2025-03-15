@@ -215,7 +215,7 @@ def update_count_label(data):
 
 def update_bar_chart(data, incompleted_count):
     # 表示順を固定
-    sorted_labels = ["Pass", "Fail", "Blocked", "Fixed", "Suspend", "N/A"]
+    sorted_labels = settings["common"]["results"]
 
     # 各ラベルとサイズ
     labels = [label for label in sorted_labels if label in data]

@@ -65,12 +65,17 @@ def get_excluded_count(data, targets:list[str]) -> int:
     return sum(1 for row in data if row and row[0] in targets)
 
 # 全日付データ合計
-def get_total_all_date(data):
+def get_total_all_date(data, exclude:str):
     result = {}
     for values in data.values():
         for key, count in values.items():
             result[key] = result.get(key, 0) + count
+    # Completedは除く
+    result.pop(exclude)
     return result
+
+def sum_completed_results(data: dict, completed_results: list) -> int:
+    return sum(data.get(key, 0) for key in completed_results)
 
 # 処理
 def aggregate_results(filepath:str, settings):
@@ -156,7 +161,7 @@ def aggregate_results(filepath:str, settings):
     data_by_name = get_daily_by_name(data=all_data)
 
     # 全セット集計(全日付)
-    data_total = get_total_all_date(data=data_daily_total)
+    data_total = get_total_all_date(data=data_daily_total, exclude=settings["common"]["completed"])
 
     # 総テストケース数
     case_count_all = sum(item['env_count'] * item['case_count'] for item in counts_by_sheet)
@@ -170,8 +175,11 @@ def aggregate_results(filepath:str, settings):
     # 消化テストケース数
     filled_count = sum(data_total.values())
 
-    # 未完了数(マイナスは0)
+    # 未実施テストケース数(マイナスは0)
     incompleted_count = max(0, available_count - filled_count)
+
+    # 完了テストケース数
+    completed_count = sum_completed_results(data_total, completed_results=settings["common"]["completed_results"])
 
     # 結果返却
     return {
@@ -179,7 +187,8 @@ def aggregate_results(filepath:str, settings):
             "all": case_count_all,
             "excluded": excluded_count,
             "available": available_count,
-            "completed": filled_count,
+            "filled": filled_count,
+            "completed": completed_count,
             "incompleted": incompleted_count
         },
         "total_daily": data_daily_total,
