@@ -96,7 +96,7 @@ def create_treeview(parent, data, structure, file_name):
 def save_to_csv(tree, columns, file_name, structure):
     # デフォルトファイル名
     basename = os.path.splitext(file_name)[0]
-    tab = settings["write"]["structures"][structure]
+    tab = settings["app"]["structures"][structure]
 
     # 保存先の選択
     file_path = filedialog.asksaveasfilename(initialfile=f"{basename}_{tab}", defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
@@ -124,15 +124,15 @@ def update_display(selected_file):
     data = next(item for item in input_data if item['selector_label'] == selected_file)
 
     frame_total = ttk.Frame(notebook)
-    notebook.add(frame_total, text=settings["write"]["structures"]["daily"])
+    notebook.add(frame_total, text=settings["app"]["structures"]["daily"])
     create_treeview(frame_total, data['total_daily'], 'total', data["file"])
 
     frame_env = ttk.Frame(notebook)
-    notebook.add(frame_env, text=settings["write"]["structures"]["by_env"])
+    notebook.add(frame_env, text=settings["app"]["structures"]["by_env"])
     create_treeview(frame_env, data['by_env'], 'by_env', data["file"])
     
     frame_name = ttk.Frame(notebook)
-    notebook.add(frame_name, text=settings["write"]["structures"]["by_name"])
+    notebook.add(frame_name, text=settings["app"]["structures"]["by_name"])
     create_treeview(frame_name, data['by_name'], 'by_name', data["file"])
 
     update_info_label(data["file"], data["count"])
@@ -154,8 +154,8 @@ def write_data(field_data):
         return
 
     # フィールドの設定値をグローバルに反映
-    settings["write"]["filepath"] = file_path
-    settings["write"]["table_name"] = table_name
+    settings["app"]["filepath"] = file_path
+    settings["app"]["table_name"] = table_name
 
     # データ書込
     try:
@@ -198,7 +198,7 @@ def create_input_area(parent, settings):
     
     ttk.Label(input_frame, text="書込先:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=3)
     file_path_entry = ttk.Entry(input_frame, width=50)
-    file_path_entry.insert(0, settings["write"]["filepath"])
+    file_path_entry.insert(0, settings["app"]["filepath"])
     file_path_entry.grid(row=0, column=1, padx=5, pady=5)
     ttk.Button(input_frame, text="選択", command=lambda: select_write_file(file_path_entry)).grid(row=0, column=2, padx=5, pady=2)
     
@@ -207,7 +207,7 @@ def create_input_area(parent, settings):
 
     ttk.Label(field_frame, text="データシート名:").pack(side=tk.LEFT, pady=3)
     table_name_entry = ttk.Entry(field_frame, width=20)
-    table_name_entry.insert(0, settings["write"]["table_name"])
+    table_name_entry.insert(0, settings["app"]["table_name"])
     table_name_entry.pack(side=tk.LEFT, padx=5)
 
     field_data = {"filepath": file_path_entry, "table_name": table_name_entry}
@@ -304,13 +304,31 @@ def update_bar_chart(data, incompleted_count):
     if canvas:
         canvas.draw()
 
+def save_window_position():
+    # ウインドウの位置情報を保存
+    settings["app"]["window_position"] = root.geometry()
+    AppConfig.save_settings(settings)
+
+def on_closing():
+    # ウインドウ終了時
+    save_window_position()
+    root.quit()
+
 def load_data(data, errors):
     global root, notebook, file_selector, input_data, settings, info_frame, count_label, rate_label, fig, ax, canvas
 
-    # 親ウインドウ
+    # 読込データ
+    input_data = data
+
+    # 設定のロード
+    settings = AppConfig.load_settings()
+
+    # 親ウインドウ生成
     root = tk.Tk()
     root.title("TestProgressTracker")
-    root.geometry("780x590")
+
+    # ウインドウ表示位置を復元
+    root.geometry(settings["app"]["window_position"])
 
     # データ抽出に失敗したファイルのリスト
     ers = "\n".join(["  "+ f["error"] for f in errors])
@@ -319,11 +337,6 @@ def load_data(data, errors):
     if not len(data):
         Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"1件もデータが抽出できませんでした。終了します。\n\nFile(s):\n{ers}")
         sys.exit()
-
-    input_data = data
-
-    # 設定読み込み
-    settings = AppConfig.load_settings()
 
     # ファイル選択プルダウン
     file_selector = ttk.Combobox(root, values=[file["selector_label"] for file in input_data], state="readonly")
@@ -363,6 +376,6 @@ def load_data(data, errors):
     if len(errors):
         Dialog.show_messagebox(root, type="warn", title="一部エラー", message=f"以下のファイルはデータが抽出できませんでした。\n\nFile(s):\n{ers}")
 
-    root.protocol("WM_DELETE_WINDOW", root.quit)  # アプリ終了時に後続処理を継続
+    root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()
     root.destroy()
