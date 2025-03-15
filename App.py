@@ -135,7 +135,7 @@ def update_display(selected_file):
     notebook.add(frame_name, text=settings["write"]["structures"]["by_name"])
     create_treeview(frame_name, data['by_name'], 'by_name', data["file"])
 
-    update_bar_chart(data['total'])
+    update_bar_chart(data['total_all'], data["incompleted_count"])
     notebook.select(current_tab)
 
 def write_data(field_data):    
@@ -209,17 +209,20 @@ def create_input_area(parent, settings):
     ttk.Button(submit_frame, text="開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=5, pady=5)
 
 
-def update_bar_chart(data):
-    total_counts = {}
-    for values in data.values():
-        for key, count in values.items():
-            total_counts[key] = total_counts.get(key, 0) + count
-
+def update_bar_chart(data, incompleted_count):
     # 表示順を固定
     sorted_labels = ["Pass", "Fail", "Blocked", "Fixed", "Suspend", "N/A"]
-    labels = [label for label in sorted_labels if label in total_counts]
-    sizes = [total_counts[label] for label in labels]
-    total = sum(sizes)  # 合計値を取得
+
+    # 各ラベルとサイズ
+    labels = [label for label in sorted_labels if label in data]
+    sizes = [data[label] for label in labels]
+
+    # 未実施数を追加
+    labels += ["Not Run"]
+    sizes += [incompleted_count]
+
+    # 合計値
+    total = sum(sizes)
 
     # 積み上げ横棒グラフ
     ax.clear()
@@ -233,7 +236,8 @@ def update_bar_chart(data):
         "Blocked": "deepskyblue",  # 水色
         "Fixed": "darkgreen",  # 濃い緑
         "Suspend": "yellow",
-        "N/A": "gray"
+        "N/A": "gray",
+        "Not Run": "lightgray"
     }
 
     for size, label in zip(sizes, labels):

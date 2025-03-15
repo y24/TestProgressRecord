@@ -23,7 +23,7 @@ def get_xlsx_paths(inputs):
             temp_dirs.append(temp_dir)
     return files, temp_dirs
 
-def file_processor(file, settings):
+def file_processor(file, settings, id):
     # 集計
     result = ReadData.aggregate_results(filepath=file["fullpath"], settings=settings)
     # ファイル名
@@ -35,11 +35,11 @@ def file_processor(file, settings):
         # zipファイル内の相対パスを取得
         if file["temp_dir"]:
             result["relative_path"] = Utility.get_relative_directory_path(full_path=file["fullpath"], base_dir=file["temp_dir"])
-            result["selector_label"] = ReadData.make_selector_label(result)
         else:
             # zipファイルではない場合
             result["relative_path"] = ""
-            result["selector_label"] = result["file"]
+        # プルダウンメニュー表示用
+        result["selector_label"] = ReadData.make_selector_label(result, id)
         # コンソール出力
         # console_out(result)
         # ビューアに渡す配列に格納
@@ -70,14 +70,15 @@ def main():
     # ファイルを処理
     out_data = []
     errors = []
-    for file in tqdm(files):
-        res = file_processor(file=file, settings=settings)
+    for index, file in enumerate(tqdm(files)):
+        id = index + 1
+        res = file_processor(file=file, settings=settings, id=id)
         if not 'error' in res.keys():
             out_data.append(res)
         else:
             errors.append(res)
 
-    pprint.pprint(out_data)
+    # pprint.pprint(out_data)
 
     # ビューア起動
     App.load_data(out_data, errors)

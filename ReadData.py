@@ -60,6 +60,14 @@ def get_daily_by_name(data):
         out_data[date] = daily_count
     return out_data
 
+# 全日付データ合計
+def get_total_all_date(data):
+    result = {}
+    for values in data.values():
+        for key, count in values.items():
+            result[key] = result.get(key, 0) + count
+    return result
+
 # 処理
 def aggregate_results(filepath:str, settings):
 
@@ -122,7 +130,7 @@ def aggregate_results(filepath:str, settings):
             data_by_env[env_name] = get_daily(data=set_data, results=settings["common"]["results"], completed_results=settings["common"]["completed_results"])
 
     # 全セット集計(日付別)
-    data_total = get_daily(data=all_data, results=settings["common"]["results"], completed_results=settings["common"]["completed_results"])
+    data_daily_total = get_daily(data=all_data, results=settings["common"]["results"], completed_results=settings["common"]["completed_results"])
 
     # 全セット集計(担当者別)
     data_by_name = get_daily_by_name(data=all_data)
@@ -134,19 +142,31 @@ def aggregate_results(filepath:str, settings):
     tobe_data = Excel.get_column_values(sheet=sheet, col_nums=tobe_rows,header_row=header_rownum, ignore_header=True)
     # テストケース数
     case_count = sum(1 for item in tobe_data if any(x is not None for x in item))
+    # テストケース数(全環境)
+    case_count_all = case_count * len(data_by_env)
+
+    # 全セット集計(全日付)
+    data_total = get_total_all_date(data=data_daily_total)
+    # 完了数
+    completed_count = sum(data_total.values())
+    # 未完了数(マイナスは0)
+    imcompleted_count = max(0, case_count_all - completed_count)
 
     # 結果返却
     return {
         "case_count": case_count,
-        "total": data_total,
+        "completed_count": completed_count,
+        "incompleted_count": imcompleted_count,
+        "total": data_daily_total,
+        "total_all": data_total,
         "by_name": data_by_name,
         "by_env": data_by_env
     }
 
-def make_selector_label(file):
+def make_selector_label(file, id):
     file_name = file["file"]
     relative_path = f'[{file["relative_path"]}] ' if file["relative_path"] else ""
-    return f"{relative_path}{file_name}"
+    return f"{id}: {relative_path}{file_name}"
 
 # コンソール出力
 def console_out(data):
