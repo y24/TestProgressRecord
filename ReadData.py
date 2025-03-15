@@ -9,8 +9,7 @@ from libs import Utility
 logger = Logger.get_logger(__name__, console=True, file=False, trace_line=False)
 
 # データ集計
-def get_daily(data, results: list[str], completed_results: list[str]):
-    total_label = "Completed"
+def get_daily(data, results: list[str], completed_label:str, completed_results: list[str]):
     result_count = defaultdict(lambda: defaultdict(int))
     
     for row in data:
@@ -23,13 +22,13 @@ def get_daily(data, results: list[str], completed_results: list[str]):
         # 各結果を0で初期化
         for keyword in results:
             result_count[date][keyword] = result_count[date].get(keyword, 0)
-        result_count[date][total_label] = result_count[date].get(total_label, 0)
+        result_count[date][completed_label] = result_count[date].get(completed_label, 0)
 
         # 結果列がフィルタ文字列に合致するものだけ抽出
         if result in results:
             result_count[date][result] += 1
         if result in completed_results:
-            result_count[date][total_label] += 1
+            result_count[date][completed_label] += 1
     
     # 出力
     out_data = {}
@@ -132,7 +131,7 @@ def aggregate_results(filepath:str, settings):
             env_name = f"{sheet_name}_{set_name}"
 
             # 環境ごとのデータ集計
-            data_by_env[env_name] = get_daily(data=set_data, results=settings["common"]["results"], completed_results=settings["common"]["completed_results"])
+            data_by_env[env_name] = get_daily(data=set_data, results=settings["common"]["results"], completed_label=settings["common"]["completed"], completed_results=settings["common"]["completed_results"])
 
         # 環境数
         env_count = len(sets)
@@ -151,7 +150,7 @@ def aggregate_results(filepath:str, settings):
         })
 
     # 全セット集計(日付別)
-    data_daily_total = get_daily(data=all_data, results=settings["common"]["results"], completed_results=settings["common"]["completed_results"])
+    data_daily_total = get_daily(data=all_data, results=settings["common"]["results"], completed_label=settings["common"]["completed"], completed_results=settings["common"]["completed_results"])
 
     # 全セット集計(担当者別)
     data_by_name = get_daily_by_name(data=all_data)

@@ -16,6 +16,7 @@
     },
     "common": {
         "results": ["Pass", "Fail", "Blocked", "Fixed", "Suspend", "N/A"],
+        "completed": "Completed",
         "completed_results": ["Pass", "Fixed", "Suspend", "N/A"],
         "not_run": "Not Run",
         "colors": {
