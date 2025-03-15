@@ -140,13 +140,22 @@ def save_to_csv_all():
         open_file(file_path=file_path)
 
 def update_display(selected_file):
+    # 全ファイル集計
+    update_info_label(sum_values(input_data, "count"), total_count_label, total_rate_label)
+    update_bar_chart(data=sum_values(input_data, "total"), incompleted_count=sum_values(input_data, "count")["incompleted"], ax=total_ax, canvas=total_canvas)
+
+    # タブ切り替え
     current_tab = notebook.index(notebook.select()) if notebook.tabs() else 0
-    
     for widget in notebook.winfo_children():
         widget.destroy()
     
     data = next(item for item in input_data if item['selector_label'] == selected_file)
 
+    # ファイル別集計
+    update_info_label(data["count"], file_count_label, file_rate_label)
+    update_bar_chart(data=data['total'], incompleted_count=data["count"]["incompleted"], ax=file_ax, canvas=file_canvas)
+
+    # タブ内情報の更新
     frame_total = ttk.Frame(notebook)
     notebook.add(frame_total, text=settings["app"]["structures"]["daily"])
     create_treeview(frame_total, data['total_daily'], 'daily', data["file"])
@@ -159,11 +168,7 @@ def update_display(selected_file):
     notebook.add(frame_name, text=settings["app"]["structures"]["by_name"])
     create_treeview(frame_name, data['by_name'], 'by_name', data["file"])
 
-    update_info_label(sum_values(input_data, "count"), total_count_label, total_rate_label)
-    update_total_bar_chart(input_data)
-
-    update_info_label(data["count"], file_count_label, file_rate_label)
-    update_bar_chart(data['total'], data["count"]["incompleted"])
+    # プルダウン切替時にタブの選択状態を保持
     notebook.select(current_tab)
 
 def write_data(field_data):    
@@ -280,7 +285,7 @@ def update_info_label(data, count_label, rate_label):
     count_label.config(text=count_text)
     rate_label.config(text=f'{completed_rate_text}  |  {filled_rate_text}')
 
-def update_bar_chart(data, incompleted_count):
+def update_bar_chart(data, incompleted_count, ax, canvas):
     # 表示順を固定
     sorted_labels = settings["common"]["results"]
 
@@ -353,77 +358,6 @@ def sum_values(data, param):
             result[key] += value
     return result
 
-def update_total_bar_chart(data_files):
-    # 全ファイル合計
-    data = sum_values(data_files, "total")
-    count = sum_values(data_files, "count")
-    incompleted_count = count["incompleted"]
-
-    # 表示順を固定
-    sorted_labels = settings["common"]["results"]
-
-    # 各ラベルとサイズ
-    labels = [label for label in sorted_labels if label in data]
-    sizes = [data[label] for label in labels]
-
-    # 未実施数を追加
-    labels += [settings["common"]["not_run"]]
-    sizes += [incompleted_count]
-
-    # 合計値
-    total = sum(sizes)
-
-    # 積み上げ横棒グラフ
-    ax_total.clear()
-    left = np.zeros(1)  # 初期の左端位置
-    bars = []  # 各バーのオブジェクトを保存
-
-    # ラベルごとの色設定
-    color_map = settings["common"]["colors"]
-
-    for size, label in zip(sizes, labels):
-        color = color_map.get(label, "gray")  # ラベルの色を取得（デフォルトは灰色）
-        bar = ax_total.barh(0, size, left=left, color=color, label=label)  # 横棒グラフを描画
-        bars.append((bar[0], size, label, color))  # バー情報を記録
-        left += size  # 次のバーの開始位置を更新
-
-    ax_total.set_xlim(0, total)  # 左右いっぱい
-    ax_total.set_yticks([])  # y軸ラベルを非表示
-    ax_total.set_xticks([])  # x軸の目盛りを非表示
-    ax_total.set_frame_on(False)  # 枠線を削除
-    ax_total.margins(0) # 余白なし
-
-    # バーの中央にラベルを配置（幅が十分にある場合のみ）
-    for bar, size, label, color in bars:
-        percentage = (size / total) * 100  # 割合計算
-        
-        # ラベルフォーマット
-        if size > total * 0.15:  # 割合15%以上は%も表示
-            label_text = f"{label} ({percentage:.1f}%)"
-        elif size > total * 0.08:  # 割合8%以上はラベルのみ
-            label_text = label
-        else:
-            label_text = ""
-
-        # ラベルの色
-        if color in color_map["black_labels"]:
-            label_color = 'black'
-        elif color in color_map["gray_labels"]:
-            label_color = 'dimgrey'
-        else:
-            label_color = 'white'
-
-        ax_total.text(
-            bar.get_x() + bar.get_width() / 2,  # 中央位置
-            bar.get_y() + bar.get_height() / 2,  # 中央位置
-            label_text,
-            ha='center', va='center', fontsize=8, 
-            color=label_color
-        )
-
-    if canvas_total:
-        canvas_total.draw()
-
 def save_window_position():
     # ウインドウの位置情報を保存
     settings["app"]["window_position"] = root.geometry()
@@ -448,8 +382,8 @@ def reload_files():
 
 def launch(data, errors):
     global root, notebook, file_selector, input_data, settings
-    global file_count_label, file_rate_label, fig, ax, canvas
-    global total_count_label, total_rate_label, fig_total, ax_total, canvas_total
+    global file_count_label, file_rate_label, file_fig, file_ax, file_canvas
+    global total_count_label, total_rate_label, total_fig, total_ax, total_canvas
 
     # 読込データ
     input_data = data
@@ -491,10 +425,10 @@ def launch(data, errors):
     total_rate_label.pack(fill=tk.X, padx=5)
 
     # グラフ表示(全体)
-    fig_total, ax_total = plt.subplots(figsize=(8, 0.3))
-    canvas_total = FigureCanvasTkAgg(fig_total, master=total_frame)
+    total_fig, total_ax = plt.subplots(figsize=(8, 0.3))
+    total_canvas = FigureCanvasTkAgg(total_fig, master=total_frame)
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-    canvas_total.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+    total_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     # ファイル別エリア
     file_frame = ttk.LabelFrame(root, text="ファイル別集計")
@@ -514,10 +448,10 @@ def launch(data, errors):
     file_rate_label.pack(fill=tk.X, padx=5)
 
     # グラフ表示(ファイル別)
-    fig, ax = plt.subplots(figsize=(6, 0.2))
-    canvas = FigureCanvasTkAgg(fig, master=file_frame)
+    file_fig, file_ax = plt.subplots(figsize=(6, 0.2))
+    file_canvas = FigureCanvasTkAgg(file_fig, master=file_frame)
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-    canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
+    file_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
 
     # タブ表示
     notebook = ttk.Notebook(file_frame, height=300)
