@@ -429,7 +429,7 @@ def launch(data, errors, inputs):
     create_menubar(parent=root)
 
     # 全ファイルエリア
-    total_frame = ttk.LabelFrame(root, text="全ファイル集計")
+    total_frame = ttk.LabelFrame(root, text="集計結果")
     total_frame.pack(fill=tk.X, padx=5, pady=5)
 
     # テストケース数(全体)
