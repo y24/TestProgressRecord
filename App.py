@@ -88,9 +88,16 @@ def create_treeview(parent, data, structure, file_name):
     
     tree.pack(fill=tk.BOTH, expand=True)
     
-    ttk.Button(parent, text="CSV保存", command=lambda: save_to_csv(treeview_to_array(tree), f'{os.path.splitext(file_name)[0]}_{settings["app"]["structures"][structure]}')).pack(side=tk.LEFT, padx=2, pady=5)
-    ttk.Button(parent, text="クリップボードにコピー", command=lambda: copy_to_clipboard(treeview_to_array(tree))).pack(side=tk.LEFT, padx=2, pady=5)
+    # ttk.Button(parent, text="CSV保存", command=lambda: save_to_csv(treeview_to_array(tree), f'{os.path.splitext(file_name)[0]}_{settings["app"]["structures"][structure]}')).pack(side=tk.LEFT, padx=2, pady=5)
+    # ttk.Button(parent, text="クリップボードにコピー", command=lambda: copy_to_clipboard(treeview_to_array(tree))).pack(side=tk.LEFT, padx=2, pady=5)
     
+    menubutton = ttk.Menubutton(parent, text="エクスポート", direction="below")
+    menu = tk.Menu(menubutton, tearoff=0)
+    menu.add_command(label="CSVで保存", command=lambda: save_to_csv(treeview_to_array(tree), f'{os.path.splitext(file_name)[0]}_{settings["app"]["structures"][structure]}'))
+    menu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(treeview_to_array(tree)))
+    menubutton.config(menu=menu)
+    menubutton.pack(side=tk.LEFT, padx=2, pady=5)
+
     return tree
 
 def treeview_to_array(treeview):
@@ -217,7 +224,6 @@ def open_file(file_path, exit:bool=False):
 def copy_to_clipboard(data):
     # 2次元配列をタブ区切りのテキストに変換
     text = "\n".join(["\t".join(map(str, row)) for row in data])
-    
     # クリップボードにコピー
     root.clipboard_clear()
     root.clipboard_append(text)
@@ -244,10 +250,10 @@ def create_menubar(parent):
 
 def create_input_area(parent, settings):
     input_frame = ttk.LabelFrame(parent, text="集計データ出力")
-    input_frame.pack(fill=tk.X, padx=5)
+    input_frame.pack(fill=tk.X, padx=5, pady=3)
 
-    ttk.Button(parent, text="CSV保存", command=lambda: save_to_csv(WriteData.convert_to_2d_array(data=input_data, settings=settings), f'進捗集計_{datetime.today().strftime("%Y-%m-%d")}')).pack(side=tk.LEFT, padx=2, pady=5)
-    ttk.Button(parent, text="クリップボードにコピー", command=lambda: copy_to_clipboard(WriteData.convert_to_2d_array(data=input_data, settings=settings))).pack(side=tk.LEFT, padx=2, pady=5)
+    # ttk.Button(parent, text="CSV保存", command=lambda: save_to_csv(WriteData.convert_to_2d_array(data=input_data, settings=settings), f'進捗集計_{datetime.today().strftime("%Y-%m-%d")}')).pack(side=tk.LEFT, padx=2, pady=5)
+    # ttk.Button(parent, text="クリップボードにコピー", command=lambda: copy_to_clipboard(WriteData.convert_to_2d_array(data=input_data, settings=settings))).pack(side=tk.LEFT, padx=2, pady=5)
     
     ttk.Label(input_frame, text="書込先:").grid(row=0, column=0, sticky=tk.W, padx=2, pady=3)
     file_path_entry = ttk.Entry(input_frame, width=50)
@@ -266,6 +272,13 @@ def create_input_area(parent, settings):
     submit_frame.grid(row=2, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W)
     ttk.Button(submit_frame, text="Excelへ書込", command=lambda: write_to_excel(field_data)).pack(side=tk.LEFT, padx=2, pady=(0,3))
     # ttk.Button(submit_frame, text="書込先を開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=2, pady=5)
+
+    menubutton = ttk.Menubutton(submit_frame, text="その他エクスポート", direction="below")
+    menu = tk.Menu(menubutton, tearoff=0)
+    menu.add_command(label="CSVで保存", command=lambda: save_to_csv(WriteData.convert_to_2d_array(data=input_data, settings=settings), f'進捗集計_{datetime.today().strftime("%Y-%m-%d")}'))
+    menu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(WriteData.convert_to_2d_array(data=input_data, settings=settings)))
+    menubutton.config(menu=menu)
+    menubutton.pack(side=tk.LEFT, padx=2)
 
 def update_info_label(data, count_label, rate_label, detail=True):
     # 値
@@ -417,7 +430,7 @@ def launch(data, errors, inputs):
 
     # 全ファイルエリア
     total_frame = ttk.LabelFrame(root, text="全ファイル集計")
-    total_frame.pack(fill=tk.X, padx=5, pady=10)
+    total_frame.pack(fill=tk.X, padx=5, pady=5)
 
     # テストケース数(全体)
     total_count_label = ttk.Label(total_frame, anchor="w")
