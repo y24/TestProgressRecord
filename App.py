@@ -273,7 +273,7 @@ def create_input_area(parent, settings):
     ttk.Button(submit_frame, text="Excelへ書込", command=lambda: write_to_excel(field_data)).pack(side=tk.LEFT, padx=2, pady=(0,3))
     # ttk.Button(submit_frame, text="書込先を開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=2, pady=5)
 
-    menubutton = ttk.Menubutton(submit_frame, text="その他エクスポート", direction="below")
+    menubutton = ttk.Menubutton(submit_frame, text="エクスポート", direction="below")
     menu = tk.Menu(menubutton, tearoff=0)
     menu.add_command(label="CSVで保存", command=lambda: save_to_csv(WriteData.convert_to_2d_array(data=input_data, settings=settings), f'進捗集計_{datetime.today().strftime("%Y-%m-%d")}'))
     menu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(WriteData.convert_to_2d_array(data=input_data, settings=settings)))
