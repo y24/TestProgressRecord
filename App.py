@@ -197,7 +197,7 @@ def write_to_excel(field_data):
             open_file(file_path=file_path, exit=True)
 
 def select_write_file(entry):
-    filepath = filedialog.askopenfilename(defaultextension=".xlsx", filetypes=[("Excel file", "*.xlsx")])
+    filepath = filedialog.askopenfilename(title="書込先ファイルを選択", defaultextension=".xlsx", filetypes=[("Excel file", "*.xlsx")])
     if filepath:  # キャンセルで空文字が返ってきたときは変更しない
         entry.delete(0, tk.END)  # 既存の内容をクリア
         entry.insert(0, filepath)  # 新しいファイルパスをセット
@@ -208,7 +208,7 @@ def open_file(file_path, exit:bool=False):
             os.startfile(file_path)  # Windows
         except AttributeError:
             subprocess.run(["xdg-open", file_path])  # Linux/Mac
-        # 終了
+        # ファイルを開いたあと終了する
         if exit:
             sys.exit()
     else:
@@ -223,14 +223,24 @@ def copy_to_clipboard(data):
     root.clipboard_append(text)
     root.update()
 
+def edit_settings():
+    Dialog.show_messagebox(root=root, type="info", title="ユーザー設定編集", message=f"ユーザー設定ファイルを開きます。\n編集した設定を反映させるには、File > 再読み込み を実行してください。")
+    open_file(file_path="UserConfig.json", exit=False)
+
 def create_menubar(parent):
     menubar = tk.Menu(parent)
     parent.config(menu=menubar)
-    filemenu = tk.Menu(menubar, tearoff=0)
-    filemenu.add_command(label="開く", command=load_files)
-    filemenu.add_separator()
-    filemenu.add_command(label="終了", command=parent.quit)
-    menubar.add_cascade(label="File", menu=filemenu)
+    # File
+    file_menu = tk.Menu(menubar, tearoff=0)
+    file_menu.add_command(label="開く", command=load_files)
+    file_menu.add_command(label="再読み込み", command=reload_files)
+    file_menu.add_separator()
+    file_menu.add_command(label="終了", command=parent.quit)
+    menubar.add_cascade(label="File", menu=file_menu)
+    # Settings
+    settings_menu = tk.Menu(menubar, tearoff=0)
+    settings_menu.add_command(label="設定ファイル編集", command=edit_settings)
+    menubar.add_cascade(label="Settings", menu=settings_menu)
 
 def create_input_area(parent, settings):
     input_frame = ttk.LabelFrame(parent, text="集計データ出力")
@@ -239,25 +249,22 @@ def create_input_area(parent, settings):
     ttk.Button(parent, text="CSV保存", command=lambda: save_to_csv(WriteData.convert_to_2d_array(data=input_data, settings=settings), f'進捗集計_{datetime.today().strftime("%Y-%m-%d")}')).pack(side=tk.LEFT, padx=2, pady=5)
     ttk.Button(parent, text="クリップボードにコピー", command=lambda: copy_to_clipboard(WriteData.convert_to_2d_array(data=input_data, settings=settings))).pack(side=tk.LEFT, padx=2, pady=5)
     
-    ttk.Label(input_frame, text="書込先:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=3)
+    ttk.Label(input_frame, text="書込先:").grid(row=0, column=0, sticky=tk.W, padx=2, pady=3)
     file_path_entry = ttk.Entry(input_frame, width=50)
     file_path_entry.insert(0, settings["app"]["filepath"])
-    file_path_entry.grid(row=0, column=1, padx=5, pady=5)
-    ttk.Button(input_frame, text="選択", command=lambda: select_write_file(file_path_entry)).grid(row=0, column=2, padx=2)
-    
-    field_frame = ttk.Frame(input_frame)
-    field_frame.grid(row=1, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W)
+    file_path_entry.grid(row=0, column=1)
+    ttk.Button(input_frame, text="...", width=3, command=lambda: select_write_file(file_path_entry)).grid(row=0, column=2, padx=2, pady=3)
 
-    ttk.Label(field_frame, text="データシート名:").pack(side=tk.LEFT, pady=3)
-    table_name_entry = ttk.Entry(field_frame, width=20)
+    ttk.Label(input_frame, text="データシート名:").grid(row=0, column=3, padx=(4,2))
+    table_name_entry = ttk.Entry(input_frame, width=20)
     table_name_entry.insert(0, settings["app"]["table_name"])
-    table_name_entry.pack(side=tk.LEFT, padx=5)
+    table_name_entry.grid(row=0, column=4, padx=2)
 
     field_data = {"filepath": file_path_entry, "table_name": table_name_entry}
 
     submit_frame = ttk.Frame(input_frame)
     submit_frame.grid(row=2, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W)
-    ttk.Button(submit_frame, text="Excelへ書込", command=lambda: write_to_excel(field_data)).pack(side=tk.LEFT, padx=2)
+    ttk.Button(submit_frame, text="Excelへ書込", command=lambda: write_to_excel(field_data)).pack(side=tk.LEFT, padx=2, pady=(0,3))
     # ttk.Button(submit_frame, text="書込先を開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=2, pady=5)
 
 def update_info_label(data, count_label, rate_label, detail=True):
@@ -363,19 +370,29 @@ def close_all_dialogs():
         if isinstance(widget, tk.Toplevel):
             widget.destroy()
 
-def load_files():
-    python = sys.executable
+def new_process(inputs):
     close_all_dialogs()
-    subprocess.Popen([python, *sys.argv])
+    python = sys.executable
+    subprocess.Popen([python, sys.argv[0]] + inputs)
     sys.exit()
 
-def launch(data, errors):
-    global root, notebook, file_selector, input_data, settings
+def load_files():
+    inputs = Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))
+    if inputs: new_process(inputs=list(inputs))
+
+def reload_files():
+    response = Dialog.ask(title="確認", message="全てのファイルを再読み込みします。よろしいですか？")
+    if response == "yes": new_process(inputs=list(input_paths))
+
+def launch(data, errors, inputs):
+    global root, notebook, file_selector, input_data, settings, input_paths
     global file_count_label, file_rate_label, file_fig, file_ax, file_canvas
     global total_count_label, total_rate_label, total_fig, total_ax, total_canvas
 
     # 読込データ
     input_data = data
+    # 起動時に指定したファイルパス（再読込用）
+    input_paths = inputs
 
     # 設定のロード
     settings = AppConfig.load_settings()

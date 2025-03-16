@@ -38,11 +38,10 @@ def file_processor(file, settings, id):
         else:
             # zipファイルではない場合
             result["relative_path"] = ""
-        # プルダウンメニュー表示用
+        # プルダウンメニュー表示用テキスト
         result["selector_label"] = ReadData.make_selector_label(result, id)
         # コンソール出力
         # console_out(result)
-        # ビューアに渡す配列に格納
         return result
     else:
         # 出力データがない場合
@@ -87,7 +86,7 @@ def start():
         pprint.pprint(out_data)
 
     # ビューア起動
-    App.launch(out_data, errors)
+    App.launch(out_data, errors, inputs)
 
     # zipファイルを展開していた場合は一時フォルダを掃除
     if len(temp_dirs): Zip.cleanup_old_temp_dirs()
