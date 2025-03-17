@@ -338,15 +338,20 @@ def update_bar_chart(data, incompleted_count, ax, canvas, show_label=True):
     # バーの中央にラベルを配置
     if show_label:
         for bar, size, label, color in bars:
-            percentage = (size / total) * 100  # 割合計算
-            
-            # ラベルフォーマット
-            if size > total * 0.15:  # 割合15%以上は%も表示
-                label_text = f"{label} ({percentage:.1f}%)"
-            elif size > total * 0.08:  # 割合8%以上はラベルのみ
-                label_text = label
+            # 割合計算
+            percentage = Utility.safe_divide(size, total)
+            if percentage:
+                # 表示用の値
+                percentage = (percentage) * 100
+                # ラベルフォーマット
+                if size > total * 0.15:  # 割合15%以上は%も表示
+                    label_text = f"{label} ({percentage:.1f}%)"
+                elif size > total * 0.08:  # 割合8%以上はラベルのみ
+                    label_text = label
+                else:
+                    label_text = ""
             else:
-                label_text = ""
+                label_text = "--"
 
             # ラベルの色
             if color in color_map["black_labels"]:

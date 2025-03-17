@@ -125,3 +125,6 @@ def sum_values(list, param):
         for key, value in entry[param].items():
             result[key] += value
     return result
+
+def safe_divide(a, b):
+    return a / b if b else None  # bが0またはNoneならNoneを返す
