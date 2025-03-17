@@ -3,10 +3,16 @@ from pathlib import Path
 from collections import OrderedDict
 from collections import defaultdict
 
-def find_rownum_by_keyword(list, keyword, ignore_words=None):
+def find_colnum_by_keyword(lst, keyword, ignore_words=None):
     if ignore_words is None:
         ignore_words = []
-    return [i + 1 for i, item in enumerate(list) if item and keyword in str(item) and str(item) not in ignore_words]
+    return [i + 1 for i, item in enumerate(lst) if item and keyword in str(item) and str(item) not in ignore_words]
+
+
+def find_colnum_by_keywords(lst, keywords:list[str], ignore_words=None):
+    if ignore_words is None:
+        ignore_words = []
+    return [i + 1 for i, item in enumerate(lst) if item and any(kw in str(item) for kw in keywords) and str(item) not in ignore_words]
 
 
 def transpose_lists(*lists):

@@ -107,11 +107,11 @@ def aggregate_results(filepath:str, settings):
 
         # 列番号(例:環境別)を取得
         # 結果
-        result_rows = Utility.find_rownum_by_keyword(list=header, keyword=settings["read"]["result_row"]["key"], ignore_words=settings["read"]["result_row"]["ignores"])
+        result_rows = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read"]["result_row"]["keys"], ignore_words=settings["read"]["result_row"]["ignores"])
         # 担当者
-        person_rows = Utility.find_rownum_by_keyword(list=header, keyword=settings["read"]["person_row"]["key"])
+        person_rows = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read"]["person_row"]["keys"])
         # 日付
-        date_rows = Utility.find_rownum_by_keyword(list=header, keyword=settings["read"]["date_row"]["key"])
+        date_rows = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read"]["date_row"]["keys"])
 
         # 結果,担当者,日付の列セットが正しく取得できない場合はスキップ
         if Utility.check_lists_equal_length(result_rows, person_rows, date_rows) == False:
@@ -147,7 +147,7 @@ def aggregate_results(filepath:str, settings):
 
         # テストケース数
         # 期待結果列の番号
-        tobe_rownunms = Utility.find_rownum_by_keyword(list=header, keyword=settings["read"]["tobe_row"]["key"])
+        tobe_rownunms = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read"]["tobe_row"]["keys"])
         tobe_data = Excel.get_column_values(sheet=sheet, col_nums=tobe_rownunms,header_row=header_rownum, ignore_header=True)
         # ケース数
         case_count = sum(1 for item in tobe_data if any(x is not None for x in item))
