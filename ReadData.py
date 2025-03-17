@@ -97,8 +97,12 @@ def aggregate_results(filepath:str, settings):
         # シート取得
         sheet = Excel.get_sheet_by_name(workbook=workbook, sheet_name=sheet_name)
 
-        # ヘッダ行を探して取得
+        # ヘッダ行の行番号を探す
         header_rownum = Excel.find_row(sheet, search_col=settings["read"]["header"]["search_col"], search_str=settings["read"]["header"]["search_key"])
+        # ヘッダ行が見つからない場合はスキップ
+        if not header_rownum: continue
+
+        # ヘッダ行を取得
         header = Excel.get_row_values(sheet=sheet, row_num=header_rownum)
 
         # 列番号(例:環境別)を取得
