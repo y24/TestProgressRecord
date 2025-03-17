@@ -436,8 +436,16 @@ def launch(data, errors, inputs):
     # メニューバー
     create_menubar(parent=root)
 
-    # 全ファイルエリア
-    total_frame = ttk.LabelFrame(root, text="集計結果")
+    # 全体タブ切り替え
+    nb = ttk.Notebook(root)
+    tab1 = tk.Frame(nb)
+    tab2 = tk.Frame(nb)
+    nb.add(tab1, text=' 集計結果 ')
+    nb.add(tab2, text=' ファイル別 ')
+    nb.pack(fill='both', expand=True)
+
+    # 集計結果タブ
+    total_frame = ttk.Frame(tab1)
     total_frame.pack(fill=tk.X, padx=5, pady=5)
 
     # テストケース数(全体)
@@ -455,10 +463,10 @@ def launch(data, errors, inputs):
     total_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     # ファイル書き込みエリア
-    create_input_area(parent=total_frame, settings=settings)
+    create_input_area(parent=tab1, settings=settings)
 
-    # ファイル別エリア
-    file_frame = ttk.LabelFrame(root, text="ファイル別集計")
+    # ファイル別集計タブ
+    file_frame = ttk.Frame(tab2)
     file_frame.pack(fill=tk.X, padx=5, pady=5)
 
     # ファイル選択プルダウン
