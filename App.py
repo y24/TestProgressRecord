@@ -329,7 +329,8 @@ def update_bar_chart(data, incompleted_count, ax, canvas, show_label=True):
         bars.append((bar[0], size, label, color))  # バー情報を記録
         left += size  # 次のバーの開始位置を更新
 
-    ax.set_xlim(0, total)  # 左右いっぱい
+    if total:
+        ax.set_xlim(0, total)  # 左右いっぱい
     ax.set_yticks([])  # y軸ラベルを非表示
     ax.set_xticks([])  # x軸の目盛りを非表示
     ax.set_frame_on(False)  # 枠線を削除
@@ -351,12 +352,14 @@ def update_bar_chart(data, incompleted_count, ax, canvas, show_label=True):
                 else:
                     label_text = ""
             else:
-                label_text = "--"
+                label_text = ""
 
             # ラベルの色
             if color in color_map["black_labels"]:
                 label_color = 'black'
             elif color in color_map["gray_labels"]:
+                label_color = 'dimgrey'
+            elif total == 0:
                 label_color = 'dimgrey'
             else:
                 label_color = 'white'
