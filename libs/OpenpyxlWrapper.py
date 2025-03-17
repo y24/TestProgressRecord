@@ -75,5 +75,10 @@ def get_columns_data(sheet, col_nums: list, header_row: int = 1, ignore_header=F
             for i in range(header_row, sheet.max_row + 1)]
     return data
 
-def get_cell_value(sheet, col:int, row:int):
-    return sheet.cell(row=row, column=col).value
+def get_cell_value(sheet, col:int, row:int, replace_newline=False):
+    value = sheet.cell(row=row, column=col).value
+    if replace_newline:
+        if value and isinstance(value, str):  # 値が文字列の場合のみ変換
+            return value.replace("\n", "_")
+    else:
+        return value

@@ -124,8 +124,8 @@ def aggregate_results(filepath:str, settings):
             # 全セット合計のデータにも追加
             all_data = all_data + set_data
 
-            # そのセットの1行目からセット名を取得
-            set_name = Excel.get_cell_value(sheet=sheet, col=set[0], row=1)
+            # そのセットの1行目からセット名を取得(セル内改行は_に置換)
+            set_name = Excel.get_cell_value(sheet=sheet, col=set[0], row=1, replace_newline=True)
 
             # セット名がない場合はスキップ
             if not set_name:
@@ -133,7 +133,7 @@ def aggregate_results(filepath:str, settings):
                 continue
 
             # 環境名
-            env_name = f"{sheet_name}_{set_name}"
+            env_name = f"[{sheet_name}]{set_name}"
 
             # 環境ごとのデータ集計
             data_by_env[env_name] = get_daily(data=set_data, results=settings["common"]["results"], completed_label=settings["common"]["completed"], completed_results=settings["common"]["completed_results"])
