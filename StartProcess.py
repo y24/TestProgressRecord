@@ -1,26 +1,24 @@
-import sys, argparse, pprint
+import sys
+import argparse
 from tqdm import tqdm
 
 import ReadData
 import App
-from libs import Utility
-from libs import Dialog
-from libs import Zip
-from libs import AppConfig
+from libs import Utility, Dialog, Zip, AppConfig
 
 def get_xlsx_paths(inputs):
     files = []
     temp_dirs = []
-    for input in inputs:
-        ext = Utility.get_ext_from_path(input)
+    
+    for input_path in inputs:
+        ext = Utility.get_ext_from_path(input_path)
         if ext == "xlsx":
-            files.append({"fullpath": input, "temp_dir": ""})
+            files.append({"fullpath": input_path, "temp_dir": ""})
         elif ext == "zip":
-            # zipファイル展開
-            extracted_files, temp_dir = Zip.extract_files_from_zip(input, extensions=['.xlsx'])
-            for f in extracted_files:
-                files.append({"fullpath": f, "temp_dir": temp_dir})
+            extracted_files, temp_dir = Zip.extract_files_from_zip(input_path, extensions=['.xlsx'])
+            files.extend([{"fullpath": f, "temp_dir": temp_dir} for f in extracted_files])
             temp_dirs.append(temp_dir)
+            
     return files, temp_dirs
 
 
@@ -31,72 +29,54 @@ def make_selector_label(file, id):
 
 
 def file_processor(file, settings, id):
-    # 集計
-    result = ReadData.aggregate_results(filepath=file["fullpath"], settings=settings)
-    # ファイル名
     filename = Utility.get_filename_from_path(filepath=file["fullpath"])
-    # 出力
-    if result and not Utility.is_empty(result):
-        # ファイルパス
+    
+    try:
+        result = ReadData.aggregate_results(filepath=file["fullpath"], settings=settings)
+        if not result or Utility.is_empty(result):
+            return {"error": filename}
+        
         result["file"] = filename
-        # zipファイル内の相対パスを取得
-        if file["temp_dir"]:
-            result["relative_path"] = Utility.get_relative_directory_path(full_path=file["fullpath"], base_dir=file["temp_dir"])
-        else:
-            # zipファイルではない場合
-            result["relative_path"] = ""
-        # プルダウンメニュー表示用テキスト
+        result["relative_path"] = (
+            Utility.get_relative_directory_path(full_path=file["fullpath"], base_dir=file["temp_dir"])
+            if file["temp_dir"] else ""
+        )
         result["selector_label"] = make_selector_label(result, id)
-        # コンソール出力
-        # console_out(result)
+        
         return result
-    else:
-        # 出力データがない場合
-        return { "error": filename }
+    except Exception as e:
+        return {"error": f"{filename}: {str(e)}"}
 
 
 def start():
-    # コマンドライン引数のパース
     parser = argparse.ArgumentParser(description="zipファイル/xlsxファイルを引数として起動します。(複数可)")
-    parser.add_argument("--Debug", action="store_true", help="Enable debug mode")
+    parser.add_argument("--debug", action="store_true", help="デバッグモードを有効化")
     parser.add_argument("data_files", nargs="*", help="zipファイル/xlsxファイルのパス")
     args = parser.parse_args()
 
-    # 処理対象のファイル
-    inputs = args.data_files
+    inputs = args.data_files or Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))
+    if not inputs:
+        sys.exit()
 
-    # 引数がない場合はファイル選択ダイアログ(複数可)
-    if len(inputs) == 0:
-        inputs = Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))
-        # キャンセル時は終了
-        if not inputs: sys.exit()
-
-    # xlsxファイルのパスを抽出
-    files, temp_dirs = get_xlsx_paths(inputs=inputs)
-
-    # 設定読み込み
+    files, temp_dirs = get_xlsx_paths(inputs)
     settings = AppConfig.load_settings()
 
-    # ファイルを処理
-    out_data = []
-    errors = []
-    for index, file in enumerate(tqdm(files)):
-        id = index + 1
-        res = file_processor(file=file, settings=settings, id=id)
-        if not 'error' in res.keys():
-            out_data.append(res)
-        else:
-            errors.append(res)
+    results = [
+        file_processor(file, settings, i+1)
+        for i, file in enumerate(tqdm(files))
+    ]
+    
+    out_data = [r for r in results if "error" not in r]
+    errors = [r for r in results if "error" in r]
 
-    # デバッグ用
-    if args.Debug:
-        pprint.pprint(out_data)
+    if args.debug:
+        from pprint import pprint
+        pprint(out_data)
 
-    # ビューア起動
     App.launch(out_data, errors, inputs)
 
-    # zipファイルを展開していた場合は一時フォルダを掃除
-    if len(temp_dirs): Zip.cleanup_old_temp_dirs()
+    if temp_dirs:
+        Zip.cleanup_old_temp_dirs()
 
 
 if __name__ == "__main__":
