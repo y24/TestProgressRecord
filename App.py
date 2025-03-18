@@ -162,7 +162,8 @@ def update_display(selected_file):
 
 def create_byfile_area(parent):
     # スタイル設定
-    style = ttk.Style()
+    padx = 1
+    pady = 3
 
     # フレーム
     file_frame = ttk.Frame(parent)
@@ -171,8 +172,8 @@ def create_byfile_area(parent):
     # ヘッダ
     headers = ["ファイル名", "項目数", "完了数", "完了率", "進捗"]
     for col, text in enumerate(headers):
-        ttk.Label(file_frame, text=text, background="#e0e0e0", relief="solid").grid(
-            row=0, column=col, sticky="nsew", padx=2, pady=3
+        ttk.Label(file_frame, text=text, foreground="#444444", background="#e0e0e0", relief="solid").grid(
+            row=0, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
         )
 
     # 列のリサイズ設定
@@ -187,29 +188,29 @@ def create_byfile_area(parent):
         
         # ファイル名
         ttk.Label(file_frame, text=file_data['file']).grid(
-            row=index, column=0, sticky="w", padx=2, pady=3
+            row=index, column=0, sticky="w", padx=padx, pady=pady
         )
         
         # 項目数
         ttk.Label(file_frame, text=available).grid(
-            row=index, column=1, padx=2, pady=3
+            row=index, column=1, padx=padx, pady=pady
         )
 
         # 完了数
         ttk.Label(file_frame, text=completed).grid(
-            row=index, column=2, padx=2, pady=3
+            row=index, column=2, padx=padx, pady=pady
         )
 
         # 完了率
         ttk.Label(file_frame, text=Utility.meke_rate_text(completed, available)).grid(
-            row=index, column=3, padx=2, pady=3
+            row=index, column=3, padx=padx, pady=pady
         )
 
         # 進捗グラフ
         fig, ax = plt.subplots(figsize=(3, 0.1))
         file_canvas = FigureCanvasTkAgg(fig, master=file_frame)
         plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-        file_canvas.get_tk_widget().grid(row=index, column=4, padx=2, pady=3)
+        file_canvas.get_tk_widget().grid(row=index, column=4, padx=padx, pady=pady)
 
         update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=file_canvas, show_label=False)
 
@@ -499,7 +500,7 @@ def launch(data, errors, inputs):
     tab2 = tk.Frame(nb)
     nb.add(tab1, text=' 集計結果 ')
     nb.add(tab2, text=' ファイル別 ')
-    nb.pack(fill='both', expand=True)
+    nb.pack(fill=tk.BOTH, expand=True)
 
     # 集計結果タブ
     total_frame = ttk.Frame(tab1)
