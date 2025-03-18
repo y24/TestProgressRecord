@@ -136,10 +136,6 @@ def save_to_csv(data, filename):
         open_file(file_path=file_path)
 
 def update_display(selected_file):
-    # 全ファイル集計
-    update_info_label(Utility.sum_values(input_data, "count"), count_label=total_count_label, rate_label=total_rate_label, detail=True)
-    update_bar_chart(data=Utility.sum_values(input_data, "total"), incompleted_count=Utility.sum_values(input_data, "count")["incompleted"], ax=total_ax, canvas=total_canvas, show_label=True)
-
     # タブ切り替え
     current_tab = notebook.index(notebook.select()) if notebook.tabs() else 0
     for widget in notebook.winfo_children():
@@ -151,7 +147,7 @@ def update_display(selected_file):
     update_info_label(data["count"], count_label=file_count_label, rate_label=file_rate_label, detail=True)
     update_bar_chart(data=data['total'], incompleted_count=data["count"]["incompleted"], ax=file_ax, canvas=file_canvas, show_label=False)
 
-    # タブ内情報の更新
+    # TreeViewの更新
     frame_total = ttk.Frame(notebook)
     notebook.add(frame_total, text=settings["app"]["structures"]["daily"])
     create_treeview(frame_total, data['total_daily'], 'daily', data["file"])
@@ -507,11 +503,15 @@ def launch(data, errors, inputs):
     total_rate_label = ttk.Label(total_frame, anchor="w")
     total_rate_label.pack(fill=tk.X, padx=5)
 
+    # 値表示
+    update_info_label(Utility.sum_values(input_data, "count"), count_label=total_count_label, rate_label=total_rate_label, detail=True)
+
     # グラフ表示(全体)
     total_fig, total_ax = plt.subplots(figsize=(8, 0.25))
     total_canvas = FigureCanvasTkAgg(total_fig, master=total_frame)
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
     total_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+    update_bar_chart(data=Utility.sum_values(input_data, "total"), incompleted_count=Utility.sum_values(input_data, "count")["incompleted"], ax=total_ax, canvas=total_canvas, show_label=True)
 
     # ファイル別グラフ
     create_byfile_area(tab1)
