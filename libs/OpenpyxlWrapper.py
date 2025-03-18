@@ -18,7 +18,7 @@ def load(file_path:str, auto_create:bool=False):
 
 def create_sheet(workbook, sheet_name:str, overwrite:bool=False):
     # 既存のデータシートがあれば削除
-    if sheet_name in workbook.sheetnames:
+    if overwrite and sheet_name in workbook.sheetnames:
         del workbook[sheet_name]
     # 新しいデータシートを作成
     return workbook.create_sheet(title=sheet_name)

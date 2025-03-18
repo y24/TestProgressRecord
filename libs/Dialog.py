@@ -12,7 +12,7 @@ def select_files(ext:tuple):
     root.withdraw()
     return filedialog.askopenfilenames(filetypes=[(ext)])
 
-def show_messagebox(root, type:str, title:str, message):
+def show_messagebox(root, type:str, title:str, message:str):
     # 一時的な Toplevel を作成（非表示）
     temp_window = Toplevel(root)
     temp_window.withdraw()  # ウィンドウを非表示にする

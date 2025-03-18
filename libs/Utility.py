@@ -3,7 +3,7 @@ from pathlib import Path
 from collections import OrderedDict
 from collections import defaultdict
 
-def find_colnum_by_keyword(lst, keyword, ignore_words=None):
+def find_colnum_by_keyword(lst, keyword:str, ignore_words=None):
     if ignore_words is None:
         ignore_words = []
     return [i + 1 for i, item in enumerate(lst) if item and keyword in str(item) and str(item) not in ignore_words]
@@ -115,7 +115,7 @@ def sort_by_master(master_list, input_list):
     """
     return sorted(input_list, key=lambda x: master_list.index(x) if x in master_list else float('inf'))
 
-def meke_rate_text(value1, value2):
+def meke_rate_text(value1:int, value2:int):
     # パーセンテージ表示用の文字列を生成
     if value2:
         rate = (value1 / value2) * 100
@@ -124,7 +124,7 @@ def meke_rate_text(value1, value2):
     else:
         return "--"
 
-def sum_values(list, param):
+def sum_values(list, param:str):
     # オブジェクト配列の各キーごとに合計値を計算
     result = defaultdict(int)
     for entry in list:
@@ -132,5 +132,5 @@ def sum_values(list, param):
             result[key] += value
     return result
 
-def safe_divide(a, b):
+def safe_divide(a:int, b:int):
     return a / b if b else None  # bが0またはNoneならNoneを返す
