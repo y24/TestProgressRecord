@@ -23,6 +23,13 @@ def get_xlsx_paths(inputs):
             temp_dirs.append(temp_dir)
     return files, temp_dirs
 
+
+def make_selector_label(file, id):
+    file_name = file["file"]
+    relative_path = f'[{file["relative_path"]}] ' if file["relative_path"] else ""
+    return f"{id}: {relative_path}{file_name}"
+
+
 def file_processor(file, settings, id):
     # 集計
     result = ReadData.aggregate_results(filepath=file["fullpath"], settings=settings)

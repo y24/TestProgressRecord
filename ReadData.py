@@ -94,98 +94,128 @@ def aggregate_results(filepath:str, settings):
     data_by_env = {}
     counts_by_sheet = []
     for sheet_name in sheet_names:
-        # シート取得
-        sheet = Excel.get_sheet_by_name(workbook=workbook, sheet_name=sheet_name)
+        sheet_data = _process_sheet(
+            workbook=workbook,
+            sheet_name=sheet_name,
+            settings=settings
+        )
+        
+        if sheet_data:
+            all_data.extend(sheet_data["data"])
+            data_by_env.update(sheet_data["env_data"])
+            counts_by_sheet.append(sheet_data["counts"])
 
-        # ヘッダ行の行番号を探す
-        header_rownum = Excel.find_row(sheet, search_col=settings["read"]["header"]["search_col"], search_str=settings["read"]["header"]["search_key"])
-        # ヘッダ行が見つからない場合はスキップ
-        if not header_rownum: continue
+    return _aggregate_final_results(
+            all_data=all_data,
+            data_by_env=data_by_env,
+            counts_by_sheet=counts_by_sheet,
+            settings=settings
+        )
 
-        # ヘッダ行を取得
-        header = Excel.get_row_values(sheet=sheet, row_num=header_rownum)
+def _process_sheet(workbook, sheet_name: str, settings: dict):
+    sheet = Excel.get_sheet_by_name(workbook=workbook, sheet_name=sheet_name)
+    header_rownum = Excel.find_row(
+        sheet, 
+        search_col=settings["read"]["header"]["search_col"],
+        search_str=settings["read"]["header"]["search_key"]
+    )
 
-        # 列番号(例:環境別)を取得
-        # 結果
-        result_rows = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read"]["result_row"]["keys"], ignore_words=settings["read"]["result_row"]["ignores"])
-        # 担当者
-        person_rows = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read"]["person_row"]["keys"])
-        # 日付
-        date_rows = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read"]["date_row"]["keys"])
+    if not header_rownum:
+        return None
 
-        # 結果,担当者,日付の列セットが正しく取得できない場合はスキップ
-        if Utility.check_lists_equal_length(result_rows, person_rows, date_rows) == False:
+    # ヘッダ行を取得
+    header = Excel.get_row_values(sheet=sheet, row_num=header_rownum)
+
+    # 列番号(例:環境別)を取得
+    # 結果
+    result_rows = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read"]["result_row"]["keys"], ignore_words=settings["read"]["result_row"]["ignores"])
+    # 担当者
+    person_rows = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read"]["person_row"]["keys"])
+    # 日付
+    date_rows = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read"]["date_row"]["keys"])
+
+    # 結果,担当者,日付の列セットが正しく取得できない場合はスキップ
+    if Utility.check_lists_equal_length(result_rows, person_rows, date_rows) == False:
+        return None
+
+    # 列番号のセット(結果、担当者、日付)を作成
+    sets = Utility.transpose_lists(result_rows, person_rows, date_rows)
+    
+    # 各セット処理
+    data = []
+    env_data = {}  # 環境データを格納する辞書を初期化
+    
+    for set in sets:
+        # セットのデータ取得
+        set_data = Excel.get_columns_data(sheet=sheet, col_nums=set, header_row=header_rownum, ignore_header=True)
+
+        # 全セット合計のデータにも追加
+        data.extend(set_data)
+
+        # そのセットの1行目からセット名を取得(セル内改行は_に置換)
+        set_name = Excel.get_cell_value(sheet=sheet, col=set[0], row=1, replace_newline=True)
+
+        # セット名がない場合はスキップ
+        if not set_name:
             continue
 
-        # 列番号のセット(結果、担当者、日付)を作成
-        sets = Utility.transpose_lists(result_rows, person_rows, date_rows)
-        
-        # 各セット処理
-        for set in sets:
-            # セットのデータ取得
-            set_data = Excel.get_columns_data(sheet=sheet, col_nums=set, header_row=header_rownum, ignore_header=True)
+        # 環境名
+        env_name = f"[{sheet_name}]{set_name}"
 
-            # 全セット合計のデータにも追加
-            all_data = all_data + set_data
+        # 環境ごとのデータ集計
+        env_data[env_name] = get_daily(
+            data=set_data, 
+            results=settings["common"]["results"], 
+            completed_label=settings["common"]["completed"], 
+            completed_results=settings["common"]["completed_results"]
+        )
 
-            # そのセットの1行目からセット名を取得(セル内改行は_に置換)
-            set_name = Excel.get_cell_value(sheet=sheet, col=set[0], row=1, replace_newline=True)
+    # 環境数
+    env_count = len(sets)
 
-            # セット名がない場合はスキップ
-            if not set_name:
-                # logger.error(f"Failed to get environment name. (Sheet: {sheet_name})")
-                continue
+    # テストケース数を計算
+    tobe_rownunms = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read"]["tobe_row"]["keys"])
+    tobe_data = Excel.get_column_values(sheet=sheet, col_nums=tobe_rownunms,header_row=header_rownum, ignore_header=True)
+    case_count = sum(1 for item in tobe_data if any(x is not None for x in item))
 
-            # 環境名
-            env_name = f"[{sheet_name}]{set_name}"
-
-            # 環境ごとのデータ集計
-            data_by_env[env_name] = get_daily(data=set_data, results=settings["common"]["results"], completed_label=settings["common"]["completed"], completed_results=settings["common"]["completed_results"])
-
-        # 環境数
-        env_count = len(sets)
-
-        # テストケース数
-        # 期待結果列の番号
-        tobe_rownunms = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read"]["tobe_row"]["keys"])
-        tobe_data = Excel.get_column_values(sheet=sheet, col_nums=tobe_rownunms,header_row=header_rownum, ignore_header=True)
-        # ケース数
-        case_count = sum(1 for item in tobe_data if any(x is not None for x in item))
-
-        # シート毎に格納
-        counts_by_sheet.append({
+    # 結果を返却
+    return {
+        "data": data,
+        "env_data": env_data,
+        "counts": {
             "env_count": env_count,
             "case_count": case_count
-        })
+        }
+    }
 
+def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
     # 全セット集計(日付別)
-    data_daily_total = get_daily(data=all_data, results=settings["common"]["results"], completed_label=settings["common"]["completed"], completed_results=settings["common"]["completed_results"])
+    data_daily_total = get_daily(
+        data=all_data,
+        results=settings["common"]["results"],
+        completed_label=settings["common"]["completed"],
+        completed_results=settings["common"]["completed_results"]
+    )
 
     # 全セット集計(担当者別)
-    data_by_name = get_daily_by_name(data=all_data)
-
+    data_by_name = get_daily_by_name(all_data)
+    
     # 全セット集計(全日付)
-    data_total = get_total_all_date(data=data_daily_total, exclude=settings["common"]["completed"])
+    data_total = get_total_all_date(data_daily_total, exclude=settings["common"]["completed"])
 
     # 総テストケース数
     case_count_all = sum(item['env_count'] * item['case_count'] for item in counts_by_sheet)
-
     # 対象外テストケース数
     excluded_count = get_excluded_count(data=all_data, targets=settings["read"]["excluded"])
-
     # 有効テストケース数
     available_count = case_count_all - excluded_count
-
     # 消化テストケース数
     filled_count = sum(data_total.values())
-
+    # 完了テストケース数
+    completed_count = sum_completed_results(data_total, settings["common"]["completed_results"])
     # 未実施テストケース数(マイナスは0)
     incompleted_count = max(0, available_count - filled_count)
 
-    # 完了テストケース数
-    completed_count = sum_completed_results(data_total, completed_results=settings["common"]["completed_results"])
-
-    # 結果返却
     return {
         "count": {
             "all": case_count_all,
@@ -200,11 +230,6 @@ def aggregate_results(filepath:str, settings):
         "by_name": data_by_name,
         "by_env": data_by_env
     }
-
-def make_selector_label(file, id):
-    file_name = file["file"]
-    relative_path = f'[{file["relative_path"]}] ' if file["relative_path"] else ""
-    return f"{id}: {relative_path}{file_name}"
 
 # コンソール出力
 def console_out(data):
