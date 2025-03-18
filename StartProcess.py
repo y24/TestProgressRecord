@@ -46,7 +46,7 @@ def file_processor(file, settings, id):
             # zipファイルではない場合
             result["relative_path"] = ""
         # プルダウンメニュー表示用テキスト
-        result["selector_label"] = ReadData.make_selector_label(result, id)
+        result["selector_label"] = make_selector_label(result, id)
         # コンソール出力
         # console_out(result)
         return result
