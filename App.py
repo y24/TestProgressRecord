@@ -132,7 +132,7 @@ def save_to_csv(data, filename):
     if response == "yes":
         open_file(file_path=file_path)
 
-def update_display(selected_file):
+def update_display(selected_file, count_label, rate_label, ax, canvas, notebook):
     # タブ切り替え
     current_tab = notebook.index(notebook.select()) if notebook.tabs() else 0
     for widget in notebook.winfo_children():
@@ -141,8 +141,8 @@ def update_display(selected_file):
     data = next(item for item in input_data if item['selector_label'] == selected_file)
 
     # ファイル別結果
-    update_info_label(data["count"], count_label=file_count_label, rate_label=file_rate_label, detail=True)
-    update_bar_chart(data=data['total'], incompleted_count=data["count"]["incompleted"], ax=file_ax, canvas=file_canvas, show_label=False)
+    update_info_label(data["count"], count_label=count_label, rate_label=rate_label, detail=True)
+    update_bar_chart(data=data['total'], incompleted_count=data["count"]["incompleted"], ax=ax, canvas=canvas, show_label=False)
 
     # TreeViewの更新
     frame_total = ttk.Frame(notebook)
@@ -208,11 +208,11 @@ def create_byfile_area(parent):
 
         # 進捗グラフ
         fig, ax = plt.subplots(figsize=(3, 0.1))
-        file_canvas = FigureCanvasTkAgg(fig, master=file_frame)
+        canvas = FigureCanvasTkAgg(fig, master=file_frame)
         plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-        file_canvas.get_tk_widget().grid(row=index, column=4, padx=padx, pady=pady)
+        canvas.get_tk_widget().grid(row=index, column=4, padx=padx, pady=pady)
 
-        update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=file_canvas, show_label=False)
+        update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=canvas, show_label=False)
 
     # フレーム
     exp_frame = ttk.Frame(parent)
@@ -460,61 +460,28 @@ def load_files():
 
 def reload_files():
     response = Dialog.ask(title="確認", message="全てのファイルを再読み込みします。よろしいですか？")
-    if response == "yes": new_process(inputs=list(input_paths))
+    if response == "yes": new_process(inputs=list(input_args))
 
-def launch(data, errors, inputs):
-    global root, notebook, file_selector, input_data, settings, input_paths
-    global file_count_label, file_rate_label, file_fig, file_ax, file_canvas
-    global total_count_label, total_rate_label, total_fig, total_ax, total_canvas
-    global byfile_frame
-
-    # 読込データ
-    input_data = data
-    # 起動時に指定したファイルパス（再読込用）
-    input_paths = inputs
-
-    # 設定のロード
-    settings = AppConfig.load_settings()
-
-    # 親ウインドウ生成
-    root = tk.Tk()
-    root.title("TestTraQ")
-
-    # ウインドウ表示位置を復元
-    root.geometry(settings["app"]["window_position"])
-
-    # データ抽出に失敗したファイルのリスト
-    ers = "\n".join(["  "+ f["error"] for f in errors])
-
-    # 1件もデータがなかった場合は終了
-    if not len(data):
-        Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"1件もデータが抽出できませんでした。終了します。\n\nFile(s):\n{ers}")
-        sys.exit()
-
-    # メニューバー
-    create_menubar(parent=root)
-
-    # 全体タブ切り替え
-    nb = ttk.Notebook(root)
+def create_global_tab(parent):
+    # 全体タブ
+    nb = ttk.Notebook(parent)
     tab1 = tk.Frame(nb)
     tab2 = tk.Frame(nb)
     nb.add(tab1, text=' 集計結果 ')
     nb.add(tab2, text=' ファイル別 ')
     nb.pack(fill=tk.BOTH, expand=True)
+    return tab1, tab2
 
+def create_total_tab(parent):
     # 集計結果タブ
-    total_frame = ttk.Frame(tab1)
+    total_frame = ttk.Frame(parent)
     total_frame.pack(fill=tk.X, padx=5, pady=5)
 
-    # テストケース数(全体)
+    # テストケース数、完了率(全体)
     total_count_label = ttk.Label(total_frame, anchor="w")
     total_count_label.pack(fill=tk.X, padx=5)
-
-    # 完了率(全体)
     total_rate_label = ttk.Label(total_frame, anchor="w")
     total_rate_label.pack(fill=tk.X, padx=5)
-
-    # 値表示
     update_info_label(Utility.sum_values(input_data, "count"), count_label=total_count_label, rate_label=total_rate_label, detail=True)
 
     # グラフ表示(全体)
@@ -525,19 +492,19 @@ def launch(data, errors, inputs):
     update_bar_chart(data=Utility.sum_values(input_data, "total"), incompleted_count=Utility.sum_values(input_data, "count")["incompleted"], ax=total_ax, canvas=total_canvas, show_label=True)
 
     # ファイル別グラフ
-    create_byfile_area(tab1)
+    create_byfile_area(parent=parent)
 
     # ファイル書き込みエリア
-    create_input_area(parent=tab1, settings=settings)
+    create_input_area(parent=parent, settings=settings)
 
-    # ファイル別集計タブ
-    file_frame = ttk.Frame(tab2)
+def create_byfile_tab(parent):
+    file_frame = ttk.Frame(parent)
     file_frame.pack(fill=tk.X, padx=5, pady=5)
 
     # ファイル選択プルダウン
     file_selector = ttk.Combobox(file_frame, values=[file["selector_label"] for file in input_data], state="readonly")
     file_selector.pack(fill=tk.X, padx=20, pady=5)
-    file_selector.bind("<<ComboboxSelected>>", lambda event: update_display(file_selector.get()))
+    file_selector.bind("<<ComboboxSelected>>", lambda event: update_display(file_selector.get(), count_label=file_count_label, rate_label=file_rate_label, ax=file_ax, canvas=file_canvas, notebook=notebook))
 
     # テストケース数(ファイル別)
     file_count_label = ttk.Label(file_frame, anchor="w")
@@ -561,8 +528,43 @@ def launch(data, errors, inputs):
     # グリッド表示
     if input_data:
         file_selector.current(0)
-        update_display(input_data[0]['selector_label'])
+        update_display(input_data[0]['selector_label'], count_label=file_count_label, rate_label=file_rate_label, ax=file_ax, canvas=file_canvas, notebook=notebook)
 
+def launch(data, errors, args):
+    global root, input_data, settings, input_args
+
+    # 読込データ
+    input_data = data
+    # 起動時に指定したファイルパス（再読込用）
+    input_args = args
+    # 設定のロード
+    settings = AppConfig.load_settings()
+
+    # 親ウインドウ生成
+    root = tk.Tk()
+    root.title("TestTraQ")
+    # ウインドウ表示位置を復元
+    root.geometry(settings["app"]["window_position"])
+
+    # メニューバー
+    create_menubar(parent=root)
+    # グローバルタブ
+    tab1, tab2 = create_global_tab(parent=root)
+
+    # タブ1：全体集計タブ
+    create_total_tab(tab1)
+    # タブ2：ファイル別集計タブ
+    create_byfile_tab(tab2)
+
+    # データ抽出に失敗したファイルのリスト
+    ers = "\n".join(["  "+ f["error"] for f in errors])
+
+    # 1件もデータがなかった場合は終了
+    if not len(data):
+        Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"1件もデータが抽出できませんでした。終了します。\n\nFile(s):\n{ers}")
+        sys.exit()
+
+    # 一部ファイルにデータがなかった場合はアラート
     if len(errors):
         Dialog.show_messagebox(root, type="warning", title="一部エラー", message=f"以下のファイルはデータが抽出できませんでした。\n\nFile(s):\n{ers}")
 
