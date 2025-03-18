@@ -160,7 +160,7 @@ def update_display(selected_file, count_label, rate_label, ax, canvas, notebook)
     # プルダウン切替時にタブの選択状態を保持
     notebook.select(current_tab)
 
-def create_byfile_area(parent):
+def create_filelist_area(parent):
     # スタイル設定
     padx = 1
     pady = 3
@@ -492,7 +492,7 @@ def create_total_tab(parent):
     update_bar_chart(data=Utility.sum_values(input_data, "total"), incompleted_count=Utility.sum_values(input_data, "count")["incompleted"], ax=total_ax, canvas=total_canvas, show_label=True)
 
     # ファイル別グラフ
-    create_byfile_area(parent=parent)
+    create_filelist_area(parent=parent)
 
     # ファイル書き込みエリア
     create_input_area(parent=parent, settings=settings)
