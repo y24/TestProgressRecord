@@ -137,7 +137,7 @@ def save_to_csv(data, filename):
 
 def update_display(selected_file):
     # 全ファイル集計
-    update_info_label(Utility.sum_values(input_data, "count"), count_label=total_count_label, rate_label=total_rate_label, detail=False)
+    update_info_label(Utility.sum_values(input_data, "count"), count_label=total_count_label, rate_label=total_rate_label, detail=True)
     update_bar_chart(data=Utility.sum_values(input_data, "total"), incompleted_count=Utility.sum_values(input_data, "count")["incompleted"], ax=total_ax, canvas=total_canvas, show_label=True)
 
     # タブ切り替え
@@ -147,10 +147,9 @@ def update_display(selected_file):
     
     data = next(item for item in input_data if item['selector_label'] == selected_file)
 
-    # ファイル別集計
-    if len(input_data) > 1:
-        update_info_label(data["count"], count_label=file_count_label, rate_label=file_rate_label, detail=True)
-        update_bar_chart(data=data['total'], incompleted_count=data["count"]["incompleted"], ax=file_ax, canvas=file_canvas, show_label=False)
+    # ファイル別結果
+    update_info_label(data["count"], count_label=file_count_label, rate_label=file_rate_label, detail=True)
+    update_bar_chart(data=data['total'], incompleted_count=data["count"]["incompleted"], ax=file_ax, canvas=file_canvas, show_label=False)
 
     # タブ内情報の更新
     frame_total = ttk.Frame(notebook)
@@ -167,6 +166,57 @@ def update_display(selected_file):
 
     # プルダウン切替時にタブの選択状態を保持
     notebook.select(current_tab)
+
+def create_byfile_area(parent):
+    # スタイル設定
+    style = ttk.Style()
+
+    # フレーム
+    file_frame = ttk.Frame(parent)
+    file_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+    # ヘッダ
+    headers = ["ファイル名", "完了率", "完了数", "進捗"]
+    for col, text in enumerate(headers):
+        ttk.Label(file_frame, text=text, background="#e0e0e0", relief="solid").grid(
+            row=0, column=col, sticky="nsew", padx=2, pady=3
+        )
+
+    # 列のリサイズ設定
+    file_frame.grid_columnconfigure(0, weight=3)
+
+    # データ行
+    for index, file_data in enumerate(input_data, 1):
+        total_data = file_data['total']
+        completed = file_data['count']['completed']
+        available = file_data['count']['available']
+        incompleted = file_data['count']['incompleted']
+        
+        # ファイル名
+        ttk.Label(file_frame, text=file_data['file']).grid(
+            row=index, column=0, sticky="w", padx=2, pady=3
+        )
+        
+        # 完了率
+        comp_rate_text = Utility.meke_rate_text(completed, available)
+        ttk.Label(file_frame, text=comp_rate_text).grid(
+            row=index, column=1, padx=2, pady=3
+        )
+        
+        # 完了数
+        comp_count_text = f"{completed} / {available}"
+        ttk.Label(file_frame, text=comp_count_text).grid(
+            row=index, column=2, padx=2, pady=3
+        )
+
+        # 進捗グラフ
+        fig, ax = plt.subplots(figsize=(3, 0.1))
+        file_canvas = FigureCanvasTkAgg(fig, master=file_frame)
+        plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+        file_canvas.get_tk_widget().grid(row=index, column=3, padx=2, pady=3)
+
+        update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=file_canvas, show_label=False)
+
 
 def write_to_excel(field_data):    
     file_path = field_data["filepath"].get()
@@ -409,6 +459,7 @@ def launch(data, errors, inputs):
     global root, notebook, file_selector, input_data, settings, input_paths
     global file_count_label, file_rate_label, file_fig, file_ax, file_canvas
     global total_count_label, total_rate_label, total_fig, total_ax, total_canvas
+    global byfile_frame
 
     # 読込データ
     input_data = data
@@ -420,7 +471,7 @@ def launch(data, errors, inputs):
 
     # 親ウインドウ生成
     root = tk.Tk()
-    root.title("TestProgressTracker")
+    root.title("TestTraQ")
 
     # ウインドウ表示位置を復元
     root.geometry(settings["app"]["window_position"])
@@ -462,6 +513,9 @@ def launch(data, errors, inputs):
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
     total_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
+    # ファイル別グラフ
+    create_byfile_area(tab1)
+
     # ファイル書き込みエリア
     create_input_area(parent=tab1, settings=settings)
 
@@ -474,20 +528,19 @@ def launch(data, errors, inputs):
     file_selector.pack(fill=tk.X, padx=20, pady=5)
     file_selector.bind("<<ComboboxSelected>>", lambda event: update_display(file_selector.get()))
 
-    if len(input_data) > 1:
-        # テストケース数(ファイル別)
-        file_count_label = ttk.Label(file_frame, anchor="w")
-        file_count_label.pack(fill=tk.X, padx=20)
+    # テストケース数(ファイル別)
+    file_count_label = ttk.Label(file_frame, anchor="w")
+    file_count_label.pack(fill=tk.X, padx=20)
 
-        # 完了率(ファイル別)
-        file_rate_label = ttk.Label(file_frame, anchor="w")
-        file_rate_label.pack(fill=tk.X, padx=20)
+    # 完了率(ファイル別)
+    file_rate_label = ttk.Label(file_frame, anchor="w")
+    file_rate_label.pack(fill=tk.X, padx=20)
 
-        # グラフ表示(ファイル別)
-        file_fig, file_ax = plt.subplots(figsize=(6, 0.1))
-        file_canvas = FigureCanvasTkAgg(file_fig, master=file_frame)
-        plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-        file_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
+    # グラフ表示(ファイル別)
+    file_fig, file_ax = plt.subplots(figsize=(6, 0.1))
+    file_canvas = FigureCanvasTkAgg(file_fig, master=file_frame)
+    plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    file_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
 
     # タブ表示
     notebook_height = 300 if len(input_data) > 1 else 355

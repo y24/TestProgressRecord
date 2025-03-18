@@ -14,7 +14,7 @@ width_dict = {
   'N': 1    # Neutral
 }
 Font_depend = 1.2
-base_header = ["フォルダ", "ファイル名", "環境名", "日付"]
+base_header = ["ファイル名", "フォルダ", "環境名", "日付"]
 
 def convert_to_2d_array(data, settings):
     results = settings["common"]["results"] + ["Completed"]
@@ -25,11 +25,11 @@ def convert_to_2d_array(data, settings):
         if entry["by_env"]:
             for env, env_data in entry.get("by_env", {}).items():
                 for date, values in env_data.items():
-                    out_arr.append([entry["relative_path"], file_name, env, date] + [values.get(v, 0) for v in results])
+                    out_arr.append([file_name, entry["relative_path"], env, date] + [values.get(v, 0) for v in results])
         else:
             # 環境別データがない場合は合計データを使用して、環境名は空で出力
             for date, values in entry.get("total_daily", {}).items():
-                out_arr.append([entry["relative_path"], file_name, "", date] + [values.get(v, 0) for v in results])
+                out_arr.append([file_name, entry["relative_path"], "", date] + [values.get(v, 0) for v in results])
     return out_arr
 
 def create_datatable(ws, sheet_name:str, data, date_labels=["日付"]):
