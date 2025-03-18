@@ -87,10 +87,7 @@ def create_treeview(parent, data, structure, file_name):
                 tree.tag_configure(date, background=highlight_color if date == today else bg_color)
     
     tree.pack(fill=tk.BOTH, expand=True)
-    
-    # ttk.Button(parent, text="CSV保存", command=lambda: save_to_csv(treeview_to_array(tree), f'{os.path.splitext(file_name)[0]}_{settings["app"]["structures"][structure]}')).pack(side=tk.LEFT, padx=2, pady=5)
-    # ttk.Button(parent, text="クリップボードにコピー", command=lambda: copy_to_clipboard(treeview_to_array(tree))).pack(side=tk.LEFT, padx=2, pady=5)
-    
+        
     menubutton = ttk.Menubutton(parent, text="エクスポート", direction="below")
     menu = tk.Menu(menubutton, tearoff=0)
     menu.add_command(label="CSVで保存", command=lambda: save_to_csv(treeview_to_array(tree), f'{os.path.splitext(file_name)[0]}_{settings["app"]["structures"][structure]}'))
@@ -172,7 +169,7 @@ def create_byfile_area(parent):
     file_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     # ヘッダ
-    headers = ["ファイル名", "完了率", "完了数", "進捗"]
+    headers = ["ファイル名", "項目数", "完了数", "完了率", "進捗"]
     for col, text in enumerate(headers):
         ttk.Label(file_frame, text=text, background="#e0e0e0", relief="solid").grid(
             row=0, column=col, sticky="nsew", padx=2, pady=3
@@ -193,26 +190,39 @@ def create_byfile_area(parent):
             row=index, column=0, sticky="w", padx=2, pady=3
         )
         
-        # 完了率
-        comp_rate_text = Utility.meke_rate_text(completed, available)
-        ttk.Label(file_frame, text=comp_rate_text).grid(
+        # 項目数
+        ttk.Label(file_frame, text=available).grid(
             row=index, column=1, padx=2, pady=3
         )
-        
+
         # 完了数
-        comp_count_text = f"{completed} / {available}"
-        ttk.Label(file_frame, text=comp_count_text).grid(
+        ttk.Label(file_frame, text=completed).grid(
             row=index, column=2, padx=2, pady=3
+        )
+
+        # 完了率
+        ttk.Label(file_frame, text=Utility.meke_rate_text(completed, available)).grid(
+            row=index, column=3, padx=2, pady=3
         )
 
         # 進捗グラフ
         fig, ax = plt.subplots(figsize=(3, 0.1))
         file_canvas = FigureCanvasTkAgg(fig, master=file_frame)
         plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-        file_canvas.get_tk_widget().grid(row=index, column=3, padx=2, pady=3)
+        file_canvas.get_tk_widget().grid(row=index, column=4, padx=2, pady=3)
 
         update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=file_canvas, show_label=False)
 
+    # フレーム
+    exp_frame = ttk.Frame(parent)
+    exp_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+    menubutton = ttk.Menubutton(exp_frame, text="エクスポート", direction="below")
+    menu = tk.Menu(menubutton, tearoff=0)
+    # menu.add_command(label="CSVで保存", command=lambda: save_to_csv(treeview_to_array(tree), f'{os.path.splitext(file_name)[0]}_{settings["app"]["structures"][structure]}'))
+    menu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(WriteData.convert_to_2d_array(data=input_data, settings=settings)))
+    menubutton.config(menu=menu)
+    menubutton.pack(anchor=tk.SW, side=tk.BOTTOM, padx=2, pady=5)
 
 def write_to_excel(field_data):    
     file_path = field_data["filepath"].get()
@@ -297,9 +307,6 @@ def create_menubar(parent):
 def create_input_area(parent, settings):
     input_frame = ttk.LabelFrame(parent, text="集計データ出力")
     input_frame.pack(fill=tk.X, padx=5, pady=3)
-
-    # ttk.Button(parent, text="CSV保存", command=lambda: save_to_csv(WriteData.convert_to_2d_array(data=input_data, settings=settings), f'進捗集計_{datetime.today().strftime("%Y-%m-%d")}')).pack(side=tk.LEFT, padx=2, pady=5)
-    # ttk.Button(parent, text="クリップボードにコピー", command=lambda: copy_to_clipboard(WriteData.convert_to_2d_array(data=input_data, settings=settings))).pack(side=tk.LEFT, padx=2, pady=5)
     
     ttk.Label(input_frame, text="書込先:").grid(row=0, column=0, sticky=tk.W, padx=2, pady=3)
     file_path_entry = ttk.Entry(input_frame, width=50)
