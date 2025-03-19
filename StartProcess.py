@@ -40,23 +40,24 @@ def file_processor(file, settings, id):
     """
     filename = Utility.get_filename_from_path(filepath=file["fullpath"])
     
-    try:
-        # データ集計
-        result = ReadData.aggregate_results(filepath=file["fullpath"], settings=settings)
-        if not result or Utility.is_empty(result):
-            return {"error": filename}
-        
-        # ファイル情報を付与
-        result["file"] = filename
-        result["relative_path"] = (
-            Utility.get_relative_directory_path(full_path=file["fullpath"], base_dir=file["temp_dir"])
-            if file["temp_dir"] else ""
-        )
-        result["selector_label"] = make_selector_label(result, id)
-        
-        return result
-    except Exception as e:
-        return {"error": f"{filename}: {str(e)}"}
+    # データ集計
+    result = ReadData.aggregate_results(filepath=file["fullpath"], settings=settings)
+    if not result or Utility.is_empty(result):
+        result["error"] = {
+            "type": "set_not_found",
+            "message": "結果列セットが見つかりませんでした。"
+        }
+        # return {"error": filename}
+    
+    # ファイル情報を付与
+    result["file"] = filename
+    result["relative_path"] = (
+        Utility.get_relative_directory_path(full_path=file["fullpath"], base_dir=file["temp_dir"])
+        if file["temp_dir"] else ""
+    )
+    result["selector_label"] = make_selector_label(result, id)
+    
+    return result
 
 
 def start():

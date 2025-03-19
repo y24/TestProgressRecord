@@ -28,7 +28,7 @@ def convert_to_2d_array(data, settings):
                     out_arr.append([file_name, entry["relative_path"], env, date] + [values.get(v, 0) for v in results])
         else:
             # 環境別データがない場合は合計データを使用して、環境名は空で出力
-            for date, values in entry.get("total_daily", {}).items():
+            for date, values in entry.get("daily", {}).items():
                 out_arr.append([file_name, entry["relative_path"], "", date] + [values.get(v, 0) for v in results])
     return out_arr
 

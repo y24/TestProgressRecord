@@ -141,13 +141,13 @@ def update_display(selected_file, count_label, rate_label, ax, canvas, notebook)
     data = next(item for item in input_data if item['selector_label'] == selected_file)
 
     # ファイル別結果
-    update_info_label(data["count"], count_label=count_label, rate_label=rate_label, detail=True)
-    update_bar_chart(data=data['total'], incompleted_count=data["count"]["incompleted"], ax=ax, canvas=canvas, show_label=False)
+    update_info_label(data["count_total"], count_label=count_label, rate_label=rate_label, detail=True)
+    update_bar_chart(data=data['total'], incompleted_count=data["count_total"]["incompleted"], ax=ax, canvas=canvas, show_label=False)
 
     # TreeViewの更新
     frame_total = ttk.Frame(notebook)
     notebook.add(frame_total, text=settings["app"]["structures"]["daily"])
-    create_treeview(frame_total, data['total_daily'], 'daily', data["file"])
+    create_treeview(frame_total, data['daily'], 'daily', data["file"])
 
     frame_env = ttk.Frame(notebook)
     notebook.add(frame_env, text=settings["app"]["structures"]["by_env"])
@@ -182,9 +182,9 @@ def create_filelist_area(parent):
     # データ行
     for index, file_data in enumerate(input_data, 1):
         total_data = file_data['total']
-        completed = file_data['count']['completed']
-        available = file_data['count']['available']
-        incompleted = file_data['count']['incompleted']
+        completed = file_data['count_total']['completed']
+        available = file_data['count_total']['available']
+        incompleted = file_data['count_total']['incompleted']
         
         # ファイル名
         ttk.Label(file_frame, text=file_data['file']).grid(
@@ -482,14 +482,14 @@ def create_total_tab(parent):
     total_count_label.pack(fill=tk.X, padx=5)
     total_rate_label = ttk.Label(total_frame, anchor="w")
     total_rate_label.pack(fill=tk.X, padx=5)
-    update_info_label(Utility.sum_values(input_data, "count"), count_label=total_count_label, rate_label=total_rate_label, detail=True)
+    update_info_label(Utility.sum_values(input_data, "count_total"), count_label=total_count_label, rate_label=total_rate_label, detail=True)
 
     # グラフ表示(全体)
     total_fig, total_ax = plt.subplots(figsize=(8, 0.25))
     total_canvas = FigureCanvasTkAgg(total_fig, master=total_frame)
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
     total_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-    update_bar_chart(data=Utility.sum_values(input_data, "total"), incompleted_count=Utility.sum_values(input_data, "count")["incompleted"], ax=total_ax, canvas=total_canvas, show_label=True)
+    update_bar_chart(data=Utility.sum_values(input_data, "total"), incompleted_count=Utility.sum_values(input_data, "count_total")["incompleted"], ax=total_ax, canvas=total_canvas, show_label=True)
 
     # ファイル別グラフ
     create_filelist_area(parent=parent)
@@ -557,7 +557,7 @@ def launch(data, errors, args):
     create_byfile_tab(tab2)
 
     # データ抽出に失敗したファイルのリスト
-    ers = "\n".join(["  "+ f["error"] for f in errors])
+    ers = "\n".join(["  "+ err["file"] for err in errors])
 
     # 1件もデータがなかった場合は終了
     if not len(data):

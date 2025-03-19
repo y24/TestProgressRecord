@@ -84,23 +84,24 @@ def aggregate_results(filepath:str, settings):
     workbook = Excel.load(filepath)
     sheet_names = Excel.get_sheetnames_by_keywords(workbook, keywords=settings["read"]["sheet_search_keys"], ignores=settings["read"]["sheet_search_ignores"])
 
-    # シートがない場合はスキップ
+    # シートがない場合はエラー
     if len(sheet_names) == 0:
-        # logger.error(f"Sheet not found. ({filepath})")
-        return
+        return {
+            "error": {
+                "type": "sheet_not_found",
+                "message": "シートが見つかりませんでした。"
+            }
+        }
 
     # 各シート処理
     all_data = []
     data_by_env = {}
     counts_by_sheet = []
     for sheet_name in sheet_names:
-        sheet_data = _process_sheet(
-            workbook=workbook,
-            sheet_name=sheet_name,
-            settings=settings
-        )
-        
-        if sheet_data:
+        sheet_data = _process_sheet(workbook=workbook, sheet_name=sheet_name, settings=settings)
+        if "error" in sheet_data:
+            return sheet_data
+        elif sheet_data:
             all_data.extend(sheet_data["data"])
             data_by_env.update(sheet_data["env_data"])
             counts_by_sheet.append(sheet_data["counts"])
@@ -114,14 +115,15 @@ def aggregate_results(filepath:str, settings):
 
 def _process_sheet(workbook, sheet_name: str, settings: dict):
     sheet = Excel.get_sheet_by_name(workbook=workbook, sheet_name=sheet_name)
-    header_rownum = Excel.find_row(
-        sheet, 
-        search_col=settings["read"]["header"]["search_col"],
-        search_str=settings["read"]["header"]["search_key"]
-    )
+    header_rownum = Excel.find_row(sheet, search_col=settings["read"]["header"]["search_col"], search_str=settings["read"]["header"]["search_key"])
 
     if not header_rownum:
-        return None
+        return {
+            "error": {
+                "type": "header_not_found",
+                "message": "ヘッダー行が見つかりませんでした。"
+            }
+        }
 
     # ヘッダ行を取得
     header = Excel.get_row_values(sheet=sheet, row_num=header_rownum)
@@ -183,8 +185,9 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
         "data": data,
         "env_data": env_data,
         "counts": {
+            "sheet_name": sheet_name,
             "env_count": env_count,
-            "case_count": case_count
+            "all": case_count
         }
     }
 
@@ -204,7 +207,7 @@ def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
     data_total = get_total_all_date(data_daily_total, exclude=settings["common"]["completed"])
 
     # 総テストケース数
-    case_count_all = sum(item['env_count'] * item['case_count'] for item in counts_by_sheet)
+    case_count_all = sum(item['env_count'] * item['all'] for item in counts_by_sheet)
     # 対象外テストケース数
     excluded_count = get_excluded_count(data=all_data, targets=settings["read"]["excluded"])
     # 有効テストケース数
@@ -216,8 +219,9 @@ def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
     # 未実施テストケース数(マイナスは0)
     incompleted_count = max(0, available_count - filled_count)
 
+    # 最終出力データ
     return {
-        "count": {
+        "count_total": {
             "all": case_count_all,
             "excluded": excluded_count,
             "available": available_count,
@@ -225,7 +229,8 @@ def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
             "completed": completed_count,
             "incompleted": incompleted_count
         },
-        "total_daily": data_daily_total,
+        "count_by_sheet": counts_by_sheet,
+        "daily": data_daily_total,
         "total": data_total,
         "by_name": data_by_name,
         "by_env": data_by_env
