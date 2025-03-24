@@ -197,6 +197,9 @@ def create_filelist_area(parent):
     # 列のリサイズ設定
     file_frame.grid_columnconfigure(1, weight=3)
 
+    # クリップボード出力用の配列
+    data_arr = [headers[:len(headers)-1]]
+
     # データ行
     for index, file_data in enumerate(input_data, 1):
         if "error" in file_data:
@@ -216,23 +219,34 @@ def create_filelist_area(parent):
             incompleted = file_data['count_total']['incompleted']
             comp_rate_text = Utility.meke_rate_text(completed, available)
 
+        row = []
+
         # インデックス
         ttk.Label(file_frame, text=index).grid(row=index, column=0, padx=padx, pady=pady)
+        row.append(index)
         
         # ファイル名
-        filename_label = ttk.Label(file_frame, text=file_data['file'])
+        filename = file_data['file']
+        filename_label = ttk.Label(file_frame, text=filename)
         filename_label.grid(row=index, column=1, sticky=tk.W, padx=padx, pady=pady)
         if on_error: filename_label.config(foreground="red")
-        tooltip_text = [file_data['file']]
+        tooltip_text = [filename]
+        row.append(filename)
         
         # 項目数
         ttk.Label(file_frame, text=available).grid(row=index, column=2, padx=padx, pady=pady)
+        row.append(available)
 
         # 完了数
         ttk.Label(file_frame, text=completed).grid(row=index, column=3, padx=padx, pady=pady)
+        row.append(completed)
 
         # 完了率
         ttk.Label(file_frame, text=comp_rate_text).grid(row=index, column=4, padx=padx, pady=pady)
+        row.append(comp_rate_text)
+
+        # クリップボード出力用の配列に格納
+        data_arr.append(row)
 
         if on_error:
             # エラー表示
@@ -258,7 +272,7 @@ def create_filelist_area(parent):
     menubutton = ttk.Menubutton(exp_frame, text="エクスポート", direction="below")
     menu = tk.Menu(menubutton, tearoff=0)
     # menu.add_command(label="CSVで保存", command=lambda: save_to_csv(treeview_to_array(tree), f'{os.path.splitext(file_name)[0]}_{settings["app"]["structures"][structure]}'))
-    menu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(WriteData.convert_to_2d_array(data=input_data, settings=settings)))
+    menu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(data_arr))
     menubutton.config(menu=menu)
     menubutton.pack(anchor=tk.SW, side=tk.BOTTOM, padx=2, pady=5)
 
