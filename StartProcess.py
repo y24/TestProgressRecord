@@ -45,6 +45,7 @@ def file_processor(file, settings, id):
     
     # ファイル情報を付与
     result["file"] = filename
+    result["filepath"] = file["fullpath"]
     result["relative_path"] = (
         Utility.get_relative_directory_path(full_path=file["fullpath"], base_dir=file["temp_dir"])
         if file["temp_dir"] else ""

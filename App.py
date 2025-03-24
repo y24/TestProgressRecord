@@ -241,6 +241,10 @@ def create_filelist_area(parent):
         filename_label.grid(row=index, column=1, sticky=tk.W, padx=padx, pady=pady)
         tooltip_text = [filename]
         row.append(filename)
+
+        # ファイル名ダブルクリック時
+        filepath = file_data['filepath']
+        filename_label.bind("<Double-Button-1>", lambda event: open_file(file_path=filepath))
         
         # 総数
         all_label = ttk.Label(file_frame, text=all)
@@ -291,6 +295,7 @@ def create_filelist_area(parent):
             update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=canvas, show_label=False)
 
         # ツールチップ表示
+        tooltip_text.append("<ダブルクリックで開きます>")
         ToolTip(filename_label, msg="\n".join(tooltip_text), delay=0.3, follow=False)
 
     # エクスポート
@@ -346,12 +351,15 @@ def select_write_file(entry):
         entry.insert(0, filepath)  # 新しいファイルパスをセット
 
 def open_file(file_path, exit:bool=False):
+    print(file_path)
     if os.path.isfile(file_path):
         try:
             os.startfile(file_path)  # Windows
         except AttributeError:
             subprocess.run(["xdg-open", file_path])  # Linux/Mac
         # ファイルを開いたあと終了する
+        except Exception as e:
+            Dialog.show_messagebox(root, type="error", title="Error", message=f"ファイルを開けませんでした。\n{e}")
         if exit:
             sys.exit()
     else:
