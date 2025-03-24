@@ -551,8 +551,8 @@ def create_global_tab(parent):
     return tab1, tab2
 
 def create_total_tab(parent):
-    # 全体集計結果にはエラーを含めない
-    filtered_data = Utility.filter_objects(input_data, exclude_key="error")
+    # 全体集計にはエラーとワーニングのあるデータを含めない
+    filtered_data = Utility.filter_objects(input_data, exclude_keys=["error", "warning"])
 
     # 集計結果タブ
     total_frame = ttk.Frame(parent)
