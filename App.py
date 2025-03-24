@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, filedialog
+from tktooltip import ToolTip
 import subprocess
 import csv, os, sys, pprint
 from datetime import datetime
@@ -219,6 +220,7 @@ def create_filelist_area(parent):
         filename_label = ttk.Label(file_frame, text=file_data['file'])
         filename_label.grid(row=index, column=0, sticky=tk.W, padx=padx, pady=pady)
         if on_error: filename_label.config(foreground="red")
+        tooltip_text = [file_data['file']]
         
         # 項目数
         ttk.Label(file_frame, text=available).grid(
@@ -238,7 +240,8 @@ def create_filelist_area(parent):
         if on_error:
             # エラー表示
             message = f'{error_message}[{error_type}]'
-            ttk.Label(file_frame, text=message, foreground="red").grid(row=index, column=4, sticky=tk.W, padx=padx, pady=pady)
+            # ttk.Label(file_frame, text=message, foreground="red").grid(row=index, column=4, sticky=tk.W, padx=padx, pady=pady)
+            tooltip_text.append(message)
         else:
             # 進捗グラフ
             fig, ax = plt.subplots(figsize=(3, 0.1))
@@ -247,6 +250,9 @@ def create_filelist_area(parent):
             canvas.get_tk_widget().grid(row=index, column=4, padx=padx, pady=pady)
             # グラフを更新
             update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=canvas, show_label=False)
+
+        # ツールチップ表示
+        ToolTip(filename_label, msg="\n".join(tooltip_text), delay=0.3, follow=False)
 
     # エクスポート
     exp_frame = ttk.Frame(parent)

@@ -1,4 +1,5 @@
 matplotlib==3.10.1
-numpy==2.2.3
+numpy==2.2.4
 openpyxl==3.1.5
+tkinter_tooltip==3.1.2
 tqdm==4.67.1
