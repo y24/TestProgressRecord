@@ -42,12 +42,7 @@ def file_processor(file, settings, id):
     
     # データ集計
     result = ReadData.aggregate_results(filepath=file["fullpath"], settings=settings)
-    if not result or Utility.is_empty(result):
-        result["error"] = {
-            "type": "set_not_found",
-            "message": "結果列セットが見つかりませんでした。"
-        }
-        # return {"error": filename}
+    print(result)
     
     # ファイル情報を付与
     result["file"] = filename

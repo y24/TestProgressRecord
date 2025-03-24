@@ -29,6 +29,10 @@ def check_lists_equal_length(*lists):
     if not lists:
         return True  # 空の入力の場合は True を返す
     
+    # すべてのリストが空の場合は False を返す
+    if all(len(lst) == 0 for lst in lists):
+        return False
+
     first_length = len(lists[0])
     return all(len(lst) == first_length for lst in lists)
 

@@ -136,9 +136,14 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
     # 日付
     date_rows = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read"]["date_row"]["keys"])
 
-    # 結果,担当者,日付の列セットが正しく取得できない場合はスキップ
+    # 結果,担当者,日付の列セットが見つからないor同数でない場合はエラー
     if Utility.check_lists_equal_length(result_rows, person_rows, date_rows) == False:
-        return None
+        return {
+            "error": {
+            "type": "set_is_incorrect",
+            "message": "結果列のセットが正しく取得できませんでした。"
+            }
+        }
 
     # 列番号のセット(結果、担当者、日付)を作成
     sets = Utility.transpose_lists(result_rows, person_rows, date_rows)
