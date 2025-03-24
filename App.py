@@ -442,7 +442,7 @@ def update_bar_chart(data, incompleted_count, ax, canvas, show_label=True):
     label_color_map = settings["app"]["colors"]["label"]
 
     for size, label in zip(sizes, labels):
-        color = bar_color_map.get(label, "gray")  # ラベルの色を取得（デフォルトは灰色）
+        color = bar_color_map.get(label, "gainsboro")  # ラベルの色を取得（デフォルトは薄い灰色）
         bar = ax.barh(0, size, left=left, color=color, label=label)  # 横棒グラフを描画
         bars.append((bar[0], size, label, color))  # バー情報を記録
         left += size  # 次のバーの開始位置を更新
@@ -476,6 +476,8 @@ def update_bar_chart(data, incompleted_count, ax, canvas, show_label=True):
             if color in label_color_map["black"]:
                 label_color = 'black'
             elif color in label_color_map["gray"]:
+                label_color = 'dimgrey'
+            elif color == "gainsboro":
                 label_color = 'dimgrey'
             elif total == 0:
                 label_color = 'dimgrey'
