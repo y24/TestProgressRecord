@@ -188,7 +188,7 @@ def create_filelist_area(parent):
     file_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     # ヘッダ
-    headers = ["No.", "ファイル名", "項目数", "完了数", "完了率", "進捗"]
+    headers = ["No.", "ファイル名", "総数", "対象外", "項目数", "完了数", "完了率", "進捗"]
     for col, text in enumerate(headers):
         ttk.Label(file_frame, text=text, foreground="#444444", background="#e0e0e0", relief="solid").grid(
             row=0, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
@@ -223,10 +223,11 @@ def create_filelist_area(parent):
             on_error = False
             total_data = file_data['total']
             completed = file_data['count_total']['completed']
+            all = file_data['count_total']['all']
+            excluded = file_data['count_total']['excluded']
             available = file_data['count_total']['available']
             incompleted = file_data['count_total']['incompleted']
             comp_rate_text = Utility.meke_rate_text(completed, available)
-
 
         row = []
 
@@ -235,31 +236,43 @@ def create_filelist_area(parent):
         row.append(index)
         
         # ファイル名
-        
         filename = file_data['file']
         filename_label = ttk.Label(file_frame, text=filename)
         filename_label.grid(row=index, column=1, sticky=tk.W, padx=padx, pady=pady)
-        if on_error: filename_label.config(foreground="red")
-        if on_warning: filename_label.config(foreground="darkorange2")
         tooltip_text = [filename]
         row.append(filename)
         
+        # 総数
+        all_label = ttk.Label(file_frame, text=all)
+        all_label.grid(row=index, column=2, padx=padx, pady=pady)
+        row.append(all)
+
+        # 対象外
+        excluded_label = ttk.Label(file_frame, text=excluded)
+        excluded_label.grid(row=index, column=3, padx=padx, pady=pady)
+        row.append(all)
+
         # 項目数
         available_label = ttk.Label(file_frame, text=available)
-        available_label.grid(row=index, column=2, padx=padx, pady=pady)
-        if on_warning: available_label.config(foreground="darkorange2")
+        available_label.grid(row=index, column=4, padx=padx, pady=pady)
         row.append(available)
 
         # 完了数
         completed_label = ttk.Label(file_frame, text=completed)
-        completed_label.grid(row=index, column=3, padx=padx, pady=pady)
-        if on_warning: completed_label.config(foreground="darkorange2")
+        completed_label.grid(row=index, column=5, padx=padx, pady=pady)
         row.append(completed)
 
         # 完了率
         if on_warning: comp_rate_text = "n/a"
-        ttk.Label(file_frame, text=comp_rate_text).grid(row=index, column=4, padx=padx, pady=pady)
+        ttk.Label(file_frame, text=comp_rate_text).grid(row=index, column=6, padx=padx, pady=pady)
         row.append(comp_rate_text)
+
+        # エラー時赤色・ワーニング時オレンジ色
+        if on_error or on_warning:
+            color = "red" if on_error else "darkorange2"
+            filename_label.config(foreground=color)
+            available_label.config(foreground=color)
+            completed_label.config(foreground=color)
 
         # クリップボード出力用の配列に格納
         data_arr.append(row)
@@ -273,7 +286,7 @@ def create_filelist_area(parent):
             fig, ax = plt.subplots(figsize=(3, 0.1))
             canvas = FigureCanvasTkAgg(fig, master=file_frame)
             plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-            canvas.get_tk_widget().grid(row=index, column=5, padx=padx, pady=pady)
+            canvas.get_tk_widget().grid(row=index, column=7, padx=padx, pady=pady)
             # グラフを更新
             update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=canvas, show_label=False)
 
