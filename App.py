@@ -606,11 +606,6 @@ def launch(data, args):
     # 読込データ
     input_data = data
 
-    # # 正常データ
-    # input_data = [r for r in data]
-    # # エラーデータ
-    # errors = [r for r in data if "error" in r]
-
     # 起動時に指定したファイルパス（再読込用）
     input_args = args
     # 設定のロード
@@ -640,10 +635,6 @@ def launch(data, args):
     if not len(data):
         Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"1件もデータが抽出できませんでした。終了します。\n\nFile(s):\n{ers}")
         sys.exit()
-
-    # 一部ファイルにデータがなかった場合はアラート
-    if len(errors):
-        Dialog.show_messagebox(root, type="warning", title="一部エラー", message=f"以下のファイルはデータが抽出できませんでした。\n\nFile(s):\n{ers}")
 
     root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()
