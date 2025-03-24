@@ -422,7 +422,7 @@ def update_info_label(data, count_label, rate_label, detail=True):
     count = available if available else "--"
     count_text = f'テストケース数: {count}'
     if detail:
-        count_text += f' (総数: {all or "-"}/ 対象外: {excluded or "-"})'
+        count_text += f' (総数: {all or "-"} / 対象外: {excluded or "-"})'
     # 完了率テキスト
     completed_rate_text = f'完了率: {Utility.meke_rate_text(completed, available)} [{completed or "-"}/{available or "-"}]'
     # 消化率テキスト
