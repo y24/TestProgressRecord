@@ -188,14 +188,14 @@ def create_filelist_area(parent):
     file_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     # ヘッダ
-    headers = ["ファイル名", "項目数", "完了数", "完了率", "進捗"]
+    headers = ["No.", "ファイル名", "項目数", "完了数", "完了率", "進捗"]
     for col, text in enumerate(headers):
         ttk.Label(file_frame, text=text, foreground="#444444", background="#e0e0e0", relief="solid").grid(
             row=0, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
         )
 
     # 列のリサイズ設定
-    file_frame.grid_columnconfigure(0, weight=3)
+    file_frame.grid_columnconfigure(1, weight=3)
 
     # データ行
     for index, file_data in enumerate(input_data, 1):
@@ -215,27 +215,24 @@ def create_filelist_area(parent):
             available = file_data['count_total']['available']
             incompleted = file_data['count_total']['incompleted']
             comp_rate_text = Utility.meke_rate_text(completed, available)
+
+        # インデックス
+        ttk.Label(file_frame, text=index).grid(row=index, column=0, padx=padx, pady=pady)
         
         # ファイル名
         filename_label = ttk.Label(file_frame, text=file_data['file'])
-        filename_label.grid(row=index, column=0, sticky=tk.W, padx=padx, pady=pady)
+        filename_label.grid(row=index, column=1, sticky=tk.W, padx=padx, pady=pady)
         if on_error: filename_label.config(foreground="red")
         tooltip_text = [file_data['file']]
         
         # 項目数
-        ttk.Label(file_frame, text=available).grid(
-            row=index, column=1, padx=padx, pady=pady
-        )
+        ttk.Label(file_frame, text=available).grid(row=index, column=2, padx=padx, pady=pady)
 
         # 完了数
-        ttk.Label(file_frame, text=completed).grid(
-            row=index, column=2, padx=padx, pady=pady
-        )
+        ttk.Label(file_frame, text=completed).grid(row=index, column=3, padx=padx, pady=pady)
 
         # 完了率
-        ttk.Label(file_frame, text=comp_rate_text).grid(
-            row=index, column=3, padx=padx, pady=pady
-        )
+        ttk.Label(file_frame, text=comp_rate_text).grid(row=index, column=4, padx=padx, pady=pady)
 
         if on_error:
             # エラー表示
@@ -247,7 +244,7 @@ def create_filelist_area(parent):
             fig, ax = plt.subplots(figsize=(3, 0.1))
             canvas = FigureCanvasTkAgg(fig, master=file_frame)
             plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-            canvas.get_tk_widget().grid(row=index, column=4, padx=padx, pady=pady)
+            canvas.get_tk_widget().grid(row=index, column=5, padx=padx, pady=pady)
             # グラフを更新
             update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=canvas, show_label=False)
 
