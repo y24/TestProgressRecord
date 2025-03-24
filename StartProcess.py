@@ -42,7 +42,6 @@ def file_processor(file, settings, id):
     
     # データ集計
     result = ReadData.aggregate_results(filepath=file["fullpath"], settings=settings)
-    print(result)
     
     # ファイル情報を付与
     result["file"] = filename
