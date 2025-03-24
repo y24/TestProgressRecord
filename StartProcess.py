@@ -77,20 +77,15 @@ def start():
     settings = AppConfig.load_settings()
 
     # 全ファイルの処理
-    results = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))]
-    
-    # 結果の振り分け（正常終了とエラー）
-    out_data = [r for r in results if "error" not in r]
-    errors = [r for r in results if "error" in r]
+    out_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))]
 
     # デバッグモード時は処理結果を表示
     if args.debug:
         from pprint import pprint
         pprint(out_data)
-        pprint(errors)
 
     # アプリケーションの起動
-    App.launch(out_data, errors, inputs)
+    App.launch(out_data, inputs)
 
     # 一時ディレクトリの掃除
     if temp_dirs: Zip.cleanup_old_temp_dirs()

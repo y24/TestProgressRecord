@@ -134,3 +134,25 @@ def sum_values(list, param:str):
 
 def safe_divide(a:int, b:int):
     return a / b if b else None  # bが0またはNoneならNoneを返す
+
+def filter_objects(obj_list, exclude_key):
+    """
+    入力されたオブジェクト配列から、指定したキーを含まないオブジェクトのみをフィルタする
+    
+    :param obj_list: list[dict] - オブジェクトのリスト
+    :param exclude_key: str - 除外するキー
+    :return: list[dict] - 指定したキーを含まないオブジェクトのリスト
+    """
+    return [obj for obj in obj_list if exclude_key not in obj]
+
+def initialize_dict(keys):
+    """
+    指定されたキーのリストを受け取り、すべての値を0にした辞書を作成
+    
+    Args:
+        keys (list): 辞書のキーとなる文字列のリスト。
+    
+    Returns:
+        dict: 各キーが0を持つ辞書。
+    """
+    return {key: 0 for key in keys}

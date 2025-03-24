@@ -13,13 +13,15 @@ from libs import AppConfig
 from libs import Dialog
 
 def create_treeview(parent, data, structure, file_name):
+    completed = "completed"
+    labels = settings["common"]["labels"]
     columns = []
     if structure == 'by_env':
         all_keys = set()
         for dates in data.values():
             for values in dates.values():
                 all_keys.update(values.keys())
-        columns = ["環境名", "日付"] + Utility.sort_by_master(master_list=settings["common"]["results"]+[settings["common"]["completed"]], input_list=all_keys)
+        columns = ["環境名", "日付"] + Utility.sort_by_master(master_list=settings["common"]["results"]+[labels[completed]], input_list=all_keys)
         data = dict(Utility.sort_nested_dates_desc(data))
     elif structure == 'by_name':
         columns = ["日付", "担当者", "Completed"]
@@ -28,7 +30,7 @@ def create_treeview(parent, data, structure, file_name):
         all_keys = set()
         for values in data.values():
             all_keys.update(values.keys())
-        columns = ["日付"] + Utility.sort_by_master(master_list=settings["common"]["results"]+[settings["common"]["completed"]], input_list=all_keys)
+        columns = ["日付"] + Utility.sort_by_master(master_list=settings["common"]["results"]+[labels[completed]], input_list=all_keys)
         data = dict(sorted(data.items(), reverse=True))
 
     frame = ttk.Frame(parent)
@@ -64,18 +66,18 @@ def create_treeview(parent, data, structure, file_name):
     if structure == 'daily':
         for index, (date, values) in enumerate(data.items()):
             bg_color = alternating_colors[index % 2]
-            row = [date] + [values.get(k, 0) for k in Utility.sort_by_master(master_list=settings["common"]["results"]+["completed"], input_list=all_keys)]
+            row = [date] + [values.get(k, 0) for k in Utility.sort_by_master(master_list=settings["common"]["results"]+[labels[completed]], input_list=all_keys)]
             item_id = tree.insert('', 'end', values=row, tags=(date,))
             tree.tag_configure(date, background=highlight_color if date == today else bg_color)
     elif structure == 'by_env':
         if not data:
-            tree.insert('', 'end', values=["取得できませんでした", "-"] + ["-" for _ in Utility.sort_by_master(master_list=settings["common"]["results"]+["completed"], input_list=all_keys)])
+            tree.insert('', 'end', values=["取得できませんでした", "-"] + ["-" for _ in Utility.sort_by_master(master_list=settings["common"]["results"]+[completed], input_list=all_keys)])
         else:
             for index, (env, dates) in enumerate(data.items()):
                 bg_color = alternating_colors[index % 2]
                 row_colors[env] = bg_color
                 for date, values in dates.items():
-                    row = [env, date] + [values.get(k, 0) for k in Utility.sort_by_master(master_list=settings["common"]["results"]+["completed"], input_list=all_keys)]
+                    row = [env, date] + [values.get(k, 0) for k in Utility.sort_by_master(master_list=settings["common"]["results"]+[completed], input_list=all_keys)]
                     item_id = tree.insert('', 'end', values=row, tags=(date,))
                     tree.tag_configure(date, background=highlight_color if date == today else bg_color)
     elif structure == 'by_name':
@@ -141,21 +143,36 @@ def update_display(selected_file, count_label, rate_label, ax, canvas, notebook)
     data = next(item for item in input_data if item['selector_label'] == selected_file)
 
     # ファイル別結果
-    update_info_label(data["count_total"], count_label=count_label, rate_label=rate_label, detail=True)
-    update_bar_chart(data=data['total'], incompleted_count=data["count_total"]["incompleted"], ax=ax, canvas=canvas, show_label=False)
+    if "error" in data:
+        count_total_data = {'all': 0, 'excluded': 0, 'available': 0, 'filled': 0, 'completed': 0, 'incompleted': 0}
+        total_data = Utility.initialize_dict(settings["common"]["results"])
+        incompleted = 0
+        daily_data = {}
+        by_env_data = {}
+        by_name_data = {}
+    else:
+        count_total_data = data["count_total"]
+        total_data = data['total']
+        incompleted = data["count_total"]["incompleted"]
+        daily_data = data['daily']
+        by_env_data = data['by_env']
+        by_name_data = data['by_name']
+
+    update_info_label(data=count_total_data, count_label=count_label, rate_label=rate_label, detail=True)
+    update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=canvas, show_label=False)
 
     # TreeViewの更新
     frame_total = ttk.Frame(notebook)
     notebook.add(frame_total, text=settings["app"]["structures"]["daily"])
-    create_treeview(frame_total, data['daily'], 'daily', data["file"])
+    create_treeview(frame_total, daily_data, 'daily', data["file"])
 
     frame_env = ttk.Frame(notebook)
     notebook.add(frame_env, text=settings["app"]["structures"]["by_env"])
-    create_treeview(frame_env, data['by_env'], 'by_env', data["file"])
+    create_treeview(frame_env, by_env_data, 'by_env', data["file"])
     
     frame_name = ttk.Frame(notebook)
     notebook.add(frame_name, text=settings["app"]["structures"]["by_name"])
-    create_treeview(frame_name, data['by_name'], 'by_name', data["file"])
+    create_treeview(frame_name, by_name_data, 'by_name', data["file"])
 
     # プルダウン切替時にタブの選択状態を保持
     notebook.select(current_tab)
@@ -181,15 +198,27 @@ def create_filelist_area(parent):
 
     # データ行
     for index, file_data in enumerate(input_data, 1):
-        total_data = file_data['total']
-        completed = file_data['count_total']['completed']
-        available = file_data['count_total']['available']
-        incompleted = file_data['count_total']['incompleted']
+        if "error" in file_data:
+            on_error = True
+            total_data = {"error": 0}
+            completed = 0
+            available = 0
+            incompleted = 0
+            comp_rate_text = "--"
+            error_type = file_data["error"]["type"]
+            error_message = file_data["error"]["message"]
+        else:
+            on_error = False
+            total_data = file_data['total']
+            completed = file_data['count_total']['completed']
+            available = file_data['count_total']['available']
+            incompleted = file_data['count_total']['incompleted']
+            comp_rate_text = Utility.meke_rate_text(completed, available)
         
         # ファイル名
-        ttk.Label(file_frame, text=file_data['file']).grid(
-            row=index, column=0, sticky="w", padx=padx, pady=pady
-        )
+        filename_label = ttk.Label(file_frame, text=file_data['file'])
+        filename_label.grid(row=index, column=0, sticky=tk.W, padx=padx, pady=pady)
+        if on_error: filename_label.config(foreground="red")
         
         # 項目数
         ttk.Label(file_frame, text=available).grid(
@@ -202,19 +231,24 @@ def create_filelist_area(parent):
         )
 
         # 完了率
-        ttk.Label(file_frame, text=Utility.meke_rate_text(completed, available)).grid(
+        ttk.Label(file_frame, text=comp_rate_text).grid(
             row=index, column=3, padx=padx, pady=pady
         )
 
-        # 進捗グラフ
-        fig, ax = plt.subplots(figsize=(3, 0.1))
-        canvas = FigureCanvasTkAgg(fig, master=file_frame)
-        plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-        canvas.get_tk_widget().grid(row=index, column=4, padx=padx, pady=pady)
+        if on_error:
+            # エラー表示
+            message = f'{error_message}[{error_type}]'
+            ttk.Label(file_frame, text=message, foreground="red").grid(row=index, column=4, sticky=tk.W, padx=padx, pady=pady)
+        else:
+            # 進捗グラフ
+            fig, ax = plt.subplots(figsize=(3, 0.1))
+            canvas = FigureCanvasTkAgg(fig, master=file_frame)
+            plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+            canvas.get_tk_widget().grid(row=index, column=4, padx=padx, pady=pady)
+            # グラフを更新
+            update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=canvas, show_label=False)
 
-        update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=canvas, show_label=False)
-
-    # フレーム
+    # エクスポート
     exp_frame = ttk.Frame(parent)
     exp_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
@@ -339,19 +373,28 @@ def create_input_area(parent, settings):
 
 def update_info_label(data, count_label, rate_label, detail=True):
     # 値
-    available = data["available"]
-    completed = data["completed"]
-    filled = data["filled"]
+    if "error" in data:
+        all = None
+        available  = None
+        completed = None
+        filled = None
+        excluded = None
+    else:
+        all = data["all"]
+        available = data["available"]
+        completed = data["completed"]
+        filled = data["filled"]
+        excluded = data["excluded"]
 
     # ケース数テキスト
     count = available if available else "--"
     count_text = f'テストケース数: {count}'
     if detail:
-        count_text += f' (総数: {data["all"]} / 対象外: {data["excluded"]})'
+        count_text += f' (総数: {all or "-"}/ 対象外: {excluded or "-"})'
     # 完了率テキスト
-    completed_rate_text = f'完了率: {Utility.meke_rate_text(completed, available)} [{completed}/{available}]'
+    completed_rate_text = f'完了率: {Utility.meke_rate_text(completed, available)} [{completed or "-"}/{available or "-"}]'
     # 消化率テキスト
-    filled_rate_text = f'消化率: {Utility.meke_rate_text(filled, available)} [{filled}/{available}]'
+    filled_rate_text = f'消化率: {Utility.meke_rate_text(filled, available)} [{filled or "-"}/{available or "-"}]'
 
     # 表示を更新
     count_label.config(text=count_text)
@@ -366,7 +409,7 @@ def update_bar_chart(data, incompleted_count, ax, canvas, show_label=True):
     sizes = [data[label] for label in labels]
 
     # 未実施数を追加
-    labels += [settings["common"]["not_run"]]
+    labels += [settings["common"]["labels"]["not_run"]]
     sizes += [incompleted_count]
 
     # 合計値
@@ -378,10 +421,11 @@ def update_bar_chart(data, incompleted_count, ax, canvas, show_label=True):
     bars = []  # 各バーのオブジェクトを保存
 
     # ラベルごとの色設定
-    color_map = settings["common"]["colors"]
+    bar_color_map = settings["app"]["colors"]["bar"]
+    label_color_map = settings["app"]["colors"]["label"]
 
     for size, label in zip(sizes, labels):
-        color = color_map.get(label, "gray")  # ラベルの色を取得（デフォルトは灰色）
+        color = bar_color_map.get(label, "gray")  # ラベルの色を取得（デフォルトは灰色）
         bar = ax.barh(0, size, left=left, color=color, label=label)  # 横棒グラフを描画
         bars.append((bar[0], size, label, color))  # バー情報を記録
         left += size  # 次のバーの開始位置を更新
@@ -412,9 +456,9 @@ def update_bar_chart(data, incompleted_count, ax, canvas, show_label=True):
                 label_text = ""
 
             # ラベルの色
-            if color in color_map["black_labels"]:
+            if color in label_color_map["black"]:
                 label_color = 'black'
-            elif color in color_map["gray_labels"]:
+            elif color in label_color_map["gray"]:
                 label_color = 'dimgrey'
             elif total == 0:
                 label_color = 'dimgrey'
@@ -473,6 +517,9 @@ def create_global_tab(parent):
     return tab1, tab2
 
 def create_total_tab(parent):
+    # 全体集計結果にはエラーを含めない
+    filtered_data = Utility.filter_objects(input_data, exclude_key="error")
+
     # 集計結果タブ
     total_frame = ttk.Frame(parent)
     total_frame.pack(fill=tk.X, padx=5, pady=5)
@@ -482,14 +529,18 @@ def create_total_tab(parent):
     total_count_label.pack(fill=tk.X, padx=5)
     total_rate_label = ttk.Label(total_frame, anchor="w")
     total_rate_label.pack(fill=tk.X, padx=5)
-    update_info_label(Utility.sum_values(input_data, "count_total"), count_label=total_count_label, rate_label=total_rate_label, detail=True)
+
+    # テストケース数、完了率を更新
+    update_info_label(data=Utility.sum_values(filtered_data, "count_total"), count_label=total_count_label, rate_label=total_rate_label, detail=True)
 
     # グラフ表示(全体)
     total_fig, total_ax = plt.subplots(figsize=(8, 0.25))
     total_canvas = FigureCanvasTkAgg(total_fig, master=total_frame)
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
     total_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-    update_bar_chart(data=Utility.sum_values(input_data, "total"), incompleted_count=Utility.sum_values(input_data, "count_total")["incompleted"], ax=total_ax, canvas=total_canvas, show_label=True)
+
+    # グラフを更新
+    update_bar_chart(data=Utility.sum_values(filtered_data, "total"), incompleted_count=Utility.sum_values(filtered_data, "count_total")["incompleted"], ax=total_ax, canvas=total_canvas, show_label=True)
 
     # ファイル別グラフ
     create_filelist_area(parent=parent)
@@ -530,11 +581,17 @@ def create_byfile_tab(parent):
         file_selector.current(0)
         update_display(input_data[0]['selector_label'], count_label=file_count_label, rate_label=file_rate_label, ax=file_ax, canvas=file_canvas, notebook=notebook)
 
-def launch(data, errors, args):
+def launch(data, args):
     global root, input_data, settings, input_args
-
+    
     # 読込データ
     input_data = data
+
+    # # 正常データ
+    # input_data = [r for r in data]
+    # # エラーデータ
+    # errors = [r for r in data if "error" in r]
+
     # 起動時に指定したファイルパス（再読込用）
     input_args = args
     # 設定のロード
@@ -557,6 +614,7 @@ def launch(data, errors, args):
     create_byfile_tab(tab2)
 
     # データ抽出に失敗したファイルのリスト
+    errors = [r for r in data if "error" in r]
     ers = "\n".join(["  "+ err["file"] for err in errors])
 
     # 1件もデータがなかった場合は終了

@@ -11,25 +11,30 @@
     },
     "common": {
         "results": ["Pass", "Fixed", "Fail", "Blocked", "Suspend", "N/A"],
-        "completed": "Completed",
         "completed_results": ["Pass", "Fixed", "Suspend", "N/A"],
-        "not_run": "Not Run",
-        "colors": {
-            "Pass": "forestgreen",
-            "Fail": "orangered",
-            "Blocked": "skyblue",
-            "Fixed": "darkgreen",
-            "Suspend": "gold",
-            "N/A": "gray",
-            "Not Run": "silver",
-            "black_labels": ["skyblue", "gold"],
-            "gray_labels": ["silver"]
+        "labels": {
+            "completed": "Completed",
+            "not_run": "Not Run"
         }
     },
     "app": {
+        "window_position": "800x580+200+200",
         "filepath": "",
         "table_name": "DATA",
         "structures": {"daily": "日付別", "by_env": "環境別", "by_name": "担当者別"},
-        "window_position": "800x580+200+200"
+        "colors": {
+            "bar": {
+                "Pass": "forestgreen",
+                "Fail": "orangered",
+                "Blocked": "skyblue",
+                "Fixed": "darkgreen",
+                "Suspend": "gold",
+                "N/A": "gray"
+            },
+            "label": {
+                "black": ["skyblue", "gold"],
+                "gray": ["silver"]
+            }
+        }
     }
 }
