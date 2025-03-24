@@ -22,7 +22,8 @@ def convert_to_2d_array(data, settings):
     out_arr = [header]
     for entry in data:
         file_name = entry.get("file", "")
-        if entry["by_env"]:
+        if "by_env" in entry and entry["by_env"]:
+            # 環境別データがある場合
             for env, env_data in entry.get("by_env", {}).items():
                 for date, values in env_data.items():
                     out_arr.append([file_name, entry["relative_path"], env, date] + [values.get(v, 0) for v in results])
