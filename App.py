@@ -202,13 +202,21 @@ def create_filelist_area(parent):
 
     # データ行
     for index, file_data in enumerate(input_data, 1):
+        # ワーニング時
+        if "warning" in file_data:
+            on_warning = True
+            error_type = file_data["warning"]["type"]
+            error_message = file_data["warning"]["message"]
+        else:
+            on_warning = False
+        # エラー時
         if "error" in file_data:
             on_error = True
             total_data = {"error": 0}
-            completed = 0
-            available = 0
+            completed = "-"
+            available = "-"
             incompleted = 0
-            comp_rate_text = "--"
+            comp_rate_text = "n/a"
             error_type = file_data["error"]["type"]
             error_message = file_data["error"]["message"]
         else:
@@ -219,6 +227,7 @@ def create_filelist_area(parent):
             incompleted = file_data['count_total']['incompleted']
             comp_rate_text = Utility.meke_rate_text(completed, available)
 
+
         row = []
 
         # インデックス
@@ -226,33 +235,39 @@ def create_filelist_area(parent):
         row.append(index)
         
         # ファイル名
+        
         filename = file_data['file']
         filename_label = ttk.Label(file_frame, text=filename)
         filename_label.grid(row=index, column=1, sticky=tk.W, padx=padx, pady=pady)
         if on_error: filename_label.config(foreground="red")
+        if on_warning: filename_label.config(foreground="darkorange2")
         tooltip_text = [filename]
         row.append(filename)
         
         # 項目数
-        ttk.Label(file_frame, text=available).grid(row=index, column=2, padx=padx, pady=pady)
+        available_label = ttk.Label(file_frame, text=available)
+        available_label.grid(row=index, column=2, padx=padx, pady=pady)
+        if on_warning: available_label.config(foreground="darkorange2")
         row.append(available)
 
         # 完了数
-        ttk.Label(file_frame, text=completed).grid(row=index, column=3, padx=padx, pady=pady)
+        completed_label = ttk.Label(file_frame, text=completed)
+        completed_label.grid(row=index, column=3, padx=padx, pady=pady)
+        if on_warning: completed_label.config(foreground="darkorange2")
         row.append(completed)
 
         # 完了率
+        if on_warning: comp_rate_text = "n/a"
         ttk.Label(file_frame, text=comp_rate_text).grid(row=index, column=4, padx=padx, pady=pady)
         row.append(comp_rate_text)
 
         # クリップボード出力用の配列に格納
         data_arr.append(row)
 
-        if on_error:
+        if on_error or on_warning:
             # エラー表示
-            message = f'{error_message}[{error_type}]'
             # ttk.Label(file_frame, text=message, foreground="red").grid(row=index, column=4, sticky=tk.W, padx=padx, pady=pady)
-            tooltip_text.append(message)
+            tooltip_text.append(f'{error_message}[{error_type}]')
         else:
             # 進捗グラフ
             fig, ax = plt.subplots(figsize=(3, 0.1))

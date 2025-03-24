@@ -225,7 +225,7 @@ def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
     incompleted_count = max(0, available_count - filled_count)
 
     # 最終出力データ
-    return {
+    out_data = {
         "count_total": {
             "all": case_count_all,
             "excluded": excluded_count,
@@ -240,6 +240,12 @@ def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
         "by_name": data_by_name,
         "by_env": data_by_env
     }
+
+    # データチェック
+    if filled_count > available_count:
+        out_data["warning"] = {"type": "count_is_incorrect", "message": "テストケースの完了数が項目数を上回っています"}
+
+    return out_data
 
 # コンソール出力
 def console_out(data):
