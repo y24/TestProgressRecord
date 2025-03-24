@@ -1,6 +1,7 @@
 import sys
 import argparse
 from tqdm import tqdm
+import os
 
 import ReadData
 import App
@@ -9,20 +10,40 @@ from libs import Utility, Dialog, Zip, AppConfig
 def get_xlsx_paths(inputs):
     """
     入力パスからxlsxファイルのパスを取得する
-    zipファイルの場合は展開してxlsxファイルを抽出する
+    - xlsxファイル: そのまま処理
+    - zipファイル: 展開してxlsxファイルを抽出
+    - ディレクトリ: 再帰的にxlsxとzipファイルを検索
     """
     files = []
     temp_dirs = []
     
+    def process_directory(dir_path):
+        """ディレクトリ内のxlsxとzipファイルを再帰的に処理"""
+        for entry in os.scandir(dir_path):
+            if entry.is_file():
+                ext = Utility.get_ext_from_path(entry.path)
+                if ext == "xlsx":
+                    files.append({"fullpath": entry.path, "temp_dir": ""})
+                elif ext == "zip":
+                    extracted_files, temp_dir = Zip.extract_files_from_zip(entry.path, extensions=['.xlsx'])
+                    files.extend([{"fullpath": f, "temp_dir": temp_dir} for f in extracted_files])
+                    temp_dirs.append(temp_dir)
+            elif entry.is_dir():
+                process_directory(entry.path)
+    
     for input_path in inputs:
-        ext = Utility.get_ext_from_path(input_path)
-        if ext == "xlsx":
-            files.append({"fullpath": input_path, "temp_dir": ""})
-        elif ext == "zip":
-            # zipファイルを解凍してxlsxファイルを抽出
-            extracted_files, temp_dir = Zip.extract_files_from_zip(input_path, extensions=['.xlsx'])
-            files.extend([{"fullpath": f, "temp_dir": temp_dir} for f in extracted_files])
-            temp_dirs.append(temp_dir)
+        if os.path.isdir(input_path):
+            # ディレクトリの場合
+            process_directory(input_path)
+        else:
+            # ファイルの場合
+            ext = Utility.get_ext_from_path(input_path)
+            if ext == "xlsx":
+                files.append({"fullpath": input_path, "temp_dir": ""})
+            elif ext == "zip":
+                extracted_files, temp_dir = Zip.extract_files_from_zip(input_path, extensions=['.xlsx'])
+                files.extend([{"fullpath": f, "temp_dir": temp_dir} for f in extracted_files])
+                temp_dirs.append(temp_dir)
             
     return files, temp_dirs
 
