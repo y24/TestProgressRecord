@@ -192,7 +192,9 @@ def create_click_handler(filepath):
     return lambda event: open_file(file_path=filepath)
 
 def make_results_text(results, incompleted):
-    return ', '.join(f'{key}:{value}' for key, value in results.items()) + f', Not Run:{incompleted}'
+    items = [f'{key}:{value}' for key, value in results.items() if value > 0]
+    if incompleted: items.append(f'Not Run:{incompleted}')
+    return ', '.join(items)
 
 def create_filelist_area(parent):
     # スタイル設定
