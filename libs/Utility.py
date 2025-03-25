@@ -132,9 +132,12 @@ def sum_values(list, param:str):
     # オブジェクト配列の各キーごとに合計値を計算
     result = defaultdict(int)
     for entry in list:
+        # パラメータのキーが存在しない場合はスキップ
+        if param not in entry:
+            continue
         for key, value in entry[param].items():
             result[key] += value
-    return result
+    return dict(result)
 
 def safe_divide(a:int, b:int):
     return a / b if b else None  # bが0またはNoneならNoneを返す

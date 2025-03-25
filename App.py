@@ -159,8 +159,13 @@ def update_display(selected_file, count_label, rate_label, ax, canvas, notebook)
         by_env_data = data['by_env']
         by_name_data = data['by_name']
 
+    # 集計情報の更新
     update_info_label(data=count_total_data, count_label=count_label, rate_label=rate_label, detail=True)
     update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=canvas, show_label=False)
+
+    # ツールチップの更新
+    graph_tooltip = f'{make_results_text(data["total"], data["count_total"]["incompleted"])}'
+    ToolTip(canvas.get_tk_widget(), msg=graph_tooltip, delay=0.3, follow=False)
 
     # TreeViewの更新
     frame_total = ttk.Frame(notebook)
@@ -592,7 +597,13 @@ def create_total_tab(parent):
     total_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     # グラフを更新
-    update_bar_chart(data=Utility.sum_values(filtered_data, "total"), incompleted_count=Utility.sum_values(filtered_data, "count_total")["incompleted"], ax=total_ax, canvas=total_canvas, show_label=True)
+    incompleted = Utility.sum_values(filtered_data, "count_total")["incompleted"]
+    update_bar_chart(data=Utility.sum_values(filtered_data, "total"), incompleted_count=incompleted, ax=total_ax, canvas=total_canvas, show_label=True)
+
+    # グラフのツールチップ(全体)
+    filtered_total_data = Utility.sum_values(filtered_data, "total")
+    graph_tooltip = f'{make_results_text(filtered_total_data, incompleted)}'
+    ToolTip(total_canvas.get_tk_widget(), msg=graph_tooltip, delay=0.3, follow=False)
 
     # ファイル別グラフ
     create_filelist_area(parent=parent)
