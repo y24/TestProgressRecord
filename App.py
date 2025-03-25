@@ -181,6 +181,9 @@ def update_display(selected_file, count_label, rate_label, ax, canvas, notebook)
 def create_click_handler(filepath):
     return lambda event: open_file(file_path=filepath)
 
+def make_results_text(results, incompleted):
+    return ', '.join(f'{key}:{value}' for key, value in results.items()) + f', Not Run:{incompleted}'
+
 def create_filelist_area(parent):
     # スタイル設定
     padx = 1
@@ -191,7 +194,7 @@ def create_filelist_area(parent):
     file_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     # ヘッダ
-    headers = ["No.", "ファイル名", "総数", "対象外", "項目数", "完了数", "完了率", "進捗"]
+    headers = ["No.", "ファイル名", "項目数", "完了数", "完了率", "進捗"]
     for col, text in enumerate(headers):
         ttk.Label(file_frame, text=text, foreground="#444444", background="#e0e0e0", relief="solid").grid(
             row=0, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
@@ -248,30 +251,20 @@ def create_filelist_area(parent):
         # ファイル名ダブルクリック時
         filepath = file_data['filepath']
         filename_label.bind("<Double-Button-1>", create_click_handler(filepath))
-        
-        # 総数
-        all_label = ttk.Label(file_frame, text=all)
-        all_label.grid(row=index, column=2, padx=padx, pady=pady)
-        row.append(all)
-
-        # 対象外
-        excluded_label = ttk.Label(file_frame, text=excluded)
-        excluded_label.grid(row=index, column=3, padx=padx, pady=pady)
-        row.append(all)
 
         # 項目数
         available_label = ttk.Label(file_frame, text=available)
-        available_label.grid(row=index, column=4, padx=padx, pady=pady)
+        available_label.grid(row=index, column=2, padx=padx, pady=pady)
         row.append(available)
 
         # 完了数
         completed_label = ttk.Label(file_frame, text=completed)
-        completed_label.grid(row=index, column=5, padx=padx, pady=pady)
+        completed_label.grid(row=index, column=3, padx=padx, pady=pady)
         row.append(completed)
 
         # 完了率
         if on_warning: comp_rate_text = "n/a"
-        ttk.Label(file_frame, text=comp_rate_text).grid(row=index, column=6, padx=padx, pady=pady)
+        ttk.Label(file_frame, text=comp_rate_text).grid(row=index, column=4, padx=padx, pady=pady)
         row.append(comp_rate_text)
 
         # エラー時赤色・ワーニング時オレンジ色
@@ -293,9 +286,11 @@ def create_filelist_area(parent):
             fig, ax = plt.subplots(figsize=(3, 0.1))
             canvas = FigureCanvasTkAgg(fig, master=file_frame)
             plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-            canvas.get_tk_widget().grid(row=index, column=7, padx=padx, pady=pady)
+            canvas.get_tk_widget().grid(row=index, column=5, padx=padx, pady=pady)
             # グラフを更新
             update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=canvas, show_label=False)
+            graph_tooltop = f"項目数:{available} (総数:{all}/対象外:{excluded})\n{make_results_text(total_data, incompleted)}"
+            ToolTip(canvas.get_tk_widget(), msg=graph_tooltop, delay=0.3, follow=False)
 
         # ツールチップ表示
         tooltip_text.append("<ダブルクリックで開きます>")
