@@ -215,8 +215,8 @@ def create_filelist_area(parent):
     # 列のリサイズ設定
     file_frame.grid_columnconfigure(1, weight=3)
 
-    # クリップボード出力用の配列
-    data_arr = [headers[:len(headers)-1]]
+    # クリップボード出力用のヘッダ
+    data_arr = [headers[:len(headers)-1] + settings["common"]["results"] + [settings["common"]["labels"]["not_run"]]]
 
     # データ行
     for index, file_data in enumerate(input_data, 1):
@@ -286,9 +286,6 @@ def create_filelist_area(parent):
             available_label.config(foreground=color)
             completed_label.config(foreground=color)
 
-        # クリップボード出力用の配列に格納
-        data_arr.append(row)
-
         if on_error or on_warning:
             # エラー表示
             # ttk.Label(file_frame, text=message, foreground="red").grid(row=index, column=4, sticky=tk.W, padx=padx, pady=pady)
@@ -303,6 +300,12 @@ def create_filelist_area(parent):
             update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=canvas, show_label=False)
             graph_tooltop = f"項目数: {available} (Total: {all} / 対象外: {excluded})\n{make_results_text(total_data, incompleted)}"
             ToolTip(canvas.get_tk_widget(), msg=graph_tooltop, delay=0.3, follow=False)
+            # クリップボード出力用
+            row += list(total_data.values())
+            row.append(incompleted)
+
+        # クリップボード出力用の配列に格納
+        data_arr.append(row)
 
         # ツールチップ表示
         tooltip_text.append("<ダブルクリックで開きます>")
