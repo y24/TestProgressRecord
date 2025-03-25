@@ -163,9 +163,14 @@ def update_display(selected_file, count_label, rate_label, ax, canvas, notebook)
     update_info_label(data=count_total_data, count_label=count_label, rate_label=rate_label, detail=True)
     update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=canvas, show_label=False)
 
-    # ツールチップの更新
-    graph_tooltip = f'{make_results_text(data["total"], data["count_total"]["incompleted"])}'
-    ToolTip(canvas.get_tk_widget(), msg=graph_tooltip, delay=0.3, follow=False)
+    # ツールチップを更新
+    if not hasattr(canvas.get_tk_widget(), '_tooltip'):
+        # 初回のみツールチップを作成
+        canvas.get_tk_widget()._tooltip = ToolTip(canvas.get_tk_widget(), msg="", delay=0.3, follow=False)
+    
+    # 既存のツールチップのメッセージを更新
+    graph_tooltip = f'{make_results_text(total_data, incompleted)}'
+    canvas.get_tk_widget()._tooltip.msg = graph_tooltip
 
     # TreeViewの更新
     frame_total = ttk.Frame(notebook)
