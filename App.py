@@ -301,7 +301,7 @@ def create_filelist_area(parent):
             canvas.get_tk_widget().grid(row=index, column=5, padx=padx, pady=pady)
             # グラフを更新
             update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=canvas, show_label=False)
-            graph_tooltop = f"項目数:{available} (総数:{all}/対象外:{excluded})\n{make_results_text(total_data, incompleted)}"
+            graph_tooltop = f"項目数: {available} (Total: {all} / 対象外: {excluded})\n{make_results_text(total_data, incompleted)}"
             ToolTip(canvas.get_tk_widget(), msg=graph_tooltop, delay=0.3, follow=False)
 
         # ツールチップ表示
@@ -450,9 +450,9 @@ def update_info_label(data, count_label, rate_label, detail=True):
 
     # ケース数テキスト
     count = available if available else "--"
-    count_text = f'テストケース数: {count}'
+    count_text = f'項目数: {count}'
     if detail:
-        count_text += f' (総数: {all or "-"} / 対象外: {excluded or "-"})'
+        count_text += f' (Total: {all or "-"} / 対象外: {excluded or "-"})'
     # 完了率テキスト
     completed_rate_text = f'完了率: {Utility.meke_rate_text(completed, available)} [{completed or "-"}/{available or "-"}]'
     # 消化率テキスト
