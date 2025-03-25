@@ -178,6 +178,9 @@ def update_display(selected_file, count_label, rate_label, ax, canvas, notebook)
     # プルダウン切替時にタブの選択状態を保持
     notebook.select(current_tab)
 
+def create_click_handler(filepath):
+    return lambda event: open_file(file_path=filepath)
+
 def create_filelist_area(parent):
     # スタイル設定
     padx = 1
@@ -244,7 +247,7 @@ def create_filelist_area(parent):
 
         # ファイル名ダブルクリック時
         filepath = file_data['filepath']
-        filename_label.bind("<Double-Button-1>", lambda event: open_file(file_path=filepath))
+        filename_label.bind("<Double-Button-1>", create_click_handler(filepath))
         
         # 総数
         all_label = ttk.Label(file_frame, text=all)
@@ -351,7 +354,6 @@ def select_write_file(entry):
         entry.insert(0, filepath)  # 新しいファイルパスをセット
 
 def open_file(file_path, exit:bool=False):
-    print(file_path)
     if os.path.isfile(file_path):
         try:
             os.startfile(file_path)  # Windows
