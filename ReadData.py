@@ -140,8 +140,8 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
     if Utility.check_lists_equal_length(result_rows, person_rows, date_rows) == False:
         return {
             "error": {
-            "type": "set_is_incorrect",
-            "message": "結果列のセットが正しく取得できませんでした。"
+                "type": "inconsistent_result_set",
+                "message": "結果列のセットが正しく取得できませんでした。"
             }
         }
 
@@ -243,7 +243,7 @@ def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
 
     # データチェック
     if filled_count > available_count:
-        out_data["warning"] = {"type": "count_is_incorrect", "message": "テストケースの完了数が項目数を上回っています"}
+        out_data["warning"] = {"type": "inconsistent_count", "message": "テストケースの完了数が項目数を上回っています"}
 
     return out_data
 
