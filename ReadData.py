@@ -226,7 +226,7 @@ def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
 
     # 最終出力データ
     out_data = {
-        "count_total": {
+        "stats": {
             "all": case_count_all,
             "excluded": excluded_count,
             "available": available_count,

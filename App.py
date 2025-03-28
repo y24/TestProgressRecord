@@ -145,22 +145,22 @@ def update_display(selected_file, count_label, rate_label, ax, canvas, notebook)
 
     # ファイル別結果
     if "error" in data:
-        count_total_data = {'all': 0, 'excluded': 0, 'available': 0, 'filled': 0, 'completed': 0, 'incompleted': 0}
+        stats_data = {'all': 0, 'excluded': 0, 'available': 0, 'filled': 0, 'completed': 0, 'incompleted': 0}
         total_data = Utility.initialize_dict(settings["common"]["results"])
         incompleted = 0
         daily_data = {}
         by_env_data = {}
         by_name_data = {}
     else:
-        count_total_data = data["count_total"]
+        stats_data = data["stats"]
         total_data = data['total']
-        incompleted = data["count_total"]["incompleted"]
+        incompleted = data["stats"]["incompleted"]
         daily_data = data['daily']
         by_env_data = data['by_env']
         by_name_data = data['by_name']
 
     # 集計情報の更新
-    update_info_label(data=count_total_data, count_label=count_label, rate_label=rate_label, detail=True)
+    update_info_label(data=stats_data, count_label=count_label, rate_label=rate_label, detail=True)
     update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=canvas, show_label=False)
 
     # ツールチップを更新
@@ -240,11 +240,11 @@ def create_filelist_area(parent):
         else:
             on_error = False
             total_data = file_data['total']
-            completed = file_data['count_total']['completed']
-            all = file_data['count_total']['all']
-            excluded = file_data['count_total']['excluded']
-            available = file_data['count_total']['available']
-            incompleted = file_data['count_total']['incompleted']
+            completed = file_data['stats']['completed']
+            all = file_data['stats']['all']
+            excluded = file_data['stats']['excluded']
+            available = file_data['stats']['available']
+            incompleted = file_data['stats']['incompleted']
             comp_rate_text = Utility.meke_rate_text(completed, available)
 
         row = []
@@ -598,7 +598,7 @@ def create_total_tab(parent):
     total_rate_label.pack(fill=tk.X, padx=5)
 
     # テストケース数、完了率を更新
-    update_info_label(data=Utility.sum_values(filtered_data, "count_total"), count_label=total_count_label, rate_label=total_rate_label, detail=True)
+    update_info_label(data=Utility.sum_values(filtered_data, "stats"), count_label=total_count_label, rate_label=total_rate_label, detail=True)
 
     # グラフ表示(全体)
     total_fig, total_ax = plt.subplots(figsize=(8, 0.25))
@@ -607,7 +607,7 @@ def create_total_tab(parent):
     total_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     # グラフを更新
-    incompleted = Utility.sum_values(filtered_data, "count_total")["incompleted"]
+    incompleted = Utility.sum_values(filtered_data, "stats")["incompleted"]
     update_bar_chart(data=Utility.sum_values(filtered_data, "total"), incompleted_count=incompleted, ax=total_ax, canvas=total_canvas, show_label=True)
 
     # グラフのツールチップ(全体)
