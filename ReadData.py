@@ -261,7 +261,7 @@ def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
 
     # データチェック
     if filled_count > available_count:
-        out_data["warning"] = {"type": "inconsistent_count", "message": "テストケースの完了数が項目数を上回っています"}
+        out_data["warning"] = {"type": "inconsistent_count", "message": "テストケースの完了数が項目数を上回っています。"}
 
     return out_data
 

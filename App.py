@@ -235,7 +235,7 @@ def create_filelist_area(parent):
             completed = "-"
             available = "-"
             incompleted = 0
-            comp_rate_text = "n/a"
+            comp_rate_text = "-"
             error_type = file_data["error"]["type"]
             error_message = file_data["error"]["message"]
         else:
@@ -278,8 +278,9 @@ def create_filelist_area(parent):
         row.append(completed_text)
 
         # 完了率
-        if on_warning: comp_rate_text = "n/a"
-        ttk.Label(file_frame, text=comp_rate_text).grid(row=index, column=4, padx=padx, pady=pady)
+        if on_warning: comp_rate_text = "-"
+        comp_rate_label = ttk.Label(file_frame, text=comp_rate_text)
+        comp_rate_label.grid(row=index, column=4, padx=padx, pady=pady)
         row.append(comp_rate_text)
 
         # エラー時赤色・ワーニング時オレンジ色
@@ -288,6 +289,7 @@ def create_filelist_area(parent):
             filename_label.config(foreground=color)
             state_label.config(foreground=color)
             completed_label.config(foreground=color)
+            comp_rate_label.config(foreground=color)
 
         if on_error or on_warning:
             # エラー表示
