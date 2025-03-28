@@ -206,7 +206,7 @@ def create_filelist_area(parent):
     file_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     # ヘッダ
-    headers = ["No.", "ファイル名", "項目数", "完了数", "完了率", "進捗"]
+    headers = ["No.", "ファイル名", "State", "完了数", "完了率", "進捗"]
     for col, text in enumerate(headers):
         ttk.Label(file_frame, text=text, foreground="#444444", background="#e0e0e0", relief="solid").grid(
             row=0, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
@@ -231,6 +231,7 @@ def create_filelist_area(parent):
         if "error" in file_data:
             on_error = True
             total_data = {"error": 0}
+            state = "???"
             completed = "-"
             available = "-"
             incompleted = 0
@@ -240,6 +241,7 @@ def create_filelist_area(parent):
         else:
             on_error = False
             total_data = file_data['total']
+            state = file_data["exec_status"]
             completed = file_data['stats']['completed']
             all = file_data['stats']['all']
             excluded = file_data['stats']['excluded']
@@ -264,15 +266,16 @@ def create_filelist_area(parent):
         filepath = file_data['filepath']
         filename_label.bind("<Double-Button-1>", create_click_handler(filepath))
 
-        # 項目数
-        available_label = ttk.Label(file_frame, text=available)
-        available_label.grid(row=index, column=2, padx=padx, pady=pady)
-        row.append(available)
+        # State
+        state_label = ttk.Label(file_frame, text=state)
+        state_label.grid(row=index, column=2, padx=padx, pady=pady)
+        row.append(state)
 
-        # 完了数
-        completed_label = ttk.Label(file_frame, text=completed)
+        # 完了数 / 項目数
+        completed_text = f'{completed}/{available}'
+        completed_label = ttk.Label(file_frame, text=completed_text)
         completed_label.grid(row=index, column=3, padx=padx, pady=pady)
-        row.append(completed)
+        row.append(completed_text)
 
         # 完了率
         if on_warning: comp_rate_text = "n/a"
@@ -283,7 +286,7 @@ def create_filelist_area(parent):
         if on_error or on_warning:
             color = "red" if on_error else "darkorange2"
             filename_label.config(foreground=color)
-            available_label.config(foreground=color)
+            state_label.config(foreground=color)
             completed_label.config(foreground=color)
 
         if on_error or on_warning:
