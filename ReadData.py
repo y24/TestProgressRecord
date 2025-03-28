@@ -74,8 +74,20 @@ def get_total_all_date(data, exclude:str):
     result.pop(exclude, None)
     return result
 
+# 完了数を合計
 def sum_completed_results(data: dict, completed_results: list) -> int:
     return sum(data.get(key, 0) for key in completed_results)
+
+# 実施状況を判別
+def make_exec_status(count_stats: dict) -> str:
+    if count_stats["filled"] == 0:
+        return "未着手"
+    elif count_stats["filled"] > 0:
+        return "進行中"
+    elif count_stats["completed"] == count_stats["available"] and count_stats["incompleted"] == 0:
+        return "完了"
+    else:
+        return "???"
 
 # 処理
 def aggregate_results(filepath:str, settings):
@@ -224,16 +236,22 @@ def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
     # 未実施テストケース数(マイナスは0)
     incompleted_count = max(0, available_count - filled_count)
 
-    # 最終出力データ
-    out_data = {
-        "stats": {
+    count_stats = {
             "all": case_count_all,
             "excluded": excluded_count,
             "available": available_count,
             "filled": filled_count,
             "completed": completed_count,
             "incompleted": incompleted_count
-        },
+        }
+
+    # 実施状況
+    exec_status = make_exec_status(count_stats)
+
+    # 最終出力データ
+    out_data = {
+        "stats": count_stats,
+        "exec_status": exec_status,
         "count_by_sheet": counts_by_sheet,
         "daily": data_daily_total,
         "total": data_total,
