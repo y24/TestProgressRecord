@@ -414,7 +414,7 @@ def create_input_area(parent, settings):
     input_frame.pack(fill=tk.X, padx=5, pady=3)
     
     ttk.Label(input_frame, text="書込先:").grid(row=0, column=0, sticky=tk.W, padx=2, pady=3)
-    file_path_entry = ttk.Entry(input_frame, width=50)
+    file_path_entry = ttk.Entry(input_frame, width=80)
     file_path_entry.insert(0, settings["app"]["filepath"])
     file_path_entry.grid(row=0, column=1)
     ttk.Button(input_frame, text="...", width=3, command=lambda: select_write_file(file_path_entry)).grid(row=0, column=2, padx=2, pady=3)
