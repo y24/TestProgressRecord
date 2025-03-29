@@ -124,8 +124,11 @@ def meke_rate_text(value1:int, value2:int):
     # パーセンテージ表示用の文字列を生成
     if value2:
         rate = (value1 / value2) * 100
-        # rate = rate if rate < 100 else 100
-        return f"{rate:.1f}%"
+        # return f"{rate:.1f}%"
+        if rate < 100:
+            return f"{rate:.0f}%"
+        else:
+            return "100%"
     else:
         return "--"
 
@@ -173,3 +176,21 @@ def find_key_by_name(data: dict, target_name: str) -> str:
 
 def get_today_str():
     return datetime.today().strftime("%Y-%m-%d")
+
+def simplify_date(date_str: str) -> str:
+    """
+    yyyy-MM-dd形式の日付文字列をM/d形式に変換する
+    
+    Args:
+        date_str (str): 'yyyy-MM-dd'形式の日付文字列
+        
+    Returns:
+        str: 'M/d'形式の日付文字列（例：3/25, 12/1）
+    """
+    if not date_str:
+        return "-"
+    try:
+        dt = datetime.strptime(date_str, "%Y-%m-%d")
+        return f"{dt.month}/{dt.day}"
+    except ValueError:
+        return date_str  # パース失敗時は元の文字列を返す

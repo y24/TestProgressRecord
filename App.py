@@ -218,7 +218,7 @@ def create_filelist_area(parent):
     file_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     # ヘッダ
-    headers = ["No.", "ファイル名", "State", "完了数", "完了率", "進捗"]
+    headers = ["No.", "ファイル名", "State", "開始日", "完了日", "完了率", "進捗"]
     for col, text in enumerate(headers):
         ttk.Label(file_frame, text=text, foreground="#444444", background="#e0e0e0", relief="solid").grid(
             row=0, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
@@ -239,18 +239,22 @@ def create_filelist_area(parent):
             error_message = file_data["warning"]["message"]
         else:
             on_warning = False
+
         # エラー時
         if "error" in file_data:
             on_error = True
             total_data = {"error": 0}
             state = "???"
-            completed = "-"
-            available = "-"
+            completed = ""
+            available = ""
             incompleted = 0
-            comp_rate_text = "-"
+            comp_rate_text = ""
+            start_date = ""
+            finish_date = ""
             error_type = file_data["error"]["type"]
             error_message = file_data["error"]["message"]
         else:
+            # 正常時
             on_error = False
             total_data = file_data['total']
             state = file_data["run"]["status"]
@@ -260,19 +264,21 @@ def create_filelist_area(parent):
             available = file_data['stats']['available']
             incompleted = file_data['stats']['incompleted']
             comp_rate_text = Utility.meke_rate_text(completed, available)
+            start_date = file_data["run"]["start_date"]
+            finish_date = file_data["run"]["finish_date"]
 
-        copy_row = []
+        export_row = []
 
         # インデックス
         ttk.Label(file_frame, text=index).grid(row=index, column=0, padx=padx, pady=pady)
-        copy_row.append(index) # クリップボード出力用データ
+        export_row.append(index) # エクスポート用データ
         
         # ファイル名
         filename = file_data['file']
         filename_label = ttk.Label(file_frame, text=filename)
         filename_label.grid(row=index, column=1, sticky=tk.W, padx=padx, pady=pady)
         tooltip_text = [filename]
-        copy_row.append(filename) # クリップボード出力用データ
+        export_row.append(filename) # エクスポート用データ
 
         # ファイル名ダブルクリック時
         filepath = file_data['filepath']
@@ -282,46 +288,56 @@ def create_filelist_area(parent):
         state_label = ttk.Label(file_frame, text=state, anchor="center")
         state_label.grid(row=index, column=2, padx=padx, pady=pady, sticky=tk.W + tk.E)
         # set_state_color(state_label, state)
-        copy_row.append(state) # クリップボード出力用データ
+        export_row.append(state) # エクスポート用データ
 
-        # 完了数 / 項目数
-        completed_text = f'{completed}/{available}'
-        completed_label = ttk.Label(file_frame, text=completed_text)
-        completed_label.grid(row=index, column=3, padx=padx, pady=pady)
-        copy_row.append(completed_text) # クリップボード出力用データ
+        # 開始日
+        start_label = ttk.Label(file_frame, text=Utility.simplify_date(start_date))
+        start_label.grid(row=index, column=3, padx=padx, pady=pady)
+        export_row.append(start_date or "") # エクスポート用データ
+
+        # 完了日
+        finish_label = ttk.Label(file_frame, text=Utility.simplify_date(finish_date))
+        finish_label.grid(row=index, column=4, padx=padx, pady=pady)
+        export_row.append(finish_date or "") # エクスポート用データ
 
         # 完了率
-        if on_warning: comp_rate_text = "-"
-        comp_rate_label = ttk.Label(file_frame, text=comp_rate_text)
-        comp_rate_label.grid(row=index, column=4, padx=padx, pady=pady)
-        copy_row.append(comp_rate_text) # クリップボード出力用データ
+        if on_error:
+            comp_rate_export = ""
+            comp_rate_display = "-"
+        else:
+            comp_rate_export = comp_rate_text
+            comp_rate_display = f'{comp_rate_text} ({completed}/{available})'
+
+        comp_rate_label = ttk.Label(file_frame, text=comp_rate_display)
+        comp_rate_label.grid(row=index, column=5, padx=padx, pady=pady)
+        export_row.append(comp_rate_export) # エクスポート用データ
 
         # エラー時赤色・ワーニング時オレンジ色
         if on_error or on_warning:
             color = "red" if on_error else "darkorange2"
             filename_label.config(foreground=color)
             state_label.config(foreground=color)
-            completed_label.config(foreground=color)
+            start_label.config(foreground=color)
             comp_rate_label.config(foreground=color)
 
         # エラー時以外は進捗グラフを表示
         if not on_error:
             # 進捗グラフ
-            fig, ax = plt.subplots(figsize=(3, 0.1))
+            fig, ax = plt.subplots(figsize=(2, 0.1))
             canvas = FigureCanvasTkAgg(fig, master=file_frame)
             plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-            canvas.get_tk_widget().grid(row=index, column=5, padx=padx, pady=pady)
+            canvas.get_tk_widget().grid(row=index, column=6, padx=padx, pady=pady)
             # グラフを更新
             update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=canvas, show_label=False)
             # グラフのツールチップ
             graph_tooltop = f"項目数: {available} (Total: {all} / 対象外: {excluded})\nState: {state}\n{make_results_text(total_data, incompleted)}"
             ToolTip(canvas.get_tk_widget(), msg=graph_tooltop, delay=0.3, follow=False)
-            # クリップボード出力用データ
-            copy_row += list(total_data.values())
-            copy_row.append(incompleted) # クリップボード出力用データ
+            # エクスポート用データ
+            export_row += list(total_data.values())
+            export_row.append(incompleted) # エクスポート用データ
 
-        # クリップボード出力用の配列に格納
-        copy_data.append(copy_row)
+        # エクスポート用の配列に格納
+        copy_data.append(export_row)
 
         # エラー・ワーニング時はツールチップにメッセージを追加
         if on_error or on_warning:
