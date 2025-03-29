@@ -265,14 +265,14 @@ def create_filelist_area(parent):
 
         # インデックス
         ttk.Label(file_frame, text=index).grid(row=index, column=0, padx=padx, pady=pady)
-        copy_row.append(index)
+        copy_row.append(index) # クリップボード出力用データ
         
         # ファイル名
         filename = file_data['file']
         filename_label = ttk.Label(file_frame, text=filename)
         filename_label.grid(row=index, column=1, sticky=tk.W, padx=padx, pady=pady)
         tooltip_text = [filename]
-        copy_row.append(filename)
+        copy_row.append(filename) # クリップボード出力用データ
 
         # ファイル名ダブルクリック時
         filepath = file_data['filepath']
@@ -282,19 +282,19 @@ def create_filelist_area(parent):
         state_label = ttk.Label(file_frame, text=state, anchor="center")
         state_label.grid(row=index, column=2, padx=padx, pady=pady, sticky=tk.W + tk.E)
         # set_state_color(state_label, state)
-        copy_row.append(state)
+        copy_row.append(state) # クリップボード出力用データ
 
         # 完了数 / 項目数
         completed_text = f'{completed}/{available}'
         completed_label = ttk.Label(file_frame, text=completed_text)
         completed_label.grid(row=index, column=3, padx=padx, pady=pady)
-        copy_row.append(completed_text)
+        copy_row.append(completed_text) # クリップボード出力用データ
 
         # 完了率
         if on_warning: comp_rate_text = "-"
         comp_rate_label = ttk.Label(file_frame, text=comp_rate_text)
         comp_rate_label.grid(row=index, column=4, padx=padx, pady=pady)
-        copy_row.append(comp_rate_text)
+        copy_row.append(comp_rate_text) # クリップボード出力用データ
 
         # エラー時赤色・ワーニング時オレンジ色
         if on_error or on_warning:
@@ -303,10 +303,6 @@ def create_filelist_area(parent):
             state_label.config(foreground=color)
             completed_label.config(foreground=color)
             comp_rate_label.config(foreground=color)
-
-        # エラー・ワーニング時はツールチップにメッセージを追加
-        if on_error or on_warning:
-            tooltip_text.append(f'{error_message}[{error_type}]')
 
         # エラー時以外は進捗グラフを表示
         if not on_error:
@@ -317,16 +313,21 @@ def create_filelist_area(parent):
             canvas.get_tk_widget().grid(row=index, column=5, padx=padx, pady=pady)
             # グラフを更新
             update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=canvas, show_label=False)
-            graph_tooltop = f"項目数: {available} (Total: {all} / 対象外: {excluded})\n{make_results_text(total_data, incompleted)}"
+            # グラフのツールチップ
+            graph_tooltop = f"項目数: {available} (Total: {all} / 対象外: {excluded})\nState: {state}\n{make_results_text(total_data, incompleted)}"
             ToolTip(canvas.get_tk_widget(), msg=graph_tooltop, delay=0.3, follow=False)
-            # クリップボード出力用
+            # クリップボード出力用データ
             copy_row += list(total_data.values())
-            copy_row.append(incompleted)
+            copy_row.append(incompleted) # クリップボード出力用データ
 
         # クリップボード出力用の配列に格納
         copy_data.append(copy_row)
 
-        # ツールチップ表示
+        # エラー・ワーニング時はツールチップにメッセージを追加
+        if on_error or on_warning:
+            tooltip_text.append(f'{error_message}[{error_type}]')
+
+        # ファイル名のツールチップ
         tooltip_text.append("<ダブルクリックで開きます>")
         ToolTip(filename_label, msg="\n".join(tooltip_text), delay=0.3, follow=False)
 
