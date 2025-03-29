@@ -272,14 +272,9 @@ def change_sort_order(order):
         print(item["file"])
 
 def create_filelist_area(parent):
-
-    # クリップボード出力用のヘッダ
-    export_headers = ["No.", "ファイル名", "State", "開始日", "完了日", "項目数", "完了数", "完了率"]
-    export_data = [export_headers + settings["common"]["results"] + [settings["common"]["labels"]["not_run"]]]
-
-    # フレーム
-    file_frame = ttk.Frame(parent)
-    file_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+    # ファイル別テーブル
+    table_frame = ttk.Frame(parent)
+    table_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     # テーブルの余白
     padx = 1
@@ -288,14 +283,18 @@ def create_filelist_area(parent):
     # ヘッダ
     headers = ["No.", "ファイル名", "State", "開始日", "完了日", "完了率", "テスト結果"]
     for col, text in enumerate(headers):
-        ttk.Label(file_frame, text=text, foreground="#444444", background="#e0e0e0", relief="solid").grid(
+        ttk.Label(table_frame, text=text, foreground="#444444", background="#e0e0e0", relief="solid").grid(
             row=0, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
         )
 
     # 列のリサイズ設定
-    file_frame.grid_columnconfigure(1, weight=3)
+    table_frame.grid_columnconfigure(1, weight=3)
 
-    # データ行
+    # クリップボード出力用のヘッダ
+    export_headers = ["No.", "ファイル名", "State", "開始日", "完了日", "項目数", "完了数", "完了率"]
+    export_data = [export_headers + settings["common"]["results"] + [settings["common"]["labels"]["not_run"]]]
+
+    # 各ファイルのデータ表示
     for index, file_data in enumerate(input_data, 1):
         # ワーニング時
         if "warning" in file_data:
@@ -335,12 +334,12 @@ def create_filelist_area(parent):
         export_row = []
 
         # インデックス
-        ttk.Label(file_frame, text=index).grid(row=index, column=0, padx=padx, pady=pady)
+        ttk.Label(table_frame, text=index).grid(row=index, column=0, padx=padx, pady=pady)
         export_row.append(index) # エクスポート用データ
         
         # ファイル名
         filename = file_data['file']
-        filename_label = ttk.Label(file_frame, text=filename)
+        filename_label = ttk.Label(table_frame, text=filename)
         filename_label.grid(row=index, column=1, sticky=tk.W, padx=padx, pady=pady)
         tooltip_text = [filename]
         export_row.append(filename)
@@ -350,18 +349,18 @@ def create_filelist_area(parent):
         filename_label.bind("<Double-Button-1>", create_click_handler(filepath))
 
         # State
-        state_label = ttk.Label(file_frame, text=state, anchor="center")
+        state_label = ttk.Label(table_frame, text=state, anchor="center")
         state_label.grid(row=index, column=2, padx=padx, pady=pady, sticky=tk.W + tk.E)
         # set_state_color(state_label, state)
         export_row.append(state)
 
         # 開始日
-        start_label = ttk.Label(file_frame, text=Utility.simplify_date(start_date))
+        start_label = ttk.Label(table_frame, text=Utility.simplify_date(start_date))
         start_label.grid(row=index, column=3, padx=padx, pady=pady)
         export_row.append(start_date or "")
 
         # 完了日
-        finish_label = ttk.Label(file_frame, text=Utility.simplify_date(finish_date))
+        finish_label = ttk.Label(table_frame, text=Utility.simplify_date(finish_date))
         finish_label.grid(row=index, column=4, padx=padx, pady=pady)
         export_row.append(finish_date or "")
 
@@ -373,7 +372,7 @@ def create_filelist_area(parent):
             comp_rate_export = comp_rate_text
             comp_rate_display = f'{comp_rate_text} ({completed}/{available})'
 
-        comp_rate_label = ttk.Label(file_frame, text=comp_rate_display)
+        comp_rate_label = ttk.Label(table_frame, text=comp_rate_display)
         comp_rate_label.grid(row=index, column=5, padx=padx, pady=pady)
         # エクスポート用データ
         export_row.append(available) # 項目数
@@ -392,7 +391,7 @@ def create_filelist_area(parent):
         if not on_error:
             # 進捗グラフ
             fig, ax = plt.subplots(figsize=(2, 0.1))
-            canvas = FigureCanvasTkAgg(fig, master=file_frame)
+            canvas = FigureCanvasTkAgg(fig, master=table_frame)
             plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
             canvas.get_tk_widget().grid(row=index, column=6, padx=padx, pady=pady)
             # グラフを更新
@@ -739,38 +738,38 @@ def create_total_tab(parent):
     graph_tooltip = f'{make_results_text(filtered_total_data, incompleted)}'
     ToolTip(total_canvas.get_tk_widget(), msg=graph_tooltip, delay=0.3, follow=False)
 
-    # ファイル別グラフ
+    # ファイル別データ表示部
     create_filelist_area(parent=parent)
 
     # ファイル書き込みエリア
     create_input_area(parent=parent, settings=settings)
 
 def create_byfile_tab(parent):
-    file_frame = ttk.Frame(parent)
-    file_frame.pack(fill=tk.X, padx=5, pady=5)
+    by_file_frame = ttk.Frame(parent)
+    by_file_frame.pack(fill=tk.X, padx=5, pady=5)
 
     # ファイル選択プルダウン
-    file_selector = ttk.Combobox(file_frame, values=[file["selector_label"] for file in input_data], state="readonly")
+    file_selector = ttk.Combobox(by_file_frame, values=[file["selector_label"] for file in input_data], state="readonly")
     file_selector.pack(fill=tk.X, padx=20, pady=5)
     file_selector.bind("<<ComboboxSelected>>", lambda event: update_display(file_selector.get(), count_label=file_count_label, rate_label=file_rate_label, ax=file_ax, canvas=file_canvas, notebook=notebook))
 
     # テストケース数(ファイル別)
-    file_count_label = ttk.Label(file_frame, anchor="w")
+    file_count_label = ttk.Label(by_file_frame, anchor="w")
     file_count_label.pack(fill=tk.X, padx=20)
 
     # 完了率(ファイル別)
-    file_rate_label = ttk.Label(file_frame, anchor="w")
+    file_rate_label = ttk.Label(by_file_frame, anchor="w")
     file_rate_label.pack(fill=tk.X, padx=20)
 
     # グラフ表示(ファイル別)
     file_fig, file_ax = plt.subplots(figsize=(6, 0.1))
-    file_canvas = FigureCanvasTkAgg(file_fig, master=file_frame)
+    file_canvas = FigureCanvasTkAgg(file_fig, master=by_file_frame)
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
     file_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
 
     # タブ表示
     notebook_height = 300 if len(input_data) > 1 else 355
-    notebook = ttk.Notebook(file_frame, height=notebook_height)
+    notebook = ttk.Notebook(by_file_frame, height=notebook_height)
     notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     # グリッド表示
