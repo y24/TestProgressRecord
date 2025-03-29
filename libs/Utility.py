@@ -163,3 +163,9 @@ def initialize_dict(keys):
         dict: 各キーが0を持つ辞書。
     """
     return {key: 0 for key in keys}
+
+def find_key_by_name(data: dict, target_name: str) -> str:
+    for key, value in data.items():
+        if value.get("name") == target_name:
+            return key
+    return None  # 見つからなかった場合

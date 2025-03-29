@@ -51,7 +51,6 @@ def find_row(sheet, search_col:str, search_str:str):
             if cell.value == search_str:  # 値が search_str のセル
                 return cell.row
         return None
-
     except Exception as e:
         print(f"Error: {e}")
 

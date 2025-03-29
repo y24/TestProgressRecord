@@ -1,4 +1,3 @@
-
 from collections import defaultdict
 import pprint
 
@@ -15,9 +14,8 @@ def get_daily(data, results: list[str], completed_label:str, completed_results: 
     for row in data:
         result, name, date = row
         
-        # 日付が空のデータはスキップ
-        if not date:
-            continue
+        # 日付が空のデータはno_dateにまとめる
+        if not date: date = "no_date"
 
         # 各結果を0で初期化
         for keyword in results:
@@ -32,11 +30,14 @@ def get_daily(data, results: list[str], completed_label:str, completed_results: 
     
     # 出力
     out_data = {}
+    no_date_data = {}
     for date, counts in sorted(result_count.items()):
         counts = {**counts}
-        out_data[date] = counts
-    
-    return out_data
+        if date == "no_date":
+            no_date_data = counts
+        else:
+            out_data[date] = counts
+    return out_data, no_date_data
 
 # データ集計（名前別）
 def get_daily_by_name(data):
@@ -65,11 +66,15 @@ def get_excluded_count(data, targets:list[str]) -> int:
     return sum(1 for row in data if row and row[0] in targets)
 
 # 全日付データ合計
-def get_total_all_date(data, exclude:str):
+def get_total_all_date(data, data_no_date, exclude:str):
     result = {}
+    # 全日付データ
     for values in data.values():
         for key, count in values.items():
             result[key] = result.get(key, 0) + count
+    # 日付なしデータ
+    for key, count in data_no_date.items():
+        result[key] = result.get(key, 0) + count
     # Completedは除く
     result.pop(exclude, None)
     return result
@@ -79,13 +84,16 @@ def sum_completed_results(data: dict, completed_results: list) -> int:
     return sum(data.get(key, 0) for key in completed_results)
 
 # 実施状況を判別
-def make_exec_status(count_stats: dict) -> str:
+def make_exec_status(count_stats: dict, settings: dict) -> str:
     if count_stats["filled"] == 0:
-        return "未着手"
-    elif count_stats["filled"] > 0:
-        return "進行中"
+        # 未着手
+        return settings["app"]["state"]["not_started"]["name"]
     elif count_stats["completed"] == count_stats["available"] and count_stats["incompleted"] == 0:
-        return "完了"
+        # 完了
+        return settings["app"]["state"]["completed"]["name"]
+    elif count_stats["filled"] > 0:
+        # 進行中
+        return settings["app"]["state"]["in_progress"]["name"]
     else:
         return "???"
 
@@ -182,10 +190,10 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
         env_name = f"[{sheet_name}]{set_name}"
 
         # 環境ごとのデータ集計
-        env_data[env_name] = get_daily(
+        env_data[env_name], _ = get_daily(
             data=set_data, 
             results=settings["common"]["results"], 
-            completed_label=settings["common"]["completed"], 
+            completed_label=settings["common"]["labels"]["completed"], 
             completed_results=settings["common"]["completed_results"]
         )
 
@@ -210,18 +218,18 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
 
 def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
     # 全セット集計(日付別)
-    data_daily_total = get_daily(
+    data_daily_total, data_no_date = get_daily(
         data=all_data,
         results=settings["common"]["results"],
-        completed_label=settings["common"]["completed"],
+        completed_label=settings["common"]["labels"]["completed"],
         completed_results=settings["common"]["completed_results"]
     )
 
     # 全セット集計(担当者別)
     data_by_name = get_daily_by_name(all_data)
     
-    # 全セット集計(全日付)
-    data_total = get_total_all_date(data_daily_total, exclude=settings["common"]["completed"])
+    # 全セット集計(全日付＋日付なし)
+    data_total = get_total_all_date(data_daily_total, data_no_date, exclude=settings["common"]["labels"]["completed"])
 
     # 総テストケース数
     case_count_all = sum(item['env_count'] * item['all'] for item in counts_by_sheet)
@@ -246,7 +254,7 @@ def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
         }
 
     # 実施状況
-    exec_status = make_exec_status(count_stats)
+    exec_status = make_exec_status(count_stats, settings)
 
     # 最終出力データ
     out_data = {
@@ -260,7 +268,9 @@ def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
     }
 
     # データチェック
-    if filled_count > available_count:
+    if case_count_all == 0:
+        out_data["warning"] = {"type": "no_data", "message": "項目数を取得できませんでした。"}
+    elif filled_count > available_count:
         out_data["warning"] = {"type": "inconsistent_count", "message": "テストケースの完了数が項目数を上回っています。"}
 
     return out_data

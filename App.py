@@ -194,7 +194,19 @@ def create_click_handler(filepath):
 def make_results_text(results, incompleted):
     items = [f'{key}:{value}' for key, value in results.items() if value > 0]
     if incompleted: items.append(f'Not Run:{incompleted}')
-    return ', '.join(items)
+    if len(items):
+        return ', '.join(items)
+    else:
+        return "有効なデータがありません。エラーのないファイルのみが集計されます。"
+
+def set_state_color(label, state_name):
+    # キー名を取得
+    state_key = Utility.find_key_by_name(settings["app"]["state"], state_name)
+    # 見つからない場合は何もしない
+    if state_key is None: return
+    # 色を設定
+    state_info = settings["app"]["state"][state_key]
+    label.config(foreground=state_info["foreground"], background=state_info["background"])
 
 def create_filelist_area(parent):
     # スタイル設定
@@ -216,7 +228,7 @@ def create_filelist_area(parent):
     file_frame.grid_columnconfigure(1, weight=3)
 
     # クリップボード出力用のヘッダ
-    data_arr = [headers[:len(headers)-1] + settings["common"]["results"] + [settings["common"]["labels"]["not_run"]]]
+    copy_data = [headers[:len(headers)-1] + settings["common"]["results"] + [settings["common"]["labels"]["not_run"]]]
 
     # データ行
     for index, file_data in enumerate(input_data, 1):
@@ -249,53 +261,54 @@ def create_filelist_area(parent):
             incompleted = file_data['stats']['incompleted']
             comp_rate_text = Utility.meke_rate_text(completed, available)
 
-        row = []
+        copy_row = []
 
         # インデックス
         ttk.Label(file_frame, text=index).grid(row=index, column=0, padx=padx, pady=pady)
-        row.append(index)
+        copy_row.append(index)
         
         # ファイル名
         filename = file_data['file']
         filename_label = ttk.Label(file_frame, text=filename)
         filename_label.grid(row=index, column=1, sticky=tk.W, padx=padx, pady=pady)
         tooltip_text = [filename]
-        row.append(filename)
+        copy_row.append(filename)
 
         # ファイル名ダブルクリック時
         filepath = file_data['filepath']
         filename_label.bind("<Double-Button-1>", create_click_handler(filepath))
 
         # State
-        state_label = ttk.Label(file_frame, text=state)
-        state_label.grid(row=index, column=2, padx=padx, pady=pady)
-        row.append(state)
+        state_label = ttk.Label(file_frame, text=state, anchor="center")
+        state_label.grid(row=index, column=2, padx=padx, pady=pady, sticky=tk.W + tk.E)
+        set_state_color(state_label, state)
+        copy_row.append(state)
 
         # 完了数 / 項目数
         completed_text = f'{completed}/{available}'
         completed_label = ttk.Label(file_frame, text=completed_text)
         completed_label.grid(row=index, column=3, padx=padx, pady=pady)
-        row.append(completed_text)
+        copy_row.append(completed_text)
 
         # 完了率
         if on_warning: comp_rate_text = "-"
         comp_rate_label = ttk.Label(file_frame, text=comp_rate_text)
         comp_rate_label.grid(row=index, column=4, padx=padx, pady=pady)
-        row.append(comp_rate_text)
+        copy_row.append(comp_rate_text)
 
         # エラー時赤色・ワーニング時オレンジ色
         if on_error or on_warning:
             color = "red" if on_error else "darkorange2"
             filename_label.config(foreground=color)
-            state_label.config(foreground=color)
             completed_label.config(foreground=color)
             comp_rate_label.config(foreground=color)
 
+        # エラー・ワーニング時はツールチップにメッセージを追加
         if on_error or on_warning:
-            # エラー表示
-            # ttk.Label(file_frame, text=message, foreground="red").grid(row=index, column=4, sticky=tk.W, padx=padx, pady=pady)
             tooltip_text.append(f'{error_message}[{error_type}]')
-        else:
+
+        # エラー時以外は進捗グラフを表示
+        if not on_error:
             # 進捗グラフ
             fig, ax = plt.subplots(figsize=(3, 0.1))
             canvas = FigureCanvasTkAgg(fig, master=file_frame)
@@ -306,11 +319,11 @@ def create_filelist_area(parent):
             graph_tooltop = f"項目数: {available} (Total: {all} / 対象外: {excluded})\n{make_results_text(total_data, incompleted)}"
             ToolTip(canvas.get_tk_widget(), msg=graph_tooltop, delay=0.3, follow=False)
             # クリップボード出力用
-            row += list(total_data.values())
-            row.append(incompleted)
+            copy_row += list(total_data.values())
+            copy_row.append(incompleted)
 
         # クリップボード出力用の配列に格納
-        data_arr.append(row)
+        copy_data.append(copy_row)
 
         # ツールチップ表示
         tooltip_text.append("<ダブルクリックで開きます>")
@@ -323,7 +336,7 @@ def create_filelist_area(parent):
     menubutton = ttk.Menubutton(exp_frame, text="エクスポート", direction="below")
     menu = tk.Menu(menubutton, tearoff=0)
     # menu.add_command(label="CSVで保存", command=lambda: save_to_csv(treeview_to_array(tree), f'{os.path.splitext(file_name)[0]}_{settings["app"]["structures"][structure]}'))
-    menu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(data_arr))
+    menu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(copy_data))
     menubutton.config(menu=menu)
     menubutton.pack(anchor=tk.SW, side=tk.BOTTOM, padx=2, pady=5)
 
@@ -442,8 +455,8 @@ def create_input_area(parent, settings):
     # menubutton.pack(side=tk.LEFT, padx=2)
 
 def update_info_label(data, count_label, rate_label, detail=True):
-    # 値
-    if "error" in data:
+    if len(data) == 0 or"error" in data:
+        # データなしまたはエラー時
         all = None
         available  = None
         completed = None
@@ -474,13 +487,19 @@ def update_bar_chart(data, incompleted_count, ax, canvas, show_label=True):
     # 表示順を固定
     sorted_labels = settings["common"]["results"]
 
-    # 各ラベルとサイズ
+    # 各結果(ラベル)とカウント(サイズ)
     labels = [label for label in sorted_labels if label in data]
     sizes = [data[label] for label in labels]
 
     # 未実施数を追加
-    labels += [settings["common"]["labels"]["not_run"]]
-    sizes += [incompleted_count]
+    if incompleted_count > 0:
+        labels += [settings["common"]["labels"]["not_run"]]
+        sizes += [incompleted_count]
+
+    # 有効データなし時
+    if len(labels) == 0:
+        labels = ["No Data"]
+        sizes = [1]
 
     # 合計値
     total = sum(sizes)
@@ -491,8 +510,8 @@ def update_bar_chart(data, incompleted_count, ax, canvas, show_label=True):
     bars = []  # 各バーのオブジェクトを保存
 
     # ラベルごとの色設定
-    bar_color_map = settings["app"]["colors"]["bar"]
-    label_color_map = settings["app"]["colors"]["label"]
+    bar_color_map = settings["app"]["bar"]["colors"]
+    label_color_map = settings["app"]["bar"]["font_color_map"]
 
     for size, label in zip(sizes, labels):
         color = bar_color_map.get(label, "gainsboro")  # ラベルの色を取得（デフォルトは薄い灰色）
@@ -524,6 +543,9 @@ def update_bar_chart(data, incompleted_count, ax, canvas, show_label=True):
                     label_text = ""
             else:
                 label_text = ""
+
+            # データなし時は%表示なし
+            if label == "No Data": label_text = label
 
             # ラベルの色
             if color in label_color_map["black"]:
@@ -612,7 +634,7 @@ def create_total_tab(parent):
     total_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     # グラフを更新
-    incompleted = Utility.sum_values(filtered_data, "stats")["incompleted"]
+    incompleted = Utility.sum_values(filtered_data, "stats")["incompleted"] if len(filtered_data) > 0 else 0
     update_bar_chart(data=Utility.sum_values(filtered_data, "total"), incompleted_count=incompleted, ax=total_ax, canvas=total_canvas, show_label=True)
 
     # グラフのツールチップ(全体)
