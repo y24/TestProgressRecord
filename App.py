@@ -337,7 +337,7 @@ def create_filelist_area(parent):
 
     menubutton = ttk.Menubutton(exp_frame, text="エクスポート", direction="below")
     menu = tk.Menu(menubutton, tearoff=0)
-    # menu.add_command(label="CSVで保存", command=lambda: save_to_csv(treeview_to_array(tree), f'{os.path.splitext(file_name)[0]}_{settings["app"]["structures"][structure]}'))
+    menu.add_command(label="CSVで保存", command=lambda: save_to_csv(copy_data, f'進捗集計_{Utility.get_today_str()}'))
     menu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(copy_data))
     menubutton.config(menu=menu)
     menubutton.pack(anchor=tk.SW, side=tk.BOTTOM, padx=2, pady=5)
@@ -446,7 +446,7 @@ def create_input_area(parent, settings):
     ttk.Button(submit_frame, text="Excelへ書込", command=lambda: write_to_excel(field_data)).pack(side=tk.LEFT, padx=2, pady=(0,2))
     # ttk.Button(submit_frame, text="書込先を開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=2, pady=5)
 
-    ttk.Button(submit_frame, text="CSV保存", command=lambda: save_to_csv(WriteData.convert_to_2d_array(data=input_data, settings=settings), f'進捗集計_{datetime.today().strftime("%Y-%m-%d")}')).pack(side=tk.LEFT, padx=2, pady=(0,2))
+    ttk.Button(submit_frame, text="CSV保存", command=lambda: save_to_csv(WriteData.convert_to_2d_array(data=input_data, settings=settings), f'進捗集計_{Utility.get_today_str()}')).pack(side=tk.LEFT, padx=2, pady=(0,2))
     ttk.Button(submit_frame, text="クリップボードにコピー", command=lambda: copy_to_clipboard(WriteData.convert_to_2d_array(data=input_data, settings=settings))).pack(side=tk.LEFT, padx=2, pady=(0,2))
 
     # menubutton = ttk.Menubutton(submit_frame, text="エクスポート", direction="below")

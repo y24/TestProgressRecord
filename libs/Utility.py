@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from datetime import datetime
 from collections import OrderedDict
 from collections import defaultdict
 
@@ -169,3 +170,6 @@ def find_key_by_name(data: dict, target_name: str) -> str:
         if value.get("name") == target_name:
             return key
     return None  # 見つからなかった場合
+
+def get_today_str():
+    return datetime.today().strftime("%Y-%m-%d")
