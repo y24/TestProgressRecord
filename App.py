@@ -253,7 +253,7 @@ def create_filelist_area(parent):
         else:
             on_error = False
             total_data = file_data['total']
-            state = file_data["exec_status"]
+            state = file_data["run"]["status"]
             completed = file_data['stats']['completed']
             all = file_data['stats']['all']
             excluded = file_data['stats']['excluded']

@@ -84,7 +84,7 @@ def sum_completed_results(data: dict, completed_results: list) -> int:
     return sum(data.get(key, 0) for key in completed_results)
 
 # 実施状況を判別
-def make_exec_status(count_stats: dict, settings: dict) -> str:
+def make_run_status(count_stats: dict, settings: dict) -> str:
     if count_stats["filled"] == 0:
         # 未着手
         return settings["app"]["state"]["not_started"]["name"]
@@ -244,22 +244,37 @@ def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
     # 未実施テストケース数(マイナスは0)
     incompleted_count = max(0, available_count - filled_count)
 
+    # 集計データ
     count_stats = {
-            "all": case_count_all,
-            "excluded": excluded_count,
-            "available": available_count,
-            "filled": filled_count,
-            "completed": completed_count,
-            "incompleted": incompleted_count
-        }
+        "all": case_count_all,
+        "excluded": excluded_count,
+        "available": available_count,
+        "filled": filled_count,
+        "completed": completed_count,
+        "incompleted": incompleted_count
+    }
 
     # 実施状況
-    exec_status = make_exec_status(count_stats, settings)
+    run_status = make_run_status(count_stats, settings)
+
+    # 開始日・完了日
+    start_date = min(data_daily_total.keys())
+    if run_status == settings["app"]["state"]["completed"]["name"]:
+        finish_date = max(data_daily_total.keys())
+    else:
+        finish_date = None
+
+    # 実施状況データ
+    run_data = {
+        "status": run_status,
+        "start_date": start_date,
+        "finish_date": finish_date
+    }
 
     # 最終出力データ
     out_data = {
         "stats": count_stats,
-        "exec_status": exec_status,
+        "run": run_data,
         "count_by_sheet": counts_by_sheet,
         "daily": data_daily_total,
         "total": data_total,
