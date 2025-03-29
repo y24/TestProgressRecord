@@ -281,7 +281,7 @@ def create_filelist_area(parent):
         # State
         state_label = ttk.Label(file_frame, text=state, anchor="center")
         state_label.grid(row=index, column=2, padx=padx, pady=pady, sticky=tk.W + tk.E)
-        set_state_color(state_label, state)
+        # set_state_color(state_label, state)
         copy_row.append(state)
 
         # 完了数 / 項目数
@@ -300,6 +300,7 @@ def create_filelist_area(parent):
         if on_error or on_warning:
             color = "red" if on_error else "darkorange2"
             filename_label.config(foreground=color)
+            state_label.config(foreground=color)
             completed_label.config(foreground=color)
             comp_rate_label.config(foreground=color)
 
