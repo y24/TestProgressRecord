@@ -218,7 +218,7 @@ def create_filelist_area(parent):
     file_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     # ヘッダ
-    headers = ["No.", "ファイル名", "State", "開始日", "完了日", "完了率", "進捗"]
+    headers = ["No.", "ファイル名", "State", "開始日", "完了日", "完了率", "テスト結果"]
     for col, text in enumerate(headers):
         ttk.Label(file_frame, text=text, foreground="#444444", background="#e0e0e0", relief="solid").grid(
             row=0, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
@@ -228,7 +228,8 @@ def create_filelist_area(parent):
     file_frame.grid_columnconfigure(1, weight=3)
 
     # クリップボード出力用のヘッダ
-    copy_data = [headers[:len(headers)-1] + settings["common"]["results"] + [settings["common"]["labels"]["not_run"]]]
+    export_headers = ["No.", "ファイル名", "State", "開始日", "完了日", "項目数", "完了数", "完了率"]
+    export_data = [export_headers + settings["common"]["results"] + [settings["common"]["labels"]["not_run"]]]
 
     # データ行
     for index, file_data in enumerate(input_data, 1):
@@ -278,7 +279,7 @@ def create_filelist_area(parent):
         filename_label = ttk.Label(file_frame, text=filename)
         filename_label.grid(row=index, column=1, sticky=tk.W, padx=padx, pady=pady)
         tooltip_text = [filename]
-        export_row.append(filename) # エクスポート用データ
+        export_row.append(filename)
 
         # ファイル名ダブルクリック時
         filepath = file_data['filepath']
@@ -288,17 +289,17 @@ def create_filelist_area(parent):
         state_label = ttk.Label(file_frame, text=state, anchor="center")
         state_label.grid(row=index, column=2, padx=padx, pady=pady, sticky=tk.W + tk.E)
         # set_state_color(state_label, state)
-        export_row.append(state) # エクスポート用データ
+        export_row.append(state)
 
         # 開始日
         start_label = ttk.Label(file_frame, text=Utility.simplify_date(start_date))
         start_label.grid(row=index, column=3, padx=padx, pady=pady)
-        export_row.append(start_date or "") # エクスポート用データ
+        export_row.append(start_date or "")
 
         # 完了日
         finish_label = ttk.Label(file_frame, text=Utility.simplify_date(finish_date))
         finish_label.grid(row=index, column=4, padx=padx, pady=pady)
-        export_row.append(finish_date or "") # エクスポート用データ
+        export_row.append(finish_date or "")
 
         # 完了率
         if on_error:
@@ -310,7 +311,10 @@ def create_filelist_area(parent):
 
         comp_rate_label = ttk.Label(file_frame, text=comp_rate_display)
         comp_rate_label.grid(row=index, column=5, padx=padx, pady=pady)
-        export_row.append(comp_rate_export) # エクスポート用データ
+        # エクスポート用データ
+        export_row.append(available) # 項目数
+        export_row.append(completed) # 完了数
+        export_row.append(comp_rate_export) # 完了率
 
         # エラー時赤色・ワーニング時オレンジ色
         if on_error or on_warning:
@@ -334,10 +338,10 @@ def create_filelist_area(parent):
             ToolTip(canvas.get_tk_widget(), msg=graph_tooltop, delay=0.3, follow=False)
             # エクスポート用データ
             export_row += list(total_data.values())
-            export_row.append(incompleted) # エクスポート用データ
+            export_row.append(incompleted)
 
         # エクスポート用の配列に格納
-        copy_data.append(export_row)
+        export_data.append(export_row)
 
         # エラー・ワーニング時はツールチップにメッセージを追加
         if on_error or on_warning:
@@ -353,8 +357,8 @@ def create_filelist_area(parent):
 
     menubutton = ttk.Menubutton(exp_frame, text="エクスポート", direction="below")
     menu = tk.Menu(menubutton, tearoff=0)
-    menu.add_command(label="CSVで保存", command=lambda: save_to_csv(copy_data, f'進捗集計_{Utility.get_today_str()}'))
-    menu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(copy_data))
+    menu.add_command(label="CSVで保存", command=lambda: save_to_csv(export_data, f'進捗集計_{Utility.get_today_str()}'))
+    menu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(export_data))
     menubutton.config(menu=menu)
     menubutton.pack(anchor=tk.SW, side=tk.BOTTOM, padx=2, pady=5)
 
