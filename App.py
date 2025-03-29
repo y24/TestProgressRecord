@@ -208,74 +208,7 @@ def set_state_color(label, state_name):
     state_info = settings["app"]["state"][state_key]
     label.config(foreground=state_info["foreground"], background=state_info["background"])
 
-def sort_input_data(order: str) -> None:
-    """入力データを指定された順序でソートする
-
-    Args:
-        order (str): ソート基準
-            - "start_date": 開始日時でソート
-            - "finish_date": 終了日時でソート
-            - "file_name": ファイル名でソート
-            - "completed_rate": 完了率でソート
-    """
-    # ソートキーの定義
-    def safe_get(x, keys, default=None):
-        """ネストされたディクショナリから安全に値を取得する"""
-        try:
-            value = x
-            for key in keys:
-                value = value[key]
-            return value
-        except (KeyError, TypeError):
-            return default
-
-    sort_keys = {
-        "start_date": lambda x: (
-            0 if "run" not in x else 1,
-            0 if safe_get(x, ["run", "start_date"]) is None else 1,
-            safe_get(x, ["run", "start_date"], "")
-        ),
-        "finish_date": lambda x: (
-            0 if "run" not in x else 1,
-            0 if safe_get(x, ["run", "finish_date"]) is None else 1,
-            safe_get(x, ["run", "finish_date"], "")
-        ),
-        "file_name": lambda x: (
-            0 if "file" not in x else 1,
-            0 if safe_get(x, ["file"]) is None else 1,
-            safe_get(x, ["file"], "").lower()
-        ),
-        "completed_rate": lambda x: (
-            0 if "stats" not in x else 1,
-            0 if safe_get(x, ["stats", "available"]) is None else 1,
-            safe_get(x, ["stats", "completed"], 0) / safe_get(x, ["stats", "available"], 1) 
-            if safe_get(x, ["stats", "available"], 0) > 0 else 0
-        )
-    }
-
-    # 存在するソートキーかチェック
-    if order not in sort_keys:
-        print(f"Warning: Unknown sort order '{order}'. Using 'start_date' as default.")
-        order = "start_date"
-
-    # ソート実行
-    global input_data
-    input_data = sorted(input_data, key=sort_keys[order])
-    input_data.reverse()
-
-def change_sort_order(order):
-    # global sort_order
-    # sort_order = order
-    sort_input_data(order)
-    print("sort:", order)
-    for item in input_data:
-        print(item["file"])
-
-def create_filelist_area(parent):
-    # ファイル別テーブル
-    table_frame = ttk.Frame(parent)
-    table_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-
+def update_filelist_table(table_frame):
     # テーブルの余白
     padx = 1
     pady = 3
@@ -414,6 +347,85 @@ def create_filelist_area(parent):
         tooltip_text.append("<ダブルクリックで開きます>")
         ToolTip(filename_label, msg="\n".join(tooltip_text), delay=0.3, follow=False)
 
+    return export_data
+
+def sort_input_data(order: str) -> None:
+    """入力データを指定された順序でソートする
+
+    Args:
+        order (str): ソート基準
+            - "start_date": 開始日時でソート
+            - "finish_date": 終了日時でソート
+            - "file_name": ファイル名でソート
+            - "completed_rate": 完了率でソート
+    """
+    # ソートキーの定義
+    def safe_get(x, keys, default=None):
+        """ネストされたディクショナリから安全に値を取得する"""
+        try:
+            value = x
+            for key in keys:
+                value = value[key]
+            return value
+        except (KeyError, TypeError):
+            return default
+
+    sort_keys = {
+        "start_date": lambda x: (
+            0 if "run" not in x else 1,
+            0 if safe_get(x, ["run", "start_date"]) is None else 1,
+            safe_get(x, ["run", "start_date"], "")
+        ),
+        "finish_date": lambda x: (
+            0 if "run" not in x else 1,
+            0 if safe_get(x, ["run", "finish_date"]) is None else 1,
+            safe_get(x, ["run", "finish_date"], "")
+        ),
+        "file_name": lambda x: (
+            0 if "file" not in x else 1,
+            0 if safe_get(x, ["file"]) is None else 1,
+            safe_get(x, ["file"], "").lower()
+        ),
+        "completed_rate": lambda x: (
+            0 if "stats" not in x else 1,
+            0 if safe_get(x, ["stats", "available"]) is None else 1,
+            safe_get(x, ["stats", "completed"], 0) / safe_get(x, ["stats", "available"], 1) 
+            if safe_get(x, ["stats", "available"], 0) > 0 else 0
+        )
+    }
+
+    # 存在するソートキーかチェック
+    if order not in sort_keys:
+        print(f"Warning: Unknown sort order '{order}'. Using 'start_date' as default.")
+        order = "start_date"
+
+    # ソート実行
+    global input_data
+    input_data = sorted(input_data, key=sort_keys[order])
+
+def clear_frame(frame):
+    for widget in frame.winfo_children():
+        widget.destroy()
+
+def change_sort_order(table_frame, order, sort_menu_button):
+    global export_data
+    # global sort_order
+    # sort_order = order
+    sort_input_data(order)
+    clear_frame(table_frame)
+    export_data = update_filelist_table(table_frame)
+    sort_menu_button.config(text=f'並び替え: {settings["app"]["sort"]["map"][order]}')
+
+def create_filelist_area(parent):
+    global export_data
+
+    # ファイル別テーブル
+    table_frame = ttk.Frame(parent)
+    table_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+    # ファイル別テーブルの更新
+    export_data = update_filelist_table(table_frame)
+
     # メニュー
     menu_frame = ttk.Frame(parent)
     menu_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
@@ -421,10 +433,8 @@ def create_filelist_area(parent):
     # 並び替えメニュー
     sort_menu_button = ttk.Menubutton(menu_frame, text="並び替え", direction="below")
     sort_menu = tk.Menu(sort_menu_button, tearoff=0)
-    sort_menu.add_command(label="開始日順", command=lambda: change_sort_order("start_date"))
-    sort_menu.add_command(label="完了日順", command=lambda: change_sort_order("finish_date"))
-    sort_menu.add_command(label="ファイル名順", command=lambda: change_sort_order("file_name"))
-    sort_menu.add_command(label="完了率順", command=lambda: change_sort_order("completed_rate"))
+    for key, label in settings["app"]["sort"]["map"].items():
+        sort_menu.add_command(label=label, command=lambda key=key: change_sort_order(table_frame, key, sort_menu_button))
     sort_menu_button.config(menu=sort_menu)
     sort_menu_button.pack(anchor=tk.SW, side=tk.LEFT, padx=2, pady=5)
 
