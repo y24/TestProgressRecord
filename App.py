@@ -208,14 +208,82 @@ def set_state_color(label, state_name):
     state_info = settings["app"]["state"][state_key]
     label.config(foreground=state_info["foreground"], background=state_info["background"])
 
+def sort_input_data(order: str) -> None:
+    """入力データを指定された順序でソートする
+
+    Args:
+        order (str): ソート基準
+            - "start_date": 開始日時でソート
+            - "finish_date": 終了日時でソート
+            - "file_name": ファイル名でソート
+            - "completed_rate": 完了率でソート
+    """
+    # ソートキーの定義
+    def safe_get(x, keys, default=None):
+        """ネストされたディクショナリから安全に値を取得する"""
+        try:
+            value = x
+            for key in keys:
+                value = value[key]
+            return value
+        except (KeyError, TypeError):
+            return default
+
+    sort_keys = {
+        "start_date": lambda x: (
+            0 if "run" not in x else 1,
+            0 if safe_get(x, ["run", "start_date"]) is None else 1,
+            safe_get(x, ["run", "start_date"], "")
+        ),
+        "finish_date": lambda x: (
+            0 if "run" not in x else 1,
+            0 if safe_get(x, ["run", "finish_date"]) is None else 1,
+            safe_get(x, ["run", "finish_date"], "")
+        ),
+        "file_name": lambda x: (
+            0 if "file" not in x else 1,
+            0 if safe_get(x, ["file"]) is None else 1,
+            safe_get(x, ["file"], "").lower()
+        ),
+        "completed_rate": lambda x: (
+            0 if "stats" not in x else 1,
+            0 if safe_get(x, ["stats", "available"]) is None else 1,
+            safe_get(x, ["stats", "completed"], 0) / safe_get(x, ["stats", "available"], 1) 
+            if safe_get(x, ["stats", "available"], 0) > 0 else 0
+        )
+    }
+
+    # 存在するソートキーかチェック
+    if order not in sort_keys:
+        print(f"Warning: Unknown sort order '{order}'. Using 'start_date' as default.")
+        order = "start_date"
+
+    # ソート実行
+    global input_data
+    input_data = sorted(input_data, key=sort_keys[order])
+    input_data.reverse()
+
+def change_sort_order(order):
+    # global sort_order
+    # sort_order = order
+    sort_input_data(order)
+    print("sort:", order)
+    for item in input_data:
+        print(item["file"])
+
 def create_filelist_area(parent):
-    # スタイル設定
-    padx = 1
-    pady = 3
+
+    # クリップボード出力用のヘッダ
+    export_headers = ["No.", "ファイル名", "State", "開始日", "完了日", "項目数", "完了数", "完了率"]
+    export_data = [export_headers + settings["common"]["results"] + [settings["common"]["labels"]["not_run"]]]
 
     # フレーム
     file_frame = ttk.Frame(parent)
     file_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+    # テーブルの余白
+    padx = 1
+    pady = 3
 
     # ヘッダ
     headers = ["No.", "ファイル名", "State", "開始日", "完了日", "完了率", "テスト結果"]
@@ -226,10 +294,6 @@ def create_filelist_area(parent):
 
     # 列のリサイズ設定
     file_frame.grid_columnconfigure(1, weight=3)
-
-    # クリップボード出力用のヘッダ
-    export_headers = ["No.", "ファイル名", "State", "開始日", "完了日", "項目数", "完了数", "完了率"]
-    export_data = [export_headers + settings["common"]["results"] + [settings["common"]["labels"]["not_run"]]]
 
     # データ行
     for index, file_data in enumerate(input_data, 1):
@@ -351,16 +415,27 @@ def create_filelist_area(parent):
         tooltip_text.append("<ダブルクリックで開きます>")
         ToolTip(filename_label, msg="\n".join(tooltip_text), delay=0.3, follow=False)
 
-    # エクスポート
-    exp_frame = ttk.Frame(parent)
-    exp_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+    # メニュー
+    menu_frame = ttk.Frame(parent)
+    menu_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-    menubutton = ttk.Menubutton(exp_frame, text="エクスポート", direction="below")
-    menu = tk.Menu(menubutton, tearoff=0)
-    menu.add_command(label="CSVで保存", command=lambda: save_to_csv(export_data, f'進捗集計_{Utility.get_today_str()}'))
-    menu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(export_data))
-    menubutton.config(menu=menu)
-    menubutton.pack(anchor=tk.SW, side=tk.BOTTOM, padx=2, pady=5)
+    # 並び替えメニュー
+    sort_menu_button = ttk.Menubutton(menu_frame, text="並び替え", direction="below")
+    sort_menu = tk.Menu(sort_menu_button, tearoff=0)
+    sort_menu.add_command(label="開始日順", command=lambda: change_sort_order("start_date"))
+    sort_menu.add_command(label="完了日順", command=lambda: change_sort_order("finish_date"))
+    sort_menu.add_command(label="ファイル名順", command=lambda: change_sort_order("file_name"))
+    sort_menu.add_command(label="完了率順", command=lambda: change_sort_order("completed_rate"))
+    sort_menu_button.config(menu=sort_menu)
+    sort_menu_button.pack(anchor=tk.SW, side=tk.LEFT, padx=2, pady=5)
+
+    # エクスポートメニュー
+    exp_menu_button = ttk.Menubutton(menu_frame, text="エクスポート", direction="below")
+    expmenu = tk.Menu(exp_menu_button, tearoff=0)
+    expmenu.add_command(label="CSVで保存", command=lambda: save_to_csv(export_data, f'進捗集計_{Utility.get_today_str()}'))
+    expmenu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(export_data))
+    exp_menu_button.config(menu=expmenu)
+    exp_menu_button.pack(anchor=tk.SW, side=tk.LEFT, padx=2, pady=5)
 
 def write_to_excel(field_data):    
     file_path = field_data["filepath"].get()
