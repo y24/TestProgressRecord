@@ -7,32 +7,35 @@ from libs import Utility
 
 logger = Logger.get_logger(__name__, console=True, file=False, trace_line=False)
 
-# データ集計
+# 日付ごとのデータ集計
 def get_daily(data, results: list[str], completed_label:str, completed_results: list[str]):
+    # 辞書を初期化：{日付: {結果タイプ: カウント}}
     result_count = defaultdict(lambda: defaultdict(int))
     
     for row in data:
         result, name, date = row
         
-        # 日付が空のデータはno_dateにまとめる
+        # 日付が未設定の場合は特別な識別子「no_date」として扱う
         if not date: date = "no_date"
 
-        # 各結果を0で初期化
+        # 各結果タイプのカウントを0で初期化し、結果が存在しない場合は0として表示されるようにする
         for keyword in results:
             result_count[date][keyword] = result_count[date].get(keyword, 0)
         result_count[date][completed_label] = result_count[date].get(completed_label, 0)
 
-        # 結果列がフィルタ文字列に合致するものだけ抽出
+        # 結果の集計処理
+        # 1. 個別の結果タイプをカウント
         if result in results:
             result_count[date][result] += 1
+        # 2. 完了としてカウントすべき結果の場合、Completedとしてもカウント
         if result in completed_results:
             result_count[date][completed_label] += 1
     
-    # 出力
-    out_data = {}
-    no_date_data = {}
+    # 集計結果を日付ありデータと日付なしデータに分離
+    out_data = {}      # 日付ありデータ
+    no_date_data = {}  # 日付なしデータ
     for date, counts in sorted(result_count.items()):
-        counts = {**counts}
+        counts = {**counts}  # 辞書のディープコピー
         if date == "no_date":
             no_date_data = counts
         else:
@@ -97,14 +100,17 @@ def make_run_status(count_stats: dict, settings: dict) -> str:
     else:
         return "???"
 
-# 処理
+# Excelファイルからテスト結果データを読み取り、集計する関数
 def aggregate_results(filepath:str, settings):
-
-    # 対象シート名を取得
+    # 設定された検索キーワードに基づいて対象シートを特定
     workbook = Excel.load(filepath)
-    sheet_names = Excel.get_sheetnames_by_keywords(workbook, keywords=settings["read"]["sheet_search_keys"], ignores=settings["read"]["sheet_search_ignores"])
+    sheet_names = Excel.get_sheetnames_by_keywords(
+        workbook, 
+        keywords=settings["read"]["sheet_search_keys"], 
+        ignores=settings["read"]["sheet_search_ignores"]
+    )
 
-    # シートがない場合はエラー
+    # 対象シートが見つからない場合はエラーを返却
     if len(sheet_names) == 0:
         return {
             "error": {
@@ -113,24 +119,31 @@ def aggregate_results(filepath:str, settings):
             }
         }
 
-    # 各シート処理
-    all_data = []
-    data_by_env = {}
-    counts_by_sheet = []
+    # 集計用の変数を初期化
+    all_data = []          # 全シートの生データを格納
+    data_by_env = {}       # 環境別の集計データを格納
+    counts_by_sheet = []   # シート別の件数情報を格納
+
+    # 各シートのデータを処理
     for sheet_name in sheet_names:
+        # シートごとのデータを処理して取得
         sheet_data = _process_sheet(workbook=workbook, sheet_name=sheet_name, settings=settings)
+        
+        # エラーが発生した場合は即時返却
         if "error" in sheet_data:
             return sheet_data
+        # 正常にデータが取得できた場合は集計用変数に追加
         elif sheet_data:
-            all_data.extend(sheet_data["data"])
-            data_by_env.update(sheet_data["env_data"])
-            counts_by_sheet.append(sheet_data["counts"])
+            all_data.extend(sheet_data["data"])           # 生データを追加
+            data_by_env.update(sheet_data["env_data"])    # 環境別データを追加
+            counts_by_sheet.append(sheet_data["counts"])   # 件数情報を追加
 
+    # 全シートの集計データを生成して返却
     return _aggregate_final_results(
-            all_data=all_data,
-            data_by_env=data_by_env,
-            counts_by_sheet=counts_by_sheet,
-            settings=settings
+            all_data=all_data,           # 全シートの生データ
+            data_by_env=data_by_env,     # 環境別の集計データ
+            counts_by_sheet=counts_by_sheet,  # シート別の件数情報
+            settings=settings            # 設定情報
         )
 
 def _process_sheet(workbook, sheet_name: str, settings: dict):
