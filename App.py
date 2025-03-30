@@ -43,7 +43,7 @@ def _create_row_data(structure: str, values: dict, settings: dict, all_keys: set
         return (date, name, count)
 
 def _insert_tree_rows(tree: ttk.Treeview, structure: str, data: dict, settings: dict, 
-                     all_keys: set, today: str) -> None:
+                     all_keys: set) -> None:
     """Treeviewに行データを挿入する
 
     Args:
@@ -52,8 +52,8 @@ def _insert_tree_rows(tree: ttk.Treeview, structure: str, data: dict, settings: 
         data: 表示データ
         settings: 設定情報
         all_keys: 全キーのセット
-        today: 今日の日付
     """
+    today = datetime.today().strftime("%Y-%m-%d")
     alternating_colors = ["#ffffff", "#f0f0f0"]
     highlight_color = "#d0f0ff"
     
@@ -163,8 +163,7 @@ def _sort_data(data: dict, structure: str) -> dict:
 
 def create_treeview(parent, data, structure, file_name):
     """Treeviewウィジェットを作成する"""
-    completed = settings["test_status"]["labels"]["completed"]
-    
+
     # 全キーの収集
     all_keys = _get_all_keys(data, structure)
     
@@ -201,11 +200,8 @@ def create_treeview(parent, data, structure, file_name):
             col_w = 70
         tree.column(col, anchor='center', width=col_w)
     
-    # 行の色分け設定
-    today = datetime.today().strftime("%Y-%m-%d")
-    
     # データ構造タイプに応じてTreeviewにデータを挿入
-    _insert_tree_rows(tree, structure, data, settings, all_keys, today)
+    _insert_tree_rows(tree, structure, data, settings, all_keys)
     
     tree.pack(fill=tk.BOTH, expand=True)
     
