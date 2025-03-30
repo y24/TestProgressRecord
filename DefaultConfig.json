@@ -42,11 +42,11 @@
             }
         },
         "sort": {
-            "map": {
-                "file_name": "ファイル名順",
-                "start_date": "開始日順",
-                "finish_date": "完了日順",
-                "completed_rate": "完了率順"
+            "orders": {
+                "file_name": {"label": "ファイル名順"},
+                "start_date": {"label": "開始日順"},
+                "finish_date": {"label": "完了日順"},
+                "completed_rate": {"label": "完了率順"}
             },
             "default": "file_name"
         }
