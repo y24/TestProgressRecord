@@ -19,8 +19,7 @@
     },
     "app": {
         "window_position": "800x580+200+200",
-        "filepath": "",
-        "table_name": "DATA",
+        "write": {"filepath": "", "table_name": "DATA"},
         "structures": {"daily": "日付別", "by_env": "環境別", "by_name": "担当者別"},
         "state": {
             "completed": {"name": "完了", "foreground": "darkgreen", "background": "darkseagreen1"},

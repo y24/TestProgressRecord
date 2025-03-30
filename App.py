@@ -530,10 +530,7 @@ def create_summary_filelist_area(parent):
     exp_menu_button.config(menu=expmenu)
     exp_menu_button.pack(anchor=tk.SW, side=tk.LEFT, padx=2, pady=5)
 
-def write_to_excel(field_data):    
-    file_path = field_data["filepath"].get()
-    table_name = field_data["table_name"].get()
-
+def write_to_excel(file_path, table_name):
     # ファイルパス未入力
     if not file_path:
         Dialog.show_messagebox(root, type="warning", title="Error", message=f"書込先のファイルを選択してください。")
@@ -545,8 +542,8 @@ def write_to_excel(field_data):
         return
 
     # フィールドの設定値をグローバルに反映
-    settings["app"]["filepath"] = file_path
-    settings["app"]["table_name"] = table_name
+    settings["app"]["write"]["filepath"] = file_path
+    settings["app"]["write"]["table_name"] = table_name
 
     # データ書込
     try:
@@ -618,20 +615,18 @@ def create_input_area(parent, settings):
     
     ttk.Label(input_frame, text="書込先:").grid(row=0, column=0, sticky=tk.W, padx=2, pady=3)
     file_path_entry = ttk.Entry(input_frame, width=80)
-    file_path_entry.insert(0, settings["app"]["filepath"])
+    file_path_entry.insert(0, settings["app"]["write"]["filepath"])
     file_path_entry.grid(row=0, column=1)
     ttk.Button(input_frame, text="...", width=3, command=lambda: select_write_file(file_path_entry)).grid(row=0, column=2, padx=2, pady=3)
 
     ttk.Label(input_frame, text="データシート名:").grid(row=0, column=3, padx=(4,2))
     table_name_entry = ttk.Entry(input_frame, width=20)
-    table_name_entry.insert(0, settings["app"]["table_name"])
+    table_name_entry.insert(0, settings["app"]["write"]["table_name"])
     table_name_entry.grid(row=0, column=4, padx=2)
-
-    field_data = {"filepath": file_path_entry, "table_name": table_name_entry}
 
     submit_frame = ttk.Frame(input_frame)
     submit_frame.grid(row=2, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W)
-    ttk.Button(submit_frame, text="Excelへ書込", command=lambda: write_to_excel(field_data)).pack(side=tk.LEFT, padx=2, pady=(0,2))
+    ttk.Button(submit_frame, text="Excelへ書込", command=lambda: write_to_excel(file_path_entry.get(), table_name_entry.get())).pack(side=tk.LEFT, padx=2, pady=(0,2))
     # ttk.Button(submit_frame, text="書込先を開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=2, pady=5)
 
     ttk.Button(submit_frame, text="CSV保存", command=lambda: save_to_csv(WriteData.convert_to_2d_array(data=input_data, settings=settings), f'進捗集計_{Utility.get_today_str()}')).pack(side=tk.LEFT, padx=2, pady=(0,2))
