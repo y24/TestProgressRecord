@@ -31,14 +31,51 @@ def get_sheet_by_name(workbook, sheet_name:str):
 def get_sheetnames_by_keyword(workbook, keyword:str):
     return [sheet for sheet in workbook.sheetnames if keyword in sheet]
 
-def get_sheetnames_by_keywords(workbook, keywords: list, ignores: list = None):
+def get_sheetnames_by_keywords(workbook, keywords: list, ignores: list = None) -> list:
+    """キーワードに基づいてワークブックからシート名をフィルタリングする
+
+    Args:
+        workbook: 対象のワークブック
+        keywords: 検索キーワードのリスト
+        ignores: 除外キーワードのリスト（デフォルト: None）
+
+    Returns:
+        list: フィルタリングされたシート名のリスト
+    """
+    # キーワードが指定されていない場合は全シート名を返す
+    if len(keywords) == 0:
+        return workbook.sheetnames
+
+    # 除外キーワードが未指定の場合は空リストを使用
     if ignores is None:
         ignores = []
-    return [
-        sheet for sheet in workbook.sheetnames 
-        if any(keyword in sheet for keyword in keywords) and not any(ignore in sheet for ignore in ignores)
+
+    # シート名のフィルタリング
+    filtered_sheets = [
+        sheet_name 
+        for sheet_name in workbook.sheetnames 
+        if _should_include_sheet(sheet_name, keywords, ignores)
     ]
 
+    return filtered_sheets
+
+def _should_include_sheet(sheet_name: str, keywords: list, ignores: list) -> bool:
+    """シートを含めるべきかどうかを判定する
+
+    Args:
+        sheet_name: 判定対象のシート名
+        keywords: 検索キーワードのリスト
+        ignores: 除外キーワードのリスト
+
+    Returns:
+        bool: シートを含める場合はTrue、除外する場合はFalse
+    """
+    # いずれかのキーワードが含まれており、
+    # かつ除外キーワードが含まれていないシートを選択
+    has_keyword = any(keyword in sheet_name for keyword in keywords)
+    has_ignore = any(ignore in sheet_name for ignore in ignores)
+    
+    return has_keyword and not has_ignore
 
 def find_row(sheet, search_col:str, search_str:str):
     try:
