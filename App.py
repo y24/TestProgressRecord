@@ -474,16 +474,15 @@ def clear_frame(frame):
     for widget in frame.winfo_children():
         widget.destroy()
 
-def change_sort_order(table_frame, order, sort_menu_button):
+def change_sort_order(table_frame, order, sort_menu_button, on_change=False):
     global export_data
-    # global sort_order
-    # sort_order = order
     sort_input_data(order)
     clear_frame(table_frame)
+    if on_change: plt.close('all')
     export_data = update_filelist_table(table_frame)
     sort_menu_button.config(text=f'並び替え: {settings["app"]["sort"]["map"][order]}')
 
-def create_filelist_area(parent):
+def create_summary_filelist_area(parent):
     global export_data
 
     # ファイル別テーブル
@@ -501,9 +500,10 @@ def create_filelist_area(parent):
     sort_menu_button = ttk.Menubutton(menu_frame, text="並び替え", direction="below")
     sort_menu = tk.Menu(sort_menu_button, tearoff=0)
     for key, label in settings["app"]["sort"]["map"].items():
-        sort_menu.add_command(label=label, command=lambda key=key: change_sort_order(table_frame, key, sort_menu_button))
+        sort_menu.add_command(label=label, command=lambda key=key: change_sort_order(table_frame, key, sort_menu_button, on_change=True))
     sort_menu_button.config(menu=sort_menu)
     sort_menu_button.pack(anchor=tk.SW, side=tk.LEFT, padx=2, pady=5)
+    change_sort_order(table_frame, settings["app"]["sort"]["default"], sort_menu_button, on_change=False)
 
     # エクスポートメニュー
     exp_menu_button = ttk.Menubutton(menu_frame, text="エクスポート", direction="below")
@@ -776,7 +776,7 @@ def create_global_tab(parent):
     nb.pack(fill=tk.BOTH, expand=True)
     return tab1, tab2
 
-def create_total_tab(parent):
+def create_summary_tab(parent):
     # 全体集計にはエラーとワーニングのあるデータを含めない
     filtered_data = Utility.filter_objects(input_data, exclude_keys=["error", "warning"])
 
@@ -809,7 +809,7 @@ def create_total_tab(parent):
     ToolTip(total_canvas.get_tk_widget(), msg=graph_tooltip, delay=0.3, follow=False)
 
     # ファイル別データ表示部
-    create_filelist_area(parent=parent)
+    create_summary_filelist_area(parent=parent)
 
     # ファイル書き込みエリア
     create_input_area(parent=parent, settings=settings)
@@ -870,7 +870,7 @@ def launch(data, args):
     tab1, tab2 = create_global_tab(parent=root)
 
     # タブ1：全体集計タブ
-    create_total_tab(tab1)
+    create_summary_tab(tab1)
     # タブ2：ファイル別集計タブ
     create_byfile_tab(tab2)
 

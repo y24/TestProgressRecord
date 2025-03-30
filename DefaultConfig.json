@@ -47,7 +47,8 @@
                 "start_date": "開始日順",
                 "finish_date": "完了日順",
                 "completed_rate": "完了率順"
-            }
+            },
+            "default": "file_name"
         }
     }
 }
