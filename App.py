@@ -416,7 +416,7 @@ def update_filelist_table(table_frame):
 
     return export_data
 
-def sort_input_data(order: str) -> None:
+def sort_input_data(order: str, type: str = "asc") -> None:
     """入力データを指定された順序でソートする
 
     Args:
@@ -425,6 +425,9 @@ def sort_input_data(order: str) -> None:
             - "finish_date": 終了日時でソート
             - "file_name": ファイル名でソート
             - "completed_rate": 完了率でソート
+        type (str): ソート順
+            - "asc": 昇順（デフォルト）
+            - "desc": 降順
     """
     # ソートキーの定義
     def safe_get(x, keys, default=None):
@@ -466,9 +469,18 @@ def sort_input_data(order: str) -> None:
         print(f"Warning: Unknown sort order '{order}'. Using 'start_date' as default.")
         order = "start_date"
 
+    # ソート順の検証
+    if type not in ["asc", "desc"]:
+        print(f"Warning: Invalid sort type '{type}'. Using 'asc' as default.")
+        type = "asc"
+
     # ソート実行
     global input_data
-    input_data = sorted(input_data, key=sort_keys[order])
+    input_data = sorted(
+        input_data, 
+        key=sort_keys[order], 
+        reverse=(type == "desc")  # type が "desc" の場合は reverse=True
+    )
 
 def clear_frame(frame):
     for widget in frame.winfo_children():
@@ -476,7 +488,7 @@ def clear_frame(frame):
 
 def change_sort_order(table_frame, order, sort_menu_button, on_change=False):
     global export_data
-    sort_input_data(order)
+    sort_input_data(order, type=settings["app"]["sort"]["orders"][order]["type"])
     clear_frame(table_frame) # 表示をクリア
     if on_change:
         plt.close('all') # 表示していたグラフを開放する
