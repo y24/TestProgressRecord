@@ -128,7 +128,7 @@ def _get_columns(structure: str, settings: dict, all_keys: set) -> list:
     
     column_definitions = {
         'by_env': ["環境名", "日付"],
-        'by_name': ["担当者", "Completed"],
+        'by_name': ["日付", "担当者", "Completed"],
         'daily': ["日付"]
     }
     
