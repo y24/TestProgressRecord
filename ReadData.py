@@ -270,18 +270,19 @@ def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
     # 実施状況
     run_status = make_run_status(count_stats, settings)
 
-    # 開始日・完了日
+    # 開始日・最終更新日
     start_date = min(data_daily_total.keys())
-    if run_status == settings["app"]["state"]["completed"]["name"]:
-        finish_date = max(data_daily_total.keys())
+    # ステータスが完了または進行中の場合は最終更新日を取得
+    if run_status == settings["app"]["state"]["completed"]["name"] or run_status == settings["app"]["state"]["in_progress"]["name"]:
+        last_update = max(data_daily_total.keys())
     else:
-        finish_date = None
+        last_update = None
 
     # 実施状況データ
     run_data = {
         "status": run_status,
         "start_date": start_date,
-        "finish_date": finish_date
+        "last_update": last_update
     }
 
     # 最終出力データ

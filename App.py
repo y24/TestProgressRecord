@@ -286,7 +286,7 @@ def _extract_file_data(file_data: dict) -> dict:
             "incompleted": 0,
             "comp_rate_text": "",
             "start_date": "",
-            "finish_date": "",
+            "last_update": "",
             "error_type": file_data["error"]["type"],
             "error_message": file_data["error"]["message"]
         }
@@ -308,7 +308,7 @@ def _extract_file_data(file_data: dict) -> dict:
         "incompleted": stats["incompleted"],
         "comp_rate_text": Utility.meke_rate_text(stats["completed"], stats["available"]),
         "start_date": run_data["start_date"],
-        "finish_date": run_data["finish_date"]
+        "last_update": run_data["last_update"]
     }
 
 def update_filelist_table(table_frame):
@@ -317,7 +317,7 @@ def update_filelist_table(table_frame):
     pady = 3
 
     # ヘッダ
-    headers = ["No.", "ファイル名", "State", "開始日", "完了日", "完了率", "テスト結果"]
+    headers = ["No.", "ファイル名", "State", "開始日", "更新日", "完了率", "テスト結果"]
     for col, text in enumerate(headers):
         ttk.Label(table_frame, text=text, foreground="#444444", background="#e0e0e0", relief="solid").grid(
             row=0, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
@@ -327,7 +327,7 @@ def update_filelist_table(table_frame):
     table_frame.grid_columnconfigure(1, weight=3)
 
     # クリップボード出力用のヘッダ
-    export_headers = ["No.", "ファイル名", "State", "開始日", "完了日", "項目数", "完了数", "完了率"]
+    export_headers = ["No.", "ファイル名", "State", "開始日", "更新日", "項目数", "完了数", "完了率"]
     export_data = [export_headers + settings["common"]["results"] + [settings["common"]["labels"]["not_run"]]]
 
     # 各ファイルのデータ表示
@@ -359,10 +359,10 @@ def update_filelist_table(table_frame):
         start_label.grid(row=index, column=3, padx=padx, pady=pady)
         export_row.append(display_data["start_date"] or "")
 
-        # 完了日
-        finish_label = ttk.Label(table_frame, text=Utility.simplify_date(display_data["finish_date"]))
-        finish_label.grid(row=index, column=4, padx=padx, pady=pady)
-        export_row.append(display_data["finish_date"] or "")
+        # 最終更新日
+        last_update_label = ttk.Label(table_frame, text=Utility.simplify_date(display_data["last_update"]))
+        last_update_label.grid(row=index, column=4, padx=padx, pady=pady)
+        export_row.append(display_data["last_update"] or "")
 
         # 完了率
         if display_data["on_error"]:
@@ -422,7 +422,7 @@ def sort_input_data(order: str, type: str = "asc") -> None:
     Args:
         order (str): ソート基準
             - "start_date": 開始日時でソート
-            - "finish_date": 終了日時でソート
+            - "last_update": 最終更新日時でソート
             - "file_name": ファイル名でソート
             - "completed_rate": 完了率でソート
         type (str): ソート順
@@ -446,10 +446,10 @@ def sort_input_data(order: str, type: str = "asc") -> None:
             0 if safe_get(x, ["run", "start_date"]) is None else 1,
             safe_get(x, ["run", "start_date"], "")
         ),
-        "finish_date": lambda x: (
+        "last_update": lambda x: (
             0 if "run" not in x else 1,
-            0 if safe_get(x, ["run", "finish_date"]) is None else 1,
-            safe_get(x, ["run", "finish_date"], "")
+            0 if safe_get(x, ["run", "last_update"]) is None else 1,
+            safe_get(x, ["run", "last_update"], "")
         ),
         "file_name": lambda x: (
             0 if "file" not in x else 1,

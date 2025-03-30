@@ -45,7 +45,7 @@
             "orders": {
                 "file_name": {"label": "ファイル名順", "type": "asc"},
                 "start_date": {"label": "最近開始した順", "type": "desc"},
-                "finish_date": {"label": "最近完了した順", "type": "desc"},
+                "last_update": {"label": "最近更新された順", "type": "desc"},
                 "completed_rate": {"label": "完了率高い順", "type": "desc"}
             },
             "default": "file_name"
