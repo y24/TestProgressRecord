@@ -13,44 +13,63 @@ from libs import Utility
 from libs import AppConfig
 from libs import Dialog
 
+# ファイル別タブのTreeview
 def create_treeview(parent, data, structure, file_name):
     completed = "completed"
     labels = settings["common"]["labels"]
     columns = []
+
+    # データ構造(by_env, by_name, daily)に応じて列定義とデータの整形
     if structure == 'by_env':
+        # 環境別表示の場合の列設定
         all_keys = set()
         for dates in data.values():
             for values in dates.values():
                 all_keys.update(values.keys())
-        columns = ["環境名", "日付"] + Utility.sort_by_master(master_list=settings["common"]["results"]+[labels[completed]], input_list=all_keys)
+        columns = ["環境名", "日付"] + Utility.sort_by_master(
+            master_list=settings["common"]["results"]+[labels[completed]], 
+            input_list=all_keys
+        )
+        # 日付の降順でソート
         data = dict(Utility.sort_nested_dates_desc(data))
+    
     elif structure == 'by_name':
+        # 担当者別表示の場合の列設定
         columns = ["日付", "担当者", "Completed"]
+        # 日付の降順でソート
         data = dict(sorted(data.items(), reverse=True))
+    
     elif structure == 'daily':
+        # 日次表示の場合の列設定
         all_keys = set()
         for values in data.values():
             all_keys.update(values.keys())
-        columns = ["日付"] + Utility.sort_by_master(master_list=settings["common"]["results"]+[labels[completed]], input_list=all_keys)
+        columns = ["日付"] + Utility.sort_by_master(
+            master_list=settings["common"]["results"]+[labels[completed]], 
+            input_list=all_keys
+        )
+        # 日付の降順でソート
         data = dict(sorted(data.items(), reverse=True))
 
+    # Treeviewウィジェットの作成と設定
     frame = ttk.Frame(parent)
     frame.pack(fill=tk.BOTH, expand=True)
     
     tree_frame = ttk.Frame(frame)
     tree_frame.pack(fill=tk.BOTH, expand=True)
 
+    # スクロール可能なTreeviewの作成
     tree = ttk.Treeview(tree_frame, columns=columns, show='headings')
-
     scrollbar_y = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
     tree.configure(yscrollcommand=scrollbar_y.set)
     
     scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
     tree.pack(fill=tk.BOTH, expand=True)
 
+    # 列の設定（ヘッダーテキストと幅）
     for col in columns:
         tree.heading(col, text=col)
-        # 列幅
+        # 列の種類に応じて幅を設定
         if col == "日付":
             col_w = 100
         elif col == "環境名":
@@ -59,29 +78,48 @@ def create_treeview(parent, data, structure, file_name):
             col_w = 70
         tree.column(col, anchor='center', width=col_w)
     
+    # 行の色分け設定
     today = datetime.today().strftime("%Y-%m-%d")
     row_colors = {}
-    alternating_colors = ["#ffffff", "#f0f0f0"]
-    highlight_color = "#d0f0ff"
+    alternating_colors = ["#ffffff", "#f0f0f0"]  # 交互の行の色
+    highlight_color = "#d0f0ff"                  # 今日の日付の行の色
     
+    # データ構造タイプに応じてTreeviewにデータを挿入
     if structure == 'daily':
+        # 日次データの表示
         for index, (date, values) in enumerate(data.items()):
             bg_color = alternating_colors[index % 2]
-            row = [date] + [values.get(k, 0) for k in Utility.sort_by_master(master_list=settings["common"]["results"]+[labels[completed]], input_list=all_keys)]
+            row = [date] + [values.get(k, 0) for k in Utility.sort_by_master(
+                master_list=settings["common"]["results"]+[labels[completed]], 
+                input_list=all_keys
+            )]
             item_id = tree.insert('', 'end', values=row, tags=(date,))
+            # 今日の日付の行はハイライト
             tree.tag_configure(date, background=highlight_color if date == today else bg_color)
+    
     elif structure == 'by_env':
+        # 環境別データの表示
         if not data:
-            tree.insert('', 'end', values=["取得できませんでした", "-"] + ["-" for _ in Utility.sort_by_master(master_list=settings["common"]["results"]+[completed], input_list=all_keys)])
+            # データが空の場合のダミー行
+            tree.insert('', 'end', values=["取得できませんでした", "-"] + 
+                       ["-" for _ in Utility.sort_by_master(
+                           master_list=settings["common"]["results"]+[completed], 
+                           input_list=all_keys
+                       )])
         else:
             for index, (env, dates) in enumerate(data.items()):
                 bg_color = alternating_colors[index % 2]
                 row_colors[env] = bg_color
                 for date, values in dates.items():
-                    row = [env, date] + [values.get(k, 0) for k in Utility.sort_by_master(master_list=settings["common"]["results"]+[completed], input_list=all_keys)]
+                    row = [env, date] + [values.get(k, 0) for k in Utility.sort_by_master(
+                        master_list=settings["common"]["results"]+[completed], 
+                        input_list=all_keys
+                    )]
                     item_id = tree.insert('', 'end', values=row, tags=(date,))
                     tree.tag_configure(date, background=highlight_color if date == today else bg_color)
+    
     elif structure == 'by_name':
+        # 担当者別データの表示
         for index, (date, names) in enumerate(data.items()):
             bg_color = alternating_colors[index % 2]
             row_colors[date] = bg_color
@@ -90,11 +128,17 @@ def create_treeview(parent, data, structure, file_name):
                 tree.tag_configure(date, background=highlight_color if date == today else bg_color)
     
     tree.pack(fill=tk.BOTH, expand=True)
-        
+    
+    # エクスポートメニューの作成
     menubutton = ttk.Menubutton(parent, text="エクスポート", direction="below")
     menu = tk.Menu(menubutton, tearoff=0)
-    menu.add_command(label="CSVで保存", command=lambda: save_to_csv(treeview_to_array(tree), f'{os.path.splitext(file_name)[0]}_{settings["app"]["structures"][structure]}'))
-    menu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(treeview_to_array(tree)))
+    menu.add_command(label="CSVで保存", 
+                    command=lambda: save_to_csv(
+                        treeview_to_array(tree), 
+                        f'{os.path.splitext(file_name)[0]}_{settings["app"]["structures"][structure]}'
+                    ))
+    menu.add_command(label="クリップボードにコピー", 
+                    command=lambda: copy_to_clipboard(treeview_to_array(tree)))
     menubutton.config(menu=menu)
     menubutton.pack(side=tk.LEFT, padx=2, pady=5)
 
@@ -107,11 +151,11 @@ def treeview_to_array(treeview):
     :param treeview: TkinterのTreeviewウィジェット
     :return: 2次元配列（リストのリスト）
     """
-    # ヘッダー取得
+    # Treeviewのヘッダー行を取得
     columns = treeview["columns"]
     headers = [treeview.heading(col)["text"] for col in columns]
 
-    # データ取得
+    # Treeviewのデータを取得
     data = []
     for item in treeview.get_children():
         row = [treeview.item(item)["values"][i] for i in range(len(columns))]
@@ -119,6 +163,7 @@ def treeview_to_array(treeview):
 
     return [headers] + data  # ヘッダーとデータを結合
 
+# 2次元配列をCSVファイルに保存
 def save_to_csv(data, filename):
     # 保存先の選択
     file_path = filedialog.asksaveasfilename(initialfile=filename, defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
@@ -135,7 +180,7 @@ def save_to_csv(data, filename):
     if response == "yes":
         open_file(file_path=file_path)
 
-def update_display(selected_file, count_label, rate_label, ax, canvas, notebook):
+def update_byfile_tab(selected_file, count_label, rate_label, ax, canvas, notebook):
     # タブ切り替え
     current_tab = notebook.index(notebook.select()) if notebook.tabs() else 0
     for widget in notebook.winfo_children():
@@ -208,6 +253,64 @@ def set_state_color(label, state_name):
     state_info = settings["app"]["state"][state_key]
     label.config(foreground=state_info["foreground"], background=state_info["background"])
 
+def _extract_file_data(file_data: dict) -> dict:
+    """ファイルデータから表示用の情報を抽出する"""
+    base_info = {
+        "on_warning": False,
+        "on_error": False,
+        "error_type": "",
+        "error_message": "",
+    }
+
+    # ワーニングの確認
+    if "warning" in file_data:
+        base_info.update({
+            "on_warning": True,
+            "error_type": file_data["warning"]["type"],
+            "error_message": file_data["warning"]["message"]
+        })
+
+    # エラー時はダミーデータを返却
+    if "error" in file_data:
+        return {
+            **base_info,
+            "on_error": True,
+            "total_data": {
+                "error": 0,
+                "all": 0,        # エラー時のall追加
+                "excluded": 0    # エラー時のexcluded追加
+            },
+            "state": "???",
+            "completed": "",
+            "available": "",
+            "incompleted": 0,
+            "comp_rate_text": "",
+            "start_date": "",
+            "finish_date": "",
+            "error_type": file_data["error"]["type"],
+            "error_message": file_data["error"]["message"]
+        }
+
+    # 正常時のデータ抽出
+    stats = file_data["stats"]
+    run_data = file_data["run"]
+    
+    return {
+        **base_info,
+        "total_data": {
+            **file_data["total"]
+        },
+        "state": run_data["status"],
+        "all": stats["all"],
+        "excluded": stats["excluded"],
+        "completed": stats["completed"],
+        "available": stats["available"],
+        "incompleted": stats["incompleted"],
+        "comp_rate_text": Utility.meke_rate_text(stats["completed"], stats["available"]),
+        "start_date": run_data["start_date"],
+        "finish_date": run_data["finish_date"]
+    }
+
 def update_filelist_table(table_frame):
     # テーブルの余白
     padx = 1
@@ -229,46 +332,10 @@ def update_filelist_table(table_frame):
 
     # 各ファイルのデータ表示
     for index, file_data in enumerate(input_data, 1):
-        # ワーニング時
-        if "warning" in file_data:
-            on_warning = True
-            error_type = file_data["warning"]["type"]
-            error_message = file_data["warning"]["message"]
-        else:
-            on_warning = False
-
-        # エラー時
-        if "error" in file_data:
-            on_error = True
-            total_data = {"error": 0}
-            state = "???"
-            completed = ""
-            available = ""
-            incompleted = 0
-            comp_rate_text = ""
-            start_date = ""
-            finish_date = ""
-            error_type = file_data["error"]["type"]
-            error_message = file_data["error"]["message"]
-        else:
-            # 正常時
-            on_error = False
-            total_data = file_data['total']
-            state = file_data["run"]["status"]
-            completed = file_data['stats']['completed']
-            all = file_data['stats']['all']
-            excluded = file_data['stats']['excluded']
-            available = file_data['stats']['available']
-            incompleted = file_data['stats']['incompleted']
-            comp_rate_text = Utility.meke_rate_text(completed, available)
-            start_date = file_data["run"]["start_date"]
-            finish_date = file_data["run"]["finish_date"]
-
-        export_row = []
-
+        display_data = _extract_file_data(file_data)
         # インデックス
         ttk.Label(table_frame, text=index).grid(row=index, column=0, padx=padx, pady=pady)
-        export_row.append(index) # エクスポート用データ
+        export_row = [index] # エクスポート用データ
         
         # ファイル名
         filename = file_data['file']
@@ -282,66 +349,66 @@ def update_filelist_table(table_frame):
         filename_label.bind("<Double-Button-1>", create_click_handler(filepath))
 
         # State
-        state_label = ttk.Label(table_frame, text=state, anchor="center")
+        state_label = ttk.Label(table_frame, text=display_data["state"], anchor="center")
         state_label.grid(row=index, column=2, padx=padx, pady=pady, sticky=tk.W + tk.E)
-        # set_state_color(state_label, state)
-        export_row.append(state)
+        # set_state_color(state_label, display_data["state"])
+        export_row.append(display_data["state"])
 
         # 開始日
-        start_label = ttk.Label(table_frame, text=Utility.simplify_date(start_date))
+        start_label = ttk.Label(table_frame, text=Utility.simplify_date(display_data["start_date"]))
         start_label.grid(row=index, column=3, padx=padx, pady=pady)
-        export_row.append(start_date or "")
+        export_row.append(display_data["start_date"] or "")
 
         # 完了日
-        finish_label = ttk.Label(table_frame, text=Utility.simplify_date(finish_date))
+        finish_label = ttk.Label(table_frame, text=Utility.simplify_date(display_data["finish_date"]))
         finish_label.grid(row=index, column=4, padx=padx, pady=pady)
-        export_row.append(finish_date or "")
+        export_row.append(display_data["finish_date"] or "")
 
         # 完了率
-        if on_error:
+        if display_data["on_error"]:
             comp_rate_export = ""
             comp_rate_display = "-"
         else:
-            comp_rate_export = comp_rate_text
-            comp_rate_display = f'{comp_rate_text} ({completed}/{available})'
+            comp_rate_export = display_data["comp_rate_text"]
+            comp_rate_display = f'{display_data["comp_rate_text"]} ({display_data["completed"]}/{display_data["available"]})'
 
         comp_rate_label = ttk.Label(table_frame, text=comp_rate_display)
         comp_rate_label.grid(row=index, column=5, padx=padx, pady=pady)
         # エクスポート用データ
-        export_row.append(available) # 項目数
-        export_row.append(completed) # 完了数
+        export_row.append(display_data["available"]) # 項目数
+        export_row.append(display_data["completed"]) # 完了数
         export_row.append(comp_rate_export) # 完了率
 
         # エラー時赤色・ワーニング時オレンジ色
-        if on_error or on_warning:
-            color = "red" if on_error else "darkorange2"
+        if display_data["on_error"] or display_data["on_warning"]:
+            color = "red" if display_data["on_error"] else "darkorange2"
             filename_label.config(foreground=color)
             state_label.config(foreground=color)
             start_label.config(foreground=color)
             comp_rate_label.config(foreground=color)
 
         # エラー時以外は進捗グラフを表示
-        if not on_error:
+        if not display_data["on_error"]:
             # 進捗グラフ
             fig, ax = plt.subplots(figsize=(2, 0.1))
             canvas = FigureCanvasTkAgg(fig, master=table_frame)
             plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
             canvas.get_tk_widget().grid(row=index, column=6, padx=padx, pady=pady)
             # グラフを更新
-            update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=canvas, show_label=False)
+            update_bar_chart(data=display_data["total_data"], incompleted_count=display_data["incompleted"], ax=ax, canvas=canvas, show_label=False)
             # グラフのツールチップ
-            graph_tooltop = f"項目数: {available} (Total: {all} / 対象外: {excluded})\nState: {state}\n{make_results_text(total_data, incompleted)}"
+            graph_tooltop = f"項目数: {display_data['available']} (Total: {display_data['all']} / 対象外: {display_data['excluded']})\nState: {display_data['state']}\n{make_results_text(display_data['total_data'], display_data['incompleted'])}"
             ToolTip(canvas.get_tk_widget(), msg=graph_tooltop, delay=0.3, follow=False)
             # エクスポート用データ
-            export_row += list(total_data.values())
-            export_row.append(incompleted)
+            export_row += list(display_data["total_data"].values())
+            export_row.append(display_data["incompleted"])
 
         # エクスポート用の配列に格納
         export_data.append(export_row)
 
         # エラー・ワーニング時はツールチップにメッセージを追加
-        if on_error or on_warning:
-            tooltip_text.append(f'{error_message}[{error_type}]')
+        if display_data["on_error"] or display_data["on_warning"]:
+            tooltip_text.append(f'{display_data["error_message"]}[{display_data["error_type"]}]')
 
         # ファイル名のツールチップ
         tooltip_text.append("<ダブルクリックで開きます>")
@@ -761,7 +828,7 @@ def create_byfile_tab(parent):
     # ファイル選択プルダウン
     file_selector = ttk.Combobox(by_file_frame, values=[file["selector_label"] for file in input_data], state="readonly")
     file_selector.pack(fill=tk.X, padx=20, pady=5)
-    file_selector.bind("<<ComboboxSelected>>", lambda event: update_display(file_selector.get(), count_label=file_count_label, rate_label=file_rate_label, ax=file_ax, canvas=file_canvas, notebook=notebook))
+    file_selector.bind("<<ComboboxSelected>>", lambda event: update_byfile_tab(selected_file=file_selector.get(), count_label=file_count_label, rate_label=file_rate_label, ax=file_ax, canvas=file_canvas, notebook=notebook))
 
     # テストケース数(ファイル別)
     file_count_label = ttk.Label(by_file_frame, anchor="w")
@@ -785,7 +852,7 @@ def create_byfile_tab(parent):
     # グリッド表示
     if input_data:
         file_selector.current(0)
-        update_display(input_data[0]['selector_label'], count_label=file_count_label, rate_label=file_rate_label, ax=file_ax, canvas=file_canvas, notebook=notebook)
+        update_byfile_tab(selected_file=input_data[0]['selector_label'], count_label=file_count_label, rate_label=file_rate_label, ax=file_ax, canvas=file_canvas, notebook=notebook)
 
 def launch(data, args):
     global root, input_data, settings, input_args
@@ -826,3 +893,4 @@ def launch(data, args):
     root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()
     root.destroy()
+
