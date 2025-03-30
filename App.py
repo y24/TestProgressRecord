@@ -493,7 +493,7 @@ def change_sort_order(table_frame, order, sort_menu_button, on_change=False):
     if on_change:
         plt.close('all') # 表示していたグラフを開放する
     export_data = update_filelist_table(table_frame)
-    sort_menu_button.config(text=f'並び替え: {settings["app"]["sort"]["orders"][order]["label"]}')
+    sort_menu_button.config(text=f'ソート: {settings["app"]["sort"]["orders"][order]["label"]}')
     if on_change:
         # デフォルト設定に保存
         settings["app"]["sort"]["default"] = order
@@ -514,7 +514,7 @@ def create_summary_filelist_area(parent):
     menu_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     # 並び替えメニュー
-    sort_menu_button = ttk.Menubutton(menu_frame, text="並び替え", direction="below")
+    sort_menu_button = ttk.Menubutton(menu_frame, text="ソート", direction="below")
     sort_menu = tk.Menu(sort_menu_button, tearoff=0)
     for key, order_info in settings["app"]["sort"]["orders"].items():
         sort_menu.add_command(label=order_info["label"], command=lambda key=key: change_sort_order(table_frame, key, sort_menu_button, on_change=True))
