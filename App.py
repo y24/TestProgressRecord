@@ -90,46 +90,91 @@ def _insert_tree_rows(tree: ttk.Treeview, structure: str, data: dict, settings: 
                 tree.insert('', 'end', values=row_data, tags=(date,))
                 tree.tag_configure(date, background=highlight_color if date == today else bg_color)
 
-# ファイル別タブのTreeview
-def create_treeview(parent, data, structure, file_name):
-    completed = "completed"
-    labels = settings["test_status"]["labels"]
-    columns = []
+def _get_all_keys(data: dict, structure: str) -> set:
+    """データ構造に応じて全てのキーを収集する
 
-    # データ構造(by_env, by_name, daily)に応じて列定義とデータの整形
+    Args:
+        data: 表示データ
+        structure: データ構造タイプ ('daily', 'by_env', 'by_name')
+
+    Returns:
+        set: 収集されたキーの集合
+    """
+    all_keys = set()
+    
     if structure == 'by_env':
-        # 環境別表示の場合の列設定
-        all_keys = set()
         for dates in data.values():
             for values in dates.values():
                 all_keys.update(values.keys())
-        columns = ["環境名", "日付"] + Utility.sort_by_master(
-            master_list=settings["test_status"]["results"]+[labels[completed]], 
-            input_list=all_keys
-        )
-        # 日付の降順でソート
-        data = dict(Utility.sort_nested_dates_desc(data))
-    
-    elif structure == 'by_name':
-        # 担当者別表示の場合の列設定
-        all_keys = set()
-        columns = ["担当者", "Completed"]
-        # 日付の降順でソート
-        data = dict(sorted(data.items(), reverse=True))
-    
     elif structure == 'daily':
-        # 日次表示の場合の列設定
-        all_keys = set()
         for values in data.values():
             all_keys.update(values.keys())
-        columns = ["日付"] + Utility.sort_by_master(
-            master_list=settings["test_status"]["results"]+[labels[completed]], 
-            input_list=all_keys
-        )
-        # 日付の降順でソート
-        data = dict(sorted(data.items(), reverse=True))
+    # by_nameの場合は空セットのまま
+    
+    return all_keys
 
-    # Treeviewウィジェットの作成と設定
+def _get_columns(structure: str, settings: dict, all_keys: set) -> list:
+    """データ構造に応じて列定義を生成する
+
+    Args:
+        structure: データ構造タイプ
+        settings: 設定情報
+        all_keys: 全キーの集合
+
+    Returns:
+        list: 列名のリスト
+    """
+    completed = settings["test_status"]["labels"]["completed"]
+    
+    column_definitions = {
+        'by_env': ["環境名", "日付"],
+        'by_name': ["担当者", "Completed"],
+        'daily': ["日付"]
+    }
+    
+    base_columns = column_definitions.get(structure, [])
+    
+    # by_nameの場合は基本列のみ返す
+    if structure == 'by_name':
+        return base_columns
+        
+    # その他の場合は結果列を追加
+    result_columns = Utility.sort_by_master(
+        master_list=settings["test_status"]["results"] + [completed],
+        input_list=all_keys
+    )
+    
+    return base_columns + result_columns
+
+def _sort_data(data: dict, structure: str) -> dict:
+    """データ構造に応じてデータをソートする
+
+    Args:
+        data: ソート対象のデータ
+        structure: データ構造タイプ
+
+    Returns:
+        dict: ソート済みデータ
+    """
+    if structure == 'by_env':
+        return dict(Utility.sort_nested_dates_desc(data))
+    else:  # daily, by_name
+        return dict(sorted(data.items(), reverse=True))
+
+def create_treeview(parent, data, structure, file_name):
+    """Treeviewウィジェットを作成する"""
+    completed = settings["test_status"]["labels"]["completed"]
+    
+    # 全キーの収集
+    all_keys = _get_all_keys(data, structure)
+    
+    # 列定義の生成
+    columns = _get_columns(structure, settings, all_keys)
+    
+    # データのソート
+    data = _sort_data(data, structure)
+    
+    # Treeviewの作成（以下は既存のコード）
     frame = ttk.Frame(parent)
     frame.pack(fill=tk.BOTH, expand=True)
     
