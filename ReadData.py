@@ -106,8 +106,8 @@ def aggregate_results(filepath:str, settings):
     workbook = Excel.load(filepath)
     sheet_names = Excel.get_sheetnames_by_keywords(
         workbook, 
-        keywords=settings["read"]["sheet_search_keys"], 
-        ignores=settings["read"]["sheet_search_ignores"]
+        keywords=settings["read_definition"]["sheet_search_keys"], 
+        ignores=settings["read_definition"]["sheet_search_ignores"]
     )
 
     # 対象シートが見つからない場合はエラーを返却
@@ -148,7 +148,7 @@ def aggregate_results(filepath:str, settings):
 
 def _process_sheet(workbook, sheet_name: str, settings: dict):
     sheet = Excel.get_sheet_by_name(workbook=workbook, sheet_name=sheet_name)
-    header_rownum = Excel.find_row(sheet, search_col=settings["read"]["header"]["search_col"], search_str=settings["read"]["header"]["search_key"])
+    header_rownum = Excel.find_row(sheet, search_col=settings["read_definition"]["header"]["search_col"], search_str=settings["read_definition"]["header"]["search_key"])
 
     if not header_rownum:
         return {
@@ -163,11 +163,11 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
 
     # 列番号(例:環境別)を取得
     # 結果
-    result_rows = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read"]["result_row"]["keys"], ignore_words=settings["read"]["result_row"]["ignores"])
+    result_rows = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read_definition"]["result_row"]["keys"], ignore_words=settings["read_definition"]["result_row"]["ignores"])
     # 担当者
-    person_rows = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read"]["person_row"]["keys"])
+    person_rows = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read_definition"]["person_row"]["keys"])
     # 日付
-    date_rows = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read"]["date_row"]["keys"])
+    date_rows = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read_definition"]["date_row"]["keys"])
 
     # 結果,担当者,日付の列セットが見つからないor同数でない場合はエラー
     if Utility.check_lists_equal_length(result_rows, person_rows, date_rows) == False:
@@ -205,16 +205,16 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
         # 環境ごとのデータ集計
         env_data[env_name], _ = get_daily(
             data=set_data, 
-            results=settings["common"]["results"], 
-            completed_label=settings["common"]["labels"]["completed"], 
-            completed_results=settings["common"]["completed_results"]
+            results=settings["test_status"]["results"], 
+            completed_label=settings["test_status"]["labels"]["completed"], 
+            completed_results=settings["test_status"]["completed_results"]
         )
 
     # 環境数
     env_count = len(sets)
 
     # テストケース数を計算
-    tobe_rownunms = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read"]["tobe_row"]["keys"])
+    tobe_rownunms = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read_definition"]["tobe_row"]["keys"])
     tobe_data = Excel.get_column_values(sheet=sheet, col_nums=tobe_rownunms,header_row=header_rownum, ignore_header=True)
     case_count = sum(1 for item in tobe_data if any(x is not None for x in item))
 
@@ -233,27 +233,27 @@ def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
     # 全セット集計(日付別)
     data_daily_total, data_no_date = get_daily(
         data=all_data,
-        results=settings["common"]["results"],
-        completed_label=settings["common"]["labels"]["completed"],
-        completed_results=settings["common"]["completed_results"]
+        results=settings["test_status"]["results"],
+        completed_label=settings["test_status"]["labels"]["completed"],
+        completed_results=settings["test_status"]["completed_results"]
     )
 
     # 全セット集計(担当者別)
     data_by_name = get_daily_by_name(all_data)
     
     # 全セット集計(全日付＋日付なし)
-    data_total = get_total_all_date(data_daily_total, data_no_date, exclude=settings["common"]["labels"]["completed"])
+    data_total = get_total_all_date(data_daily_total, data_no_date, exclude=settings["test_status"]["labels"]["completed"])
 
     # 総テストケース数
     case_count_all = sum(item['env_count'] * item['all'] for item in counts_by_sheet)
     # 対象外テストケース数
-    excluded_count = get_excluded_count(data=all_data, targets=settings["read"]["excluded"])
+    excluded_count = get_excluded_count(data=all_data, targets=settings["read_definition"]["excluded"])
     # 有効テストケース数
     available_count = case_count_all - excluded_count
     # 消化テストケース数
     filled_count = sum(data_total.values())
     # 完了テストケース数
-    completed_count = sum_completed_results(data_total, settings["common"]["completed_results"])
+    completed_count = sum_completed_results(data_total, settings["test_status"]["completed_results"])
     # 未実施テストケース数(マイナスは0)
     incompleted_count = max(0, available_count - filled_count)
 

@@ -1,5 +1,5 @@
 {
-    "read": {
+    "read_definition": {
         "sheet_search_keys": ["テスト項目"],
         "sheet_search_ignores": [],
         "header": {"search_col": "A", "search_key": "#"},
@@ -9,7 +9,7 @@
         "date_row": {"keys": ["日付", "実施日"]},
         "excluded": ["対象外"]
     },
-    "common": {
+    "test_status": {
         "results": ["Pass", "Fixed", "Fail", "Blocked", "Suspend", "N/A"],
         "completed_results": ["Pass", "Fixed", "Suspend", "N/A"],
         "labels": {

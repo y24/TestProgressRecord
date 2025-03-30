@@ -16,7 +16,7 @@ from libs import Dialog
 # ファイル別タブのTreeview
 def create_treeview(parent, data, structure, file_name):
     completed = "completed"
-    labels = settings["common"]["labels"]
+    labels = settings["test_status"]["labels"]
     columns = []
 
     # データ構造(by_env, by_name, daily)に応じて列定義とデータの整形
@@ -27,7 +27,7 @@ def create_treeview(parent, data, structure, file_name):
             for values in dates.values():
                 all_keys.update(values.keys())
         columns = ["環境名", "日付"] + Utility.sort_by_master(
-            master_list=settings["common"]["results"]+[labels[completed]], 
+            master_list=settings["test_status"]["results"]+[labels[completed]], 
             input_list=all_keys
         )
         # 日付の降順でソート
@@ -45,7 +45,7 @@ def create_treeview(parent, data, structure, file_name):
         for values in data.values():
             all_keys.update(values.keys())
         columns = ["日付"] + Utility.sort_by_master(
-            master_list=settings["common"]["results"]+[labels[completed]], 
+            master_list=settings["test_status"]["results"]+[labels[completed]], 
             input_list=all_keys
         )
         # 日付の降順でソート
@@ -90,7 +90,7 @@ def create_treeview(parent, data, structure, file_name):
         for index, (date, values) in enumerate(data.items()):
             bg_color = alternating_colors[index % 2]
             row = [date] + [values.get(k, 0) for k in Utility.sort_by_master(
-                master_list=settings["common"]["results"]+[labels[completed]], 
+                master_list=settings["test_status"]["results"]+[labels[completed]], 
                 input_list=all_keys
             )]
             item_id = tree.insert('', 'end', values=row, tags=(date,))
@@ -103,7 +103,7 @@ def create_treeview(parent, data, structure, file_name):
             # データが空の場合のダミー行
             tree.insert('', 'end', values=["取得できませんでした", "-"] + 
                        ["-" for _ in Utility.sort_by_master(
-                           master_list=settings["common"]["results"]+[completed], 
+                           master_list=settings["test_status"]["results"]+[completed], 
                            input_list=all_keys
                        )])
         else:
@@ -112,7 +112,7 @@ def create_treeview(parent, data, structure, file_name):
                 row_colors[env] = bg_color
                 for date, values in dates.items():
                     row = [env, date] + [values.get(k, 0) for k in Utility.sort_by_master(
-                        master_list=settings["common"]["results"]+[completed], 
+                        master_list=settings["test_status"]["results"]+[completed], 
                         input_list=all_keys
                     )]
                     item_id = tree.insert('', 'end', values=row, tags=(date,))
@@ -191,7 +191,7 @@ def update_byfile_tab(selected_file, count_label, rate_label, ax, canvas, notebo
     # ファイル別結果
     if "error" in data:
         stats_data = {'all': 0, 'excluded': 0, 'available': 0, 'filled': 0, 'completed': 0, 'incompleted': 0}
-        total_data = Utility.initialize_dict(settings["common"]["results"])
+        total_data = Utility.initialize_dict(settings["test_status"]["results"])
         incompleted = 0
         daily_data = {}
         by_env_data = {}
@@ -328,7 +328,7 @@ def update_filelist_table(table_frame):
 
     # クリップボード出力用のヘッダ
     export_headers = ["No.", "ファイル名", "State", "開始日", "更新日", "項目数", "完了数", "完了率"]
-    export_data = [export_headers + settings["common"]["results"] + [settings["common"]["labels"]["not_run"]]]
+    export_data = [export_headers + settings["test_status"]["results"] + [settings["test_status"]["labels"]["not_run"]]]
 
     # 各ファイルのデータ表示
     for index, file_data in enumerate(input_data, 1):
@@ -668,7 +668,7 @@ def update_info_label(data, count_label, rate_label, detail=True):
 
 def update_bar_chart(data, incompleted_count, ax, canvas, show_label=True):
     # 表示順を固定
-    sorted_labels = settings["common"]["results"]
+    sorted_labels = settings["test_status"]["results"]
 
     # 各結果(ラベル)とカウント(サイズ)
     labels = [label for label in sorted_labels if label in data]
@@ -676,7 +676,7 @@ def update_bar_chart(data, incompleted_count, ax, canvas, show_label=True):
 
     # 未実施数を追加
     if incompleted_count > 0:
-        labels += [settings["common"]["labels"]["not_run"]]
+        labels += [settings["test_status"]["labels"]["not_run"]]
         sizes += [incompleted_count]
 
     # 有効データなし時
