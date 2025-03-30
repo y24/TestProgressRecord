@@ -13,6 +13,83 @@ from libs import Utility
 from libs import AppConfig
 from libs import Dialog
 
+def _create_row_data(structure: str, values: dict, settings: dict, all_keys: set) -> list:
+    """行データを生成する
+
+    Args:
+        structure: データ構造タイプ ('daily', 'by_env', 'by_name')
+        values: 表示データ
+        settings: 設定情報
+        all_keys: 全キーのセット
+
+    Returns:
+        list: 表示用の行データ
+    """
+    completed = settings["test_status"]["labels"]["completed"]
+    
+    if structure == 'daily':
+        return [values[0]] + [values[1].get(k, 0) for k in Utility.sort_by_master(
+            master_list=settings["test_status"]["results"] + [completed],
+            input_list=all_keys
+        )]
+    elif structure == 'by_env':
+        env, date, data = values
+        return [env, date] + [data.get(k, 0) for k in Utility.sort_by_master(
+            master_list=settings["test_status"]["results"] + [completed],
+            input_list=all_keys
+        )]
+    elif structure == 'by_name':
+        date, name, count = values
+        return (date, name, count)
+
+def _insert_tree_rows(tree: ttk.Treeview, structure: str, data: dict, settings: dict, 
+                     all_keys: set, today: str) -> None:
+    """Treeviewに行データを挿入する
+
+    Args:
+        tree: 対象のTreeviewウィジェット
+        structure: データ構造タイプ
+        data: 表示データ
+        settings: 設定情報
+        all_keys: 全キーのセット
+        today: 今日の日付
+    """
+    alternating_colors = ["#ffffff", "#f0f0f0"]
+    highlight_color = "#d0f0ff"
+    
+    # データが空の場合（by_envのみ）
+    if structure == 'by_env' and not data:
+        dummy_row = ["環境名を取得できませんでした", "-"] + ["-" for _ in Utility.sort_by_master(
+            master_list=settings["test_status"]["results"] + [settings["test_status"]["labels"]["completed"]],
+            input_list=all_keys
+        )]
+        tree.insert('', 'end', values=dummy_row)
+        return
+
+    # データの挿入
+    for index, item in enumerate(data.items()):
+        bg_color = alternating_colors[index % 2]
+        
+        if structure == 'daily':
+            date, values = item
+            row_data = _create_row_data(structure, (date, values), settings, all_keys)
+            tree.insert('', 'end', values=row_data, tags=(date,))
+            tree.tag_configure(date, background=highlight_color if date == today else bg_color)
+            
+        elif structure == 'by_env':
+            env, dates = item
+            for date, values in dates.items():
+                row_data = _create_row_data(structure, (env, date, values), settings, all_keys)
+                tree.insert('', 'end', values=row_data, tags=(date,))
+                tree.tag_configure(date, background=highlight_color if date == today else bg_color)
+                
+        elif structure == 'by_name':
+            date, names = item
+            for name, count in names.items():
+                row_data = _create_row_data(structure, (date, name, count), settings, all_keys)
+                tree.insert('', 'end', values=row_data, tags=(date,))
+                tree.tag_configure(date, background=highlight_color if date == today else bg_color)
+
 # ファイル別タブのTreeview
 def create_treeview(parent, data, structure, file_name):
     completed = "completed"
@@ -35,7 +112,8 @@ def create_treeview(parent, data, structure, file_name):
     
     elif structure == 'by_name':
         # 担当者別表示の場合の列設定
-        columns = ["日付", "担当者", "Completed"]
+        all_keys = set()
+        columns = ["担当者", "Completed"]
         # 日付の降順でソート
         data = dict(sorted(data.items(), reverse=True))
     
@@ -80,52 +158,9 @@ def create_treeview(parent, data, structure, file_name):
     
     # 行の色分け設定
     today = datetime.today().strftime("%Y-%m-%d")
-    row_colors = {}
-    alternating_colors = ["#ffffff", "#f0f0f0"]  # 交互の行の色
-    highlight_color = "#d0f0ff"                  # 今日の日付の行の色
     
     # データ構造タイプに応じてTreeviewにデータを挿入
-    if structure == 'daily':
-        # 日次データの表示
-        for index, (date, values) in enumerate(data.items()):
-            bg_color = alternating_colors[index % 2]
-            row = [date] + [values.get(k, 0) for k in Utility.sort_by_master(
-                master_list=settings["test_status"]["results"]+[labels[completed]], 
-                input_list=all_keys
-            )]
-            item_id = tree.insert('', 'end', values=row, tags=(date,))
-            # 今日の日付の行はハイライト
-            tree.tag_configure(date, background=highlight_color if date == today else bg_color)
-    
-    elif structure == 'by_env':
-        # 環境別データの表示
-        if not data:
-            # データが空の場合のダミー行
-            tree.insert('', 'end', values=["取得できませんでした", "-"] + 
-                       ["-" for _ in Utility.sort_by_master(
-                           master_list=settings["test_status"]["results"]+[completed], 
-                           input_list=all_keys
-                       )])
-        else:
-            for index, (env, dates) in enumerate(data.items()):
-                bg_color = alternating_colors[index % 2]
-                row_colors[env] = bg_color
-                for date, values in dates.items():
-                    row = [env, date] + [values.get(k, 0) for k in Utility.sort_by_master(
-                        master_list=settings["test_status"]["results"]+[completed], 
-                        input_list=all_keys
-                    )]
-                    item_id = tree.insert('', 'end', values=row, tags=(date,))
-                    tree.tag_configure(date, background=highlight_color if date == today else bg_color)
-    
-    elif structure == 'by_name':
-        # 担当者別データの表示
-        for index, (date, names) in enumerate(data.items()):
-            bg_color = alternating_colors[index % 2]
-            row_colors[date] = bg_color
-            for name, count in names.items():
-                item_id = tree.insert('', 'end', values=(date, name, count), tags=(date,))
-                tree.tag_configure(date, background=highlight_color if date == today else bg_color)
+    _insert_tree_rows(tree, structure, data, settings, all_keys, today)
     
     tree.pack(fill=tk.BOTH, expand=True)
     
@@ -898,4 +933,3 @@ def launch(data, args):
     root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()
     root.destroy()
-
