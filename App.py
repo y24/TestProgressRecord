@@ -477,10 +477,15 @@ def clear_frame(frame):
 def change_sort_order(table_frame, order, sort_menu_button, on_change=False):
     global export_data
     sort_input_data(order)
-    clear_frame(table_frame)
-    if on_change: plt.close('all')
+    clear_frame(table_frame) # 表示をクリア
+    if on_change:
+        plt.close('all') # 表示していたグラフを開放する
     export_data = update_filelist_table(table_frame)
     sort_menu_button.config(text=f'並び替え: {settings["app"]["sort"]["map"][order]}')
+    if on_change:
+        # デフォルト設定に保存
+        settings["app"]["sort"]["default"] = order
+        AppConfig.save_settings(settings)
 
 def create_summary_filelist_area(parent):
     global export_data
