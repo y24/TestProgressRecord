@@ -620,13 +620,6 @@ def create_input_area(parent, settings):
     ttk.Button(submit_frame, text="CSV保存", command=lambda: save_to_csv(WriteData.convert_to_2d_array(data=input_data, settings=settings), f'進捗集計_{Utility.get_today_str()}')).pack(side=tk.LEFT, padx=2, pady=(0,2))
     ttk.Button(submit_frame, text="クリップボードにコピー", command=lambda: copy_to_clipboard(WriteData.convert_to_2d_array(data=input_data, settings=settings))).pack(side=tk.LEFT, padx=2, pady=(0,2))
 
-    # menubutton = ttk.Menubutton(submit_frame, text="エクスポート", direction="below")
-    # menu = tk.Menu(menubutton, tearoff=0)
-    # menu.add_command(label="CSVで保存", command=lambda: save_to_csv(WriteData.convert_to_2d_array(data=input_data, settings=settings), f'進捗集計_{datetime.today().strftime("%Y-%m-%d")}'))
-    # menu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(WriteData.convert_to_2d_array(data=input_data, settings=settings)))
-    # menubutton.config(menu=menu)
-    # menubutton.pack(side=tk.LEFT, padx=2)
-
 def update_info_label(data, count_label, rate_label, detail=True):
     if len(data) == 0 or"error" in data:
         # データなしまたはエラー時
