@@ -358,9 +358,11 @@ def _extract_file_data(file_data: dict) -> dict:
             },
             "state": "???",
             "completed": "",
+            "filled": "",
             "available": "",
             "incompleted": 0,
             "comp_rate_text": "",
+            "filled_rate_text": "",
             "start_date": "",
             "last_update": "",
             "error_type": file_data["error"]["type"],
@@ -380,9 +382,11 @@ def _extract_file_data(file_data: dict) -> dict:
         "all": stats["all"],
         "excluded": stats["excluded"],
         "completed": stats["completed"],
+        "filled": stats["filled"],
         "available": stats["available"],
         "incompleted": stats["incompleted"],
         "comp_rate_text": Utility.meke_rate_text(stats["completed"], stats["available"]),
+        "filled_rate_text": Utility.meke_rate_text(stats["filled"], stats["available"]),
         "start_date": run_data["start_date"],
         "last_update": run_data["last_update"]
     }
@@ -393,7 +397,7 @@ def update_filelist_table(table_frame):
     pady = 3
 
     # ヘッダ
-    headers = ["No.", "ファイル名", "State", "更新日", "完了率", "テスト結果"]
+    headers = ["No.", "ファイル名", "State", "更新日", "消化率", "完了率", "テスト結果"]
     for col, text in enumerate(headers):
         ttk.Label(table_frame, text=text, foreground="#444444", background="#e0e0e0", relief="solid").grid(
             row=0, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
@@ -403,7 +407,7 @@ def update_filelist_table(table_frame):
     table_frame.grid_columnconfigure(1, weight=3)
 
     # クリップボード出力用のヘッダ
-    export_headers = ["No.", "ファイル名", "State", "更新日", "項目数", "完了数", "完了率"]
+    export_headers = ["No.", "ファイル名", "State", "更新日", "項目数", "完了数", "消化率", "完了率"]
     export_data = [export_headers + settings["test_status"]["results"] + [settings["test_status"]["labels"]["not_run"]]]
 
     # 各ファイルのデータ表示
@@ -435,19 +439,36 @@ def update_filelist_table(table_frame):
         last_update_label.grid(row=index, column=3, padx=padx, pady=pady)
         export_row.append(display_data["last_update"] or "")
 
-        # 完了率
+        # 消化率・完了率ラベル
         if display_data["on_error"]:
+            filled_rate_export = ""
+            filled_rate_display = "-"
+            filled_rate_tooltip = "消化率: -"
             comp_rate_export = ""
             comp_rate_display = "-"
+            comp_rate_tooltip = "完了率: -"
         else:
+            filled_rate_export = display_data["filled_rate_text"]
+            filled_rate_display = display_data["filled_rate_text"]
+            filled_rate_tooltip = f'消化率: {display_data["filled_rate_text"]} ({display_data["filled"]}/{display_data["available"]})'
             comp_rate_export = display_data["comp_rate_text"]
-            comp_rate_display = f'{display_data["comp_rate_text"]} ({display_data["completed"]}/{display_data["available"]})'
+            comp_rate_display = display_data["comp_rate_text"]
+            comp_rate_tooltip = f'完了率: {display_data["comp_rate_text"]} ({display_data["completed"]}/{display_data["available"]})'
 
+        # 消化率
+        filled_rate_label = ttk.Label(table_frame, text=filled_rate_display)
+        filled_rate_label.grid(row=index, column=4, padx=padx, pady=pady)
+        ToolTip(filled_rate_label, msg=filled_rate_tooltip, delay=0.3, follow=False)
+
+        # 完了率
         comp_rate_label = ttk.Label(table_frame, text=comp_rate_display)
-        comp_rate_label.grid(row=index, column=4, padx=padx, pady=pady)
+        comp_rate_label.grid(row=index, column=5, padx=padx, pady=pady)
+        ToolTip(comp_rate_label, msg=comp_rate_tooltip, delay=0.3, follow=False)
+
         # エクスポート用データ
         export_row.append(display_data["available"]) # 項目数
         export_row.append(display_data["completed"]) # 完了数
+        export_row.append(filled_rate_export) # 消化率
         export_row.append(comp_rate_export) # 完了率
 
         # エラー時赤色・ワーニング時オレンジ色
@@ -463,7 +484,7 @@ def update_filelist_table(table_frame):
             fig, ax = plt.subplots(figsize=(2, 0.1))
             canvas = FigureCanvasTkAgg(fig, master=table_frame)
             plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-            canvas.get_tk_widget().grid(row=index, column=5, padx=padx, pady=pady)
+            canvas.get_tk_widget().grid(row=index, column=6, padx=padx, pady=pady)
             # グラフを更新
             update_bar_chart(data=display_data["total_data"], incompleted_count=display_data["incompleted"], ax=ax, canvas=canvas, show_label=False)
             # グラフのツールチップ
