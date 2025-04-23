@@ -393,7 +393,7 @@ def update_filelist_table(table_frame):
     pady = 3
 
     # ヘッダ
-    headers = ["No.", "ファイル名", "State", "開始日", "更新日", "完了率", "テスト結果"]
+    headers = ["No.", "ファイル名", "State", "更新日", "完了率", "テスト結果"]
     for col, text in enumerate(headers):
         ttk.Label(table_frame, text=text, foreground="#444444", background="#e0e0e0", relief="solid").grid(
             row=0, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
@@ -403,7 +403,7 @@ def update_filelist_table(table_frame):
     table_frame.grid_columnconfigure(1, weight=3)
 
     # クリップボード出力用のヘッダ
-    export_headers = ["No.", "ファイル名", "State", "開始日", "更新日", "項目数", "完了数", "完了率"]
+    export_headers = ["No.", "ファイル名", "State", "更新日", "項目数", "完了数", "完了率"]
     export_data = [export_headers + settings["test_status"]["results"] + [settings["test_status"]["labels"]["not_run"]]]
 
     # 各ファイルのデータ表示
@@ -430,14 +430,9 @@ def update_filelist_table(table_frame):
         # set_state_color(state_label, display_data["state"])
         export_row.append(display_data["state"])
 
-        # 開始日
-        start_label = ttk.Label(table_frame, text=Utility.simplify_date(display_data["start_date"]))
-        start_label.grid(row=index, column=3, padx=padx, pady=pady)
-        export_row.append(display_data["start_date"] or "")
-
         # 最終更新日
         last_update_label = ttk.Label(table_frame, text=Utility.simplify_date(display_data["last_update"]))
-        last_update_label.grid(row=index, column=4, padx=padx, pady=pady)
+        last_update_label.grid(row=index, column=3, padx=padx, pady=pady)
         export_row.append(display_data["last_update"] or "")
 
         # 完了率
@@ -449,7 +444,7 @@ def update_filelist_table(table_frame):
             comp_rate_display = f'{display_data["comp_rate_text"]} ({display_data["completed"]}/{display_data["available"]})'
 
         comp_rate_label = ttk.Label(table_frame, text=comp_rate_display)
-        comp_rate_label.grid(row=index, column=5, padx=padx, pady=pady)
+        comp_rate_label.grid(row=index, column=4, padx=padx, pady=pady)
         # エクスポート用データ
         export_row.append(display_data["available"]) # 項目数
         export_row.append(display_data["completed"]) # 完了数
@@ -460,7 +455,6 @@ def update_filelist_table(table_frame):
             color = "red" if display_data["on_error"] else "darkorange2"
             filename_label.config(foreground=color)
             state_label.config(foreground=color)
-            start_label.config(foreground=color)
             comp_rate_label.config(foreground=color)
 
         # エラー時以外は進捗グラフを表示
@@ -469,7 +463,7 @@ def update_filelist_table(table_frame):
             fig, ax = plt.subplots(figsize=(2, 0.1))
             canvas = FigureCanvasTkAgg(fig, master=table_frame)
             plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-            canvas.get_tk_widget().grid(row=index, column=6, padx=padx, pady=pady)
+            canvas.get_tk_widget().grid(row=index, column=5, padx=padx, pady=pady)
             # グラフを更新
             update_bar_chart(data=display_data["total_data"], incompleted_count=display_data["incompleted"], ax=ax, canvas=canvas, show_label=False)
             # グラフのツールチップ
