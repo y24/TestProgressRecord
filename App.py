@@ -905,20 +905,11 @@ def create_summary_tab(parent):
     total_frame = ttk.Frame(parent)
     total_frame.pack(fill=tk.X, padx=5, pady=5)
 
-    # テストケース数、完了率(全体)
-    total_count_label = ttk.Label(total_frame, anchor="w")
-    total_count_label.pack(fill=tk.X, padx=5)
-    total_rate_label = ttk.Label(total_frame, anchor="w")
-    total_rate_label.pack(fill=tk.X, padx=5)
-
-    # テストケース数、完了率を更新
-    update_info_label(data=Utility.sum_values(filtered_data, "stats"), count_label=total_count_label, rate_label=total_rate_label, detail=True)
-
     # グラフ表示(全体)
     total_fig, total_ax = plt.subplots(figsize=(8, 0.25))
     total_canvas = FigureCanvasTkAgg(total_fig, master=total_frame)
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-    total_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+    total_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
 
     # グラフを更新
     incompleted = Utility.sum_values(filtered_data, "stats")["incompleted"] if len(filtered_data) > 0 else 0
@@ -928,6 +919,15 @@ def create_summary_tab(parent):
     filtered_total_data = Utility.sum_values(filtered_data, "total")
     graph_tooltip = f'{make_results_text(filtered_total_data, incompleted)}'
     ToolTip(total_canvas.get_tk_widget(), msg=graph_tooltip, delay=0.3, follow=False)
+
+    # テストケース数、完了率(全体)
+    total_count_label = ttk.Label(total_frame, anchor="w")
+    total_count_label.pack(fill=tk.X, padx=20)
+    total_rate_label = ttk.Label(total_frame, anchor="w")
+    total_rate_label.pack(fill=tk.X, padx=20)
+
+    # テストケース数、完了率を更新
+    update_info_label(data=Utility.sum_values(filtered_data, "stats"), count_label=total_count_label, rate_label=total_rate_label, detail=True)
 
     # ファイル別データ表示部
     create_summary_filelist_area(parent=parent)
