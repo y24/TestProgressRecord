@@ -26,16 +26,17 @@ def _create_row_data(structure: str, values: dict, settings: dict, all_keys: set
         list: 表示用の行データ
     """
     completed = settings["test_status"]["labels"]["completed"]
-    
+    filled = settings["test_status"]["labels"]["filled"]
+
     if structure == 'daily':
         return [values[0]] + [values[1].get(k, 0) for k in Utility.sort_by_master(
-            master_list=settings["test_status"]["results"] + [completed],
+            master_list=settings["test_status"]["results"] + [filled, completed],
             input_list=all_keys
         )]
     elif structure == 'by_env':
         env, date, data = values
         return [env, date] + [data.get(k, 0) for k in Utility.sort_by_master(
-            master_list=settings["test_status"]["results"] + [completed],
+            master_list=settings["test_status"]["results"] + [filled, completed],
             input_list=all_keys
         )]
     elif structure == 'by_name':
@@ -60,7 +61,7 @@ def _insert_tree_rows(tree: ttk.Treeview, structure: str, data: dict, settings: 
     # データが空の場合（by_envのみ）
     if structure == 'by_env' and not data:
         dummy_row = ["環境名を取得できませんでした", "-"] + ["-" for _ in Utility.sort_by_master(
-            master_list=settings["test_status"]["results"] + [settings["test_status"]["labels"]["completed"]],
+            master_list=settings["test_status"]["results"] + [settings["test_status"]["labels"]["filled"]],
             input_list=all_keys
         )]
         tree.insert('', 'end', values=dummy_row)
@@ -125,10 +126,11 @@ def _get_columns(structure: str, settings: dict, all_keys: set) -> list:
         list: 列名のリスト
     """
     completed = settings["test_status"]["labels"]["completed"]
+    filled = settings["test_status"]["labels"]["filled"]
     
     column_definitions = {
         'by_env': ["環境名", "日付"],
-        'by_name': ["日付", "担当者", "Completed"],
+        'by_name': ["日付", "担当者", "消化数"],
         'daily': ["日付"]
     }
     
@@ -140,7 +142,7 @@ def _get_columns(structure: str, settings: dict, all_keys: set) -> list:
         
     # その他の場合は結果列を追加
     result_columns = Utility.sort_by_master(
-        master_list=settings["test_status"]["results"] + [completed],
+        master_list=settings["test_status"]["results"] + [filled, completed],
         input_list=all_keys
     )
     
