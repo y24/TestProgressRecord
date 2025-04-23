@@ -629,7 +629,6 @@ def create_summary_filelist_area(parent):
         sort_menu.add_command(label=order_info["label"], command=lambda key=key: change_sort_order(table_frame, key, sort_menu_button, on_change=True))
     sort_menu_button.config(menu=sort_menu)
     sort_menu_button.pack(anchor=tk.SW, side=tk.LEFT, padx=2, pady=5)
-    change_sort_order(table_frame, settings["app"]["sort"]["default"], sort_menu_button, on_change=False)
 
     # エクスポートメニュー
     exp_menu_button = ttk.Menubutton(menu_frame, text="エクスポート", direction="below")
@@ -638,6 +637,9 @@ def create_summary_filelist_area(parent):
     expmenu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(export_data))
     exp_menu_button.config(menu=expmenu)
     exp_menu_button.pack(anchor=tk.SW, side=tk.LEFT, padx=2, pady=5)
+
+    # 初期ソート順の反映
+    change_sort_order(table_frame, settings["app"]["sort"]["default"], sort_menu_button, on_change=False)
 
 def write_to_excel(file_path, table_name):
     # ファイルパス未入力
@@ -739,7 +741,7 @@ def create_input_area(parent, settings):
     # ttk.Button(submit_frame, text="書込先を開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=2, pady=5)
 
     ttk.Button(submit_frame, text="CSV保存", command=lambda: save_to_csv(WriteData.convert_to_2d_array(data=input_data, settings=settings), f'進捗集計_{Utility.get_today_str()}')).pack(side=tk.LEFT, padx=2, pady=(0,2))
-    ttk.Button(submit_frame, text="クリップボードにコピー", command=lambda: copy_to_clipboard(WriteData.convert_to_2d_array(data=input_data, settings=settings))).pack(side=tk.LEFT, padx=2, pady=(0,2))
+    ttk.Button(submit_frame, text="クリップボードにコピー", command=lambda: copy_to_clipboard(WriteData.convert_to_2d_array(data=input_data, settings=settings)), width=22).pack(side=tk.LEFT, padx=2, pady=(0,2))
 
 def update_info_label(data, count_label, rate_label, detail=True):
     if len(data) == 0 or"error" in data:
