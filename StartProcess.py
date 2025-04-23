@@ -1,7 +1,5 @@
-import sys
-import argparse
+import sys, argparse, os, re
 from tqdm import tqdm
-import os
 
 import ReadData
 import App
@@ -54,6 +52,18 @@ def make_selector_label(file, id):
     relative_path = f'[{file["relative_path"]}] ' if file["relative_path"] else ""
     return f"{id}: {relative_path}{file_name}"
 
+def _remove_duplicate_number(filename: str) -> str:
+    """
+    ファイル名から末尾の ' (数字)' パターンを削除する
+    
+    Args:
+        filename (str): 元のファイル名
+        
+    Returns:
+        str: ' (数字)' パターンを削除したファイル名
+    """
+    # 末尾の ' (数字)' パターンを検索して削除
+    return re.sub(r' \(\d+\)(?=\.[^.]+$)', '', filename)
 
 def file_processor(file, settings, id):
     """
@@ -65,7 +75,7 @@ def file_processor(file, settings, id):
     result = ReadData.aggregate_results(filepath=file["fullpath"], settings=settings)
     
     # ファイル情報を付与
-    result["file"] = filename
+    result["file"] = _remove_duplicate_number(filename)
     result["filepath"] = file["fullpath"]
     result["relative_path"] = (
         Utility.get_relative_directory_path(full_path=file["fullpath"], base_dir=file["temp_dir"])
@@ -105,7 +115,6 @@ def start():
 
     # 一時ディレクトリの掃除
     if temp_dirs: Zip.cleanup_old_temp_dirs()
-
 
 if __name__ == "__main__":
     start()
