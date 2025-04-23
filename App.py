@@ -399,7 +399,7 @@ def update_filelist_table(table_frame):
     pady = 3
 
     # ヘッダ
-    headers = ["No.", "ファイル名", "State", "更新日", "消化率", "完了率", "テスト結果"]
+    headers = ["No.", "ファイル名", "State", "更新日", "項目数", "消化率", "完了率", "テスト結果"]
     for col, text in enumerate(headers):
         ttk.Label(table_frame, text=text, foreground="#444444", background="#e0e0e0", relief="solid").grid(
             row=0, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
@@ -415,16 +415,20 @@ def update_filelist_table(table_frame):
     # 各ファイルのデータ表示
     for index, file_data in enumerate(input_data, 1):
         display_data = _extract_file_data(file_data)
-        # インデックス
-        ttk.Label(table_frame, text=index).grid(row=index, column=0, padx=padx, pady=pady)
-        export_row = [index] # エクスポート用データ
+        col_idx = 0
         
+        # インデックス
+        ttk.Label(table_frame, text=index).grid(row=index, column=col_idx, padx=padx, pady=pady)
+        export_row = [index] # エクスポート用データ
+        col_idx += 1
+
         # ファイル名
         filename = file_data['file']
         filename_label = ttk.Label(table_frame, text=filename)
-        filename_label.grid(row=index, column=1, sticky=tk.W, padx=padx, pady=pady)
+        filename_label.grid(row=index, column=col_idx, sticky=tk.W, padx=padx, pady=pady)
         tooltip_text = [filename]
         export_row.append(filename)
+        col_idx += 1
 
         # ファイル名ダブルクリック時
         filepath = file_data['filepath']
@@ -432,14 +436,22 @@ def update_filelist_table(table_frame):
 
         # State
         state_label = ttk.Label(table_frame, text=display_data["state"], anchor="center")
-        state_label.grid(row=index, column=2, padx=padx, pady=pady, sticky=tk.W + tk.E)
+        state_label.grid(row=index, column=col_idx, padx=padx, pady=pady, sticky=tk.W + tk.E)
         # set_state_color(state_label, display_data["state"])
         export_row.append(display_data["state"])
+        col_idx += 1
 
         # 最終更新日
         last_update_label = ttk.Label(table_frame, text=Utility.simplify_date(display_data["last_update"]))
-        last_update_label.grid(row=index, column=3, padx=padx, pady=pady)
+        last_update_label.grid(row=index, column=col_idx, padx=padx, pady=pady)
         export_row.append(display_data["last_update"] or "")
+        col_idx += 1
+
+        #項目数
+        case_count_label = ttk.Label(table_frame, text=display_data["available"])
+        case_count_label.grid(row=index, column=col_idx, padx=padx, pady=pady)
+        export_row.append(display_data["available"])
+        col_idx += 1
 
         # 消化率・完了率ラベル
         if display_data["on_error"]:
@@ -459,16 +471,17 @@ def update_filelist_table(table_frame):
 
         # 消化率
         filled_rate_label = ttk.Label(table_frame, text=filled_rate_display)
-        filled_rate_label.grid(row=index, column=4, padx=padx, pady=pady)
+        filled_rate_label.grid(row=index, column=col_idx, padx=padx, pady=pady)
         ToolTip(filled_rate_label, msg=filled_rate_tooltip, delay=0.3, follow=False)
+        col_idx += 1
 
         # 完了率
         comp_rate_label = ttk.Label(table_frame, text=comp_rate_display)
-        comp_rate_label.grid(row=index, column=5, padx=padx, pady=pady)
+        comp_rate_label.grid(row=index, column=col_idx, padx=padx, pady=pady)
         ToolTip(comp_rate_label, msg=comp_rate_tooltip, delay=0.3, follow=False)
+        col_idx += 1
 
         # エクスポート用データ
-        export_row.append(display_data["available"]) # 項目数
         export_row.append(display_data["completed"]) # 完了数
         export_row.append(filled_rate_export) # 消化率
         export_row.append(comp_rate_export) # 完了率
@@ -486,12 +499,15 @@ def update_filelist_table(table_frame):
             fig, ax = plt.subplots(figsize=(2, 0.1))
             canvas = FigureCanvasTkAgg(fig, master=table_frame)
             plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-            canvas.get_tk_widget().grid(row=index, column=6, padx=padx, pady=pady)
+            canvas.get_tk_widget().grid(row=index, column=col_idx, padx=padx, pady=pady)
+
             # グラフを更新
             update_bar_chart(data=display_data["total_data"], incompleted_count=display_data["incompleted"], ax=ax, canvas=canvas, show_label=False)
+
             # グラフのツールチップ
             graph_tooltop = f"項目数: {display_data['available']} (Total: {display_data['all']} / 対象外: {display_data['excluded']})\nState: {display_data['state']}\n{make_results_text(display_data['total_data'], display_data['incompleted'])}"
             ToolTip(canvas.get_tk_widget(), msg=graph_tooltop, delay=0.3, follow=False)
+
             # エクスポート用データ
             export_row += list(display_data["total_data"].values())
             export_row.append(display_data["incompleted"])
