@@ -399,7 +399,7 @@ def update_filelist_table(table_frame):
     pady = 3
 
     # ヘッダ
-    headers = ["No.", "ファイル名", "State", "更新日", "項目数", "消化率", "完了率", "テスト結果"]
+    headers = ["No.", "ファイル名", "項目数", "State", "更新日", "消化率", "完了率", "テスト結果"]
     for col, text in enumerate(headers):
         ttk.Label(table_frame, text=text, foreground="#444444", background="#e0e0e0", relief="solid").grid(
             row=0, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
@@ -409,7 +409,7 @@ def update_filelist_table(table_frame):
     table_frame.grid_columnconfigure(1, weight=3)
 
     # クリップボード出力用のヘッダ
-    export_headers = ["No.", "ファイル名", "State", "更新日", "項目数", "完了数", "消化率", "完了率"]
+    export_headers = ["No.", "ファイル名", "項目数", "State", "更新日", "完了数", "消化率", "完了率"]
     export_data = [export_headers + settings["test_status"]["results"] + [settings["test_status"]["labels"]["not_run"]]]
 
     # 各ファイルのデータ表示
@@ -434,6 +434,12 @@ def update_filelist_table(table_frame):
         filepath = file_data['filepath']
         filename_label.bind("<Double-Button-1>", create_click_handler(filepath))
 
+        #項目数
+        case_count_label = ttk.Label(table_frame, text=display_data["available"])
+        case_count_label.grid(row=index, column=col_idx, padx=padx, pady=pady)
+        export_row.append(display_data["available"])
+        col_idx += 1
+
         # State
         state_label = ttk.Label(table_frame, text=display_data["state"], anchor="center")
         state_label.grid(row=index, column=col_idx, padx=padx, pady=pady, sticky=tk.W + tk.E)
@@ -445,12 +451,6 @@ def update_filelist_table(table_frame):
         last_update_label = ttk.Label(table_frame, text=Utility.simplify_date(display_data["last_update"]))
         last_update_label.grid(row=index, column=col_idx, padx=padx, pady=pady)
         export_row.append(display_data["last_update"] or "")
-        col_idx += 1
-
-        #項目数
-        case_count_label = ttk.Label(table_frame, text=display_data["available"])
-        case_count_label.grid(row=index, column=col_idx, padx=padx, pady=pady)
-        export_row.append(display_data["available"])
         col_idx += 1
 
         # 消化率・完了率ラベル
