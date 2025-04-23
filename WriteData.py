@@ -17,7 +17,7 @@ Font_depend = 1.2
 base_header = ["ファイル名", "フォルダ", "環境名", "日付"]
 
 def convert_to_2d_array(data, settings):
-    results = settings["test_status"]["results"] + ["Completed"]
+    results = settings["test_status"]["results"] + ["Filled", "Completed"]
     header = base_header + results
     out_arr = [header]
     for entry in data:

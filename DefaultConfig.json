@@ -12,8 +12,10 @@
     "test_status": {
         "results": ["Pass", "Fixed", "Fail", "Blocked", "Suspend", "N/A"],
         "completed_results": ["Pass", "Fixed", "Suspend", "N/A"],
+        "filled_results": ["Pass", "Fixed", "Fail", "Blocked", "Suspend", "N/A"],
         "labels": {
             "completed": "Completed",
+            "filled": "Filled",
             "not_run": "Not Run"
         }
     },

@@ -8,7 +8,7 @@ from libs import Utility
 logger = Logger.get_logger(__name__, console=True, file=False, trace_line=False)
 
 # 日付ごとのデータ集計
-def get_daily(data, results: list[str], completed_label:str, completed_results: list[str]):
+def get_daily(data, results: list[str], completed_label:str, completed_results: list[str], filled_label:str, filled_results: list[str]):
     # 辞書を初期化：{日付: {結果タイプ: カウント}}
     result_count = defaultdict(lambda: defaultdict(int))
     
@@ -22,6 +22,7 @@ def get_daily(data, results: list[str], completed_label:str, completed_results: 
         for keyword in results:
             result_count[date][keyword] = result_count[date].get(keyword, 0)
         result_count[date][completed_label] = result_count[date].get(completed_label, 0)
+        result_count[date][filled_label] = result_count[date].get(filled_label, 0)
 
         # 結果の集計処理
         # 1. 個別の結果タイプをカウント
@@ -30,7 +31,10 @@ def get_daily(data, results: list[str], completed_label:str, completed_results: 
         # 2. 完了としてカウントすべき結果の場合、Completedとしてもカウント
         if result in completed_results:
             result_count[date][completed_label] += 1
-    
+        # 3. 消化としてカウントすべき結果の場合、Filledとしてもカウント
+        if result in filled_results:
+            result_count[date][filled_label] += 1
+
     # 集計結果を日付ありデータと日付なしデータに分離
     out_data = {}      # 日付ありデータ
     no_date_data = {}  # 日付なしデータ
@@ -69,7 +73,7 @@ def get_excluded_count(data, targets:list[str]) -> int:
     return sum(1 for row in data if row and row[0] in targets)
 
 # 全日付データ合計
-def get_total_all_date(data, data_no_date, exclude:str):
+def get_total_all_date(data, data_no_date, excludes:list[str]):
     result = {}
     # 全日付データ
     for values in data.values():
@@ -79,7 +83,8 @@ def get_total_all_date(data, data_no_date, exclude:str):
     for key, count in data_no_date.items():
         result[key] = result.get(key, 0) + count
     # Completedは除く
-    result.pop(exclude, None)
+    for exclude in excludes:
+        result.pop(exclude, None)
     return result
 
 # 完了数を合計
@@ -207,7 +212,9 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
             data=set_data, 
             results=settings["test_status"]["results"], 
             completed_label=settings["test_status"]["labels"]["completed"], 
-            completed_results=settings["test_status"]["completed_results"]
+            completed_results=settings["test_status"]["completed_results"],
+            filled_label=settings["test_status"]["labels"]["filled"],
+            filled_results=settings["test_status"]["filled_results"]
         )
 
     # 環境数
@@ -235,14 +242,16 @@ def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
         data=all_data,
         results=settings["test_status"]["results"],
         completed_label=settings["test_status"]["labels"]["completed"],
-        completed_results=settings["test_status"]["completed_results"]
+        completed_results=settings["test_status"]["completed_results"],
+        filled_label=settings["test_status"]["labels"]["filled"],
+        filled_results=settings["test_status"]["filled_results"]
     )
 
     # 全セット集計(担当者別)
     data_by_name = get_daily_by_name(all_data)
     
     # 全セット集計(全日付＋日付なし)
-    data_total = get_total_all_date(data_daily_total, data_no_date, exclude=settings["test_status"]["labels"]["completed"])
+    data_total = get_total_all_date(data_daily_total, data_no_date, excludes=[settings["test_status"]["labels"]["completed"], settings["test_status"]["labels"]["filled"]])
 
     # 総テストケース数
     case_count_all = sum(item['env_count'] * item['all'] for item in counts_by_sheet)
