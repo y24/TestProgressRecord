@@ -640,6 +640,7 @@ def create_summary_filelist_area(parent):
     expmenu = tk.Menu(exp_menu_button, tearoff=0)
     expmenu.add_command(label="CSVで保存", command=lambda: save_to_csv(export_data, f'進捗集計_{Utility.get_today_str()}'))
     expmenu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(export_data))
+    expmenu.add_command(label="ファイル名一覧をコピー", command=lambda: copy_to_clipboard(export_data, filename_only=True))
     exp_menu_button.config(menu=expmenu)
     exp_menu_button.pack(anchor=tk.SW, side=tk.LEFT, padx=2, pady=5)
 
@@ -698,9 +699,21 @@ def open_file(file_path, exit:bool=False):
     else:
         Dialog.show_messagebox(root, type="error", title="Error", message="指定されたファイルが見つかりません")
 
-def copy_to_clipboard(data):
-    # 2次元配列をタブ区切りのテキストに変換
-    text = "\n".join(["\t".join(map(str, row)) for row in data])
+def copy_to_clipboard(data, filename_only=False):
+    """クリップボードにデータをコピーする
+
+    Args:
+        data: コピーするデータ
+        filename_only: Trueの場合、ファイル名のみをコピー
+    """
+    if filename_only:
+        # ファイル名のみを抽出（ヘッダー行を除く）
+        filenames = [row[1] for row in data[1:]]
+        text = "\n".join(filenames)
+    else:
+        # タブ区切りのテキストに変換
+        text = "\n".join(["\t".join(map(str, row)) for row in data])
+    
     # クリップボードにコピー
     root.clipboard_clear()
     root.clipboard_append(text)
