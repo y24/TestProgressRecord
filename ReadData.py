@@ -218,9 +218,9 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
         env_data[env_name], _ = get_daily(
             data=processed_data, 
             results=settings["test_status"]["results"], 
-            completed_label=settings["test_status"]["labels"]["completed"], 
+            completed_label="Completed", 
             completed_results=settings["test_status"]["completed_results"],
-            filled_label=settings["test_status"]["labels"]["filled"],
+            filled_label="Filled",
             filled_results=settings["test_status"]["filled_results"]
         )
 

@@ -17,9 +17,16 @@ Font_depend = 1.2
 base_header = ["ファイル名", "フォルダ", "環境名", "日付"]
 
 def convert_to_2d_array(data, settings):
-    results = settings["test_status"]["results"] + ["Filled", "Completed"]
+    # ヘッダーの作成
+    completed_label = settings["test_status"]["labels"]["completed"]
+    filled_label = settings["test_status"]["labels"]["filled"]
+    results = settings["test_status"]["results"] + [filled_label, completed_label]
     header = base_header + results
+
+    # 出力用の2次元配列の作成
     out_arr = [header]
+
+    # データの書き込み
     for entry in data:
         file_name = entry.get("file", "")
         if "by_env" in entry and entry["by_env"]:

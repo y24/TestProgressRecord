@@ -14,9 +14,9 @@
         "completed_results": ["Pass", "Fixed", "Suspend", "N/A"],
         "filled_results": ["Pass", "Fixed", "Fail", "Blocked", "Suspend", "N/A"],
         "labels": {
-            "completed": "Completed",
-            "filled": "Filled",
-            "not_run": "Not Run"
+            "completed": "完了数",
+            "filled": "消化数",
+            "not_run": "未着手"
         }
     },
     "app": {
