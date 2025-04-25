@@ -2,7 +2,7 @@ import sys, argparse, os, re
 from tqdm import tqdm
 
 import ReadData
-import App
+import MainApp
 from libs import Utility, Dialog, Zip, AppConfig
 
 def get_xlsx_paths(inputs):
@@ -111,7 +111,7 @@ def start():
         pprint(out_data)
 
     # アプリケーションの起動
-    App.launch(out_data, inputs)
+    MainApp.launch(out_data, inputs)
 
     # 一時ディレクトリの掃除
     if temp_dirs: Zip.cleanup_old_temp_dirs()
