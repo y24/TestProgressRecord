@@ -8,10 +8,7 @@ from libs import Utility
 logger = Logger.get_logger(__name__, console=True, file=False, trace_line=False)
 
 # 日付ごとのデータ集計
-def get_daily(data, results: list[str], completed_results: list[str], filled_results: list[str]):
-    completed_key = "Completed"
-    filled_key = "Filled"
-
+def get_daily(data, results: list[str], completed_label:str, completed_results: list[str], filled_label:str, filled_results: list[str]):
     # 辞書を初期化：{日付: {結果タイプ: カウント}}
     result_count = defaultdict(lambda: defaultdict(int))
     
@@ -24,8 +21,8 @@ def get_daily(data, results: list[str], completed_results: list[str], filled_res
         # 各結果タイプのカウントを0で初期化し、結果が存在しない場合は0として表示されるようにする
         for keyword in results:
             result_count[date][keyword] = result_count[date].get(keyword, 0)
-        result_count[date][completed_key] = result_count[date].get(completed_key, 0)
-        result_count[date][filled_key] = result_count[date].get(filled_key, 0)
+        result_count[date][completed_label] = result_count[date].get(completed_label, 0)
+        result_count[date][filled_label] = result_count[date].get(filled_label, 0)
 
         # 結果の集計処理
         # 1. 個別の結果タイプをカウント
@@ -33,10 +30,10 @@ def get_daily(data, results: list[str], completed_results: list[str], filled_res
             result_count[date][result] += 1
         # 2. 完了としてカウントすべき結果の場合、Completedとしてもカウント
         if result in completed_results:
-            result_count[date][completed_key] += 1
+            result_count[date][completed_label] += 1
         # 3. 消化としてカウントすべき結果の場合、Filledとしてもカウント
         if result in filled_results:
-            result_count[date][filled_key] += 1
+            result_count[date][filled_label] += 1
 
     # 集計結果を日付ありデータと日付なしデータに分離
     out_data = {}      # 日付ありデータ
@@ -221,7 +218,9 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
         env_data[env_name], _ = get_daily(
             data=processed_data, 
             results=settings["test_status"]["results"], 
+            completed_label=settings["test_status"]["labels"]["completed"], 
             completed_results=settings["test_status"]["completed_results"],
+            filled_label=settings["test_status"]["labels"]["filled"],
             filled_results=settings["test_status"]["filled_results"]
         )
 
@@ -249,7 +248,9 @@ def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
     data_daily_total, data_no_date = get_daily(
         data=all_data,
         results=settings["test_status"]["results"],
+        completed_label=settings["test_status"]["labels"]["completed"],
         completed_results=settings["test_status"]["completed_results"],
+        filled_label=settings["test_status"]["labels"]["filled"],
         filled_results=settings["test_status"]["filled_results"]
     )
 
