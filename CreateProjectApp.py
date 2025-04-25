@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 class CreateProjectApp:
-    def __init__(self, initial_files: List[str] = None):
+    def __init__(self, initial_files: List[str] = None, initial_json_path: str = None):
         self.root = tk.Tk()
         self.root.title("プロジェクト作成")
         self.root.geometry("800x600")
@@ -20,6 +20,10 @@ class CreateProjectApp:
         
         self.initial_files = initial_files or []
         self.create_widgets()
+        
+        # 初期JSONファイルが指定されている場合は読み込む
+        if initial_json_path:
+            self.load_project_from_path(initial_json_path)
         
     def create_widgets(self):
         # プロジェクト名称
@@ -113,21 +117,8 @@ class CreateProjectApp:
             self.excel_path_entry.delete(0, tk.END)
             self.excel_path_entry.insert(0, file_path)
             
-    def load_project(self):
-        # 既存のファイル情報をクリア
-        for widget in self.files_frame.winfo_children():
-            widget.destroy()
-            
-        # JSONファイルを選択
-        file_path = filedialog.askopenfilename(
-            title="プロジェクトファイルを選択",
-            filetypes=[("JSON files", "*.json")],
-            initialdir="projects"
-        )
-        
-        if not file_path:
-            return
-            
+    def load_project_from_path(self, file_path: str):
+        """指定されたパスのJSONファイルを読み込む"""
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 project_data = json.load(f)
@@ -148,6 +139,23 @@ class CreateProjectApp:
             
         except Exception as e:
             messagebox.showerror("エラー", f"プロジェクトファイルの読み込みに失敗しました: {str(e)}")
+            
+    def load_project(self):
+        # 既存のファイル情報をクリア
+        for widget in self.files_frame.winfo_children():
+            widget.destroy()
+            
+        # JSONファイルを選択
+        file_path = filedialog.askopenfilename(
+            title="プロジェクトファイルを選択",
+            filetypes=[("JSON files", "*.json")],
+            initialdir="projects"
+        )
+        
+        if not file_path:
+            return
+            
+        self.load_project_from_path(file_path)
             
     def save_project(self):
         # プロジェクト名の取得
@@ -174,9 +182,6 @@ class CreateProjectApp:
             
         # Excelファイルパスの取得
         excel_path = self.excel_path_entry.get().strip()
-        if not excel_path:
-            messagebox.showerror("エラー", "Excelファイルを選択してください")
-            return
             
         # プロジェクトデータの作成
         self.project_data = {
@@ -200,6 +205,17 @@ class CreateProjectApp:
         self.root.mainloop()
 
 if __name__ == "__main__":
-    initial_files = sys.argv[1:] if len(sys.argv) > 1 else None
-    app = CreateProjectApp(initial_files)
+    # 引数の解析
+    args = sys.argv[1:]
+    initial_files = []
+    initial_json_path = None
+    
+    for arg in args:
+        if arg.endswith('.json'):
+            initial_json_path = arg
+        else:
+            initial_files.append(arg)
+            
+    app = CreateProjectApp(initial_files=initial_files if initial_files else None,
+                         initial_json_path=initial_json_path)
     app.run()
