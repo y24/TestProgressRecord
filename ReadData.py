@@ -194,8 +194,15 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
         # セットのデータ取得
         set_data = Excel.get_columns_data(sheet=sheet, col_nums=set, header_row=header_rownum, ignore_header=True)
 
+        # 担当者名がNoneで結果と日付が存在する場合、"NO_NAME"に置き換え
+        processed_data = []
+        for row in set_data:
+            if row[0] is not None and row[2] is not None and row[1] is None:
+                row = [row[0], "NO_NAME", row[2]]
+            processed_data.append(row)
+
         # 全セット合計のデータにも追加
-        data.extend(set_data)
+        data.extend(processed_data)
 
         # そのセットの1行目からセット名を取得(セル内改行は_に置換)
         set_name = Excel.get_cell_value(sheet=sheet, col=set[0], row=1, replace_newline=True)
@@ -209,7 +216,7 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
 
         # 環境ごとのデータ集計
         env_data[env_name], _ = get_daily(
-            data=set_data, 
+            data=processed_data, 
             results=settings["test_status"]["results"], 
             completed_label=settings["test_status"]["labels"]["completed"], 
             completed_results=settings["test_status"]["completed_results"],
