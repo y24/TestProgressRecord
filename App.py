@@ -316,8 +316,12 @@ def create_click_handler(filepath):
     return lambda event: open_file(file_path=filepath)
 
 def make_results_text(results, incompleted):
+    # 各結果テキストの生成
     items = [f'{key}:{value}' for key, value in results.items() if value > 0]
-    if incompleted: items.append(f'Not Run:{incompleted}')
+    # 未着手数を付加
+    not_run_text = f'{settings["test_status"]["labels"]["not_run"]}:{incompleted}'
+    if incompleted: items.append(not_run_text)
+    # 結果テキストの結合
     if len(items):
         return ', '.join(items)
     else:
