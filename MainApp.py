@@ -804,8 +804,6 @@ def create_menubar(parent):
     parent.config(menu=menubar)
     # File
     file_menu = tk.Menu(menubar, tearoff=0)
-    file_menu.add_command(label="再集計", command=reload_files, accelerator="Ctrl+R")
-    file_menu.add_separator()
     file_menu.add_command(label="プロジェクトを開く", command=open_project, accelerator="Ctrl+O")
     file_menu.add_command(label="保存", command=save_project, accelerator="Ctrl+S")
     file_menu.add_command(label="ファイルを読み込む", command=load_files, accelerator="Ctrl+L")
@@ -815,6 +813,10 @@ def create_menubar(parent):
     file_menu.add_separator()
     file_menu.add_command(label="終了", command=parent.quit, accelerator="Ctrl+Q")
     menubar.add_cascade(label="File", menu=file_menu)
+    # Data
+    data_menu = tk.Menu(menubar, tearoff=0)
+    data_menu.add_command(label="再集計", command=reload_files, accelerator="Ctrl+R")
+    menubar.add_cascade(label="Data", menu=data_menu)
 
     # キーバインドの追加
     parent.bind('<Control-s>', lambda e: save_project())

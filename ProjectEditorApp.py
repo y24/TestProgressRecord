@@ -63,12 +63,12 @@ class ProjectEditorApp:
         file_menu.add_command(label="プロジェクトファイルを読込", command=self.load_project)
         
         # プロジェクト名称
-        ttk.Label(self.root, text="プロジェクト名称:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(self.root, text="プロジェクト名称(*):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.project_name_entry = ttk.Entry(self.root, width=60)
         self.project_name_entry.grid(row=0, column=1, padx=5, pady=5, sticky="w")
         
         # ファイル情報フレーム
-        self.files_frame = ttk.LabelFrame(self.root, text="取得元情報")
+        self.files_frame = ttk.LabelFrame(self.root, text="取得元URL")
         self.files_frame.grid(row=1, column=0, columnspan=3, padx=5, pady=5, sticky="nsew")
         
         # ファイル情報追加ボタン
