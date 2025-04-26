@@ -1039,6 +1039,12 @@ def create_byfile_tab(parent):
     file_selector.pack(fill=tk.X, padx=20, pady=5)
     file_selector.bind("<<ComboboxSelected>>", lambda event: update_byfile_tab(selected_file=file_selector.get(), count_label=file_count_label, last_load_time_label=file_last_load_time_label, ax=file_ax, canvas=file_canvas, notebook=notebook))
 
+    # グラフ表示(ファイル別)
+    file_fig, file_ax = plt.subplots(figsize=(6, 0.1))
+    file_canvas = FigureCanvasTkAgg(file_fig, master=by_file_frame)
+    plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    file_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
+
     # テストケース数/完了率/消化率(ファイル別)
     file_count_label = ttk.Label(by_file_frame, anchor="w")
     file_count_label.pack(fill=tk.X, padx=20)
@@ -1046,12 +1052,6 @@ def create_byfile_tab(parent):
     # 最終読込日時(ファイル別)
     file_last_load_time_label = ttk.Label(by_file_frame, anchor="w")
     file_last_load_time_label.pack(fill=tk.X, padx=20)
-
-    # グラフ表示(ファイル別)
-    file_fig, file_ax = plt.subplots(figsize=(6, 0.1))
-    file_canvas = FigureCanvasTkAgg(file_fig, master=by_file_frame)
-    plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-    file_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
 
     # タブ表示
     notebook_height = 300 if len(input_data) > 1 else 355
