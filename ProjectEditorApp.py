@@ -47,16 +47,16 @@ class ProjectEditorApp:
         self.project_name_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
         
         # ファイル情報フレーム
-        self.files_frame = ttk.LabelFrame(self.root, text="ファイル情報")
+        self.files_frame = ttk.LabelFrame(self.root, text="取得元情報")
         self.files_frame.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
         
         # ファイル情報追加ボタン
-        ttk.Button(self.root, text="ファイル情報を追加", command=self.add_file_info).grid(row=2, column=0, columnspan=2, pady=5)
+        ttk.Button(self.files_frame, text="Add", command=self.add_file_info).pack(padx=5, pady=5, anchor="w")
         
-        # Excelファイルパス
-        ttk.Label(self.root, text="書込先Excelファイル:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
-        self.excel_path_entry = ttk.Entry(self.root, width=50)
-        self.excel_path_entry.grid(row=3, column=1, padx=5, pady=5, sticky="ew")
+        # 集計データ書込先
+        ttk.Label(self.root, text="集計データ書込先:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        self.write_path_entry = ttk.Entry(self.root, width=50)
+        self.write_path_entry.grid(row=3, column=1, padx=5, pady=5, sticky="ew")
         ttk.Button(self.root, text="参照", command=self.select_excel_file).grid(row=3, column=2, padx=5, pady=5)
         
         # ボタンフレーム
@@ -71,7 +71,7 @@ class ProjectEditorApp:
             for file in self.initial_files:
                 self.add_file_info(file)
         else:
-            # 初期ファイルがない場合は1つの空の入力欄を追加
+            # 初期ファイルがない場合は空の入力欄を1つ追加
             self.add_file_info()
         
         # グリッドの設定
@@ -82,35 +82,25 @@ class ProjectEditorApp:
         frame = ttk.Frame(self.files_frame)
         frame.pack(fill="x", padx=5, pady=5)
         
-        # ファイル名
-        ttk.Label(frame, text="ファイル名:").grid(row=0, column=0, padx=5, pady=2)
-        filename_entry = ttk.Entry(frame, width=40)
-        filename_entry.grid(row=0, column=1, padx=5, pady=2)
-        if initial_file:
-            filename_entry.insert(0, initial_file)
-        if file_data:
-            filename_entry.insert(0, file_data.get("filename", ""))
-        
-        # URL
-        ttk.Label(frame, text="URL:").grid(row=0, column=2, padx=5, pady=2)
-        url_entry = ttk.Entry(frame, width=40)
-        url_entry.grid(row=0, column=3, padx=5, pady=2)
-        if file_data:
-            url_entry.insert(0, file_data.get("url", ""))
+        # 削除ボタン
+        ttk.Button(frame, text="×", width=2, command=lambda: frame.destroy()).grid(row=0, column=0, padx=5, pady=2)
 
         # 識別子
-        ttk.Label(frame, text="識別子:").grid(row=0, column=4, padx=5, pady=2)
+        ttk.Label(frame, text="識別子:").grid(row=0, column=1, padx=5, pady=2)
         identifier_entry = ttk.Entry(frame, width=20)
-        identifier_entry.grid(row=0, column=5, padx=5, pady=2)
+        identifier_entry.grid(row=0, column=2, padx=5, pady=2)
         if file_data:
             identifier_entry.insert(0, file_data.get("identifier", ""))
 
-        # 削除ボタン
-        ttk.Button(frame, text="削除", command=lambda: frame.destroy()).grid(row=0, column=7, padx=5, pady=2)
+        # URL
+        ttk.Label(frame, text="URL:").grid(row=0, column=3, padx=5, pady=2)
+        url_entry = ttk.Entry(frame, width=100)
+        url_entry.grid(row=0, column=4, padx=5, pady=2)
+        if file_data:
+            url_entry.insert(0, file_data.get("url", ""))
         
         # エントリを保持
         frame.entries = {
-            "filename": filename_entry,
             "identifier": identifier_entry,
             "url": url_entry
         }
@@ -121,8 +111,8 @@ class ProjectEditorApp:
             filetypes=[("Excel files", "*.xlsx")]
         )
         if file_path:
-            self.excel_path_entry.delete(0, tk.END)
-            self.excel_path_entry.insert(0, file_path)
+            self.write_path_entry.delete(0, tk.END)
+            self.write_path_entry.insert(0, file_path)
             
     def load_project_from_path(self, file_path: str):
         """指定されたパスのJSONファイルを読み込む"""
@@ -137,8 +127,8 @@ class ProjectEditorApp:
             self.current_project_name = project_data.get("project_name", "")  # 現在のプロジェクト名を保存
             
             # Excelファイルパスを設定
-            self.excel_path_entry.delete(0, tk.END)
-            self.excel_path_entry.insert(0, project_data.get("excel_path", ""))
+            self.write_path_entry.delete(0, tk.END)
+            self.write_path_entry.insert(0, project_data.get("excel_path", ""))
             
             # ファイル情報を設定
             for file_data in project_data.get("files", []):
@@ -188,12 +178,11 @@ class ProjectEditorApp:
         for frame in self.files_frame.winfo_children():
             if isinstance(frame, ttk.Frame):
                 file_info = {
-                    "filename": frame.entries["filename"].get().strip(),
                     "identifier": frame.entries["identifier"].get().strip(),
                     "url": frame.entries["url"].get().strip()
                 }
                 # ファイル名とURLが必須
-                if file_info["filename"] and file_info["url"]:
+                if file_info["url"]:
                     files.append(file_info)
                 else:
                     frames_to_remove.append(frame)
@@ -203,13 +192,9 @@ class ProjectEditorApp:
             # 最後の1つを残して削除
             for frame in frames_to_remove[:-1]:
                 frame.destroy()
-                
-        if not files:
-            messagebox.showerror("エラー", "少なくとも1つのファイル情報を入力してください（ファイル名とURLは必須です）")
-            return
             
         # Excelファイルパスの取得
-        excel_path = self.excel_path_entry.get().strip()
+        excel_path = self.write_path_entry.get().strip()
             
         # プロジェクトデータの作成
         project_data = {
