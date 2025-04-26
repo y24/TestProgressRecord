@@ -816,6 +816,14 @@ def create_menubar(parent):
     file_menu.add_command(label="終了", command=parent.quit)
     menubar.add_cascade(label="File", menu=file_menu)
 
+    # キーバインドの追加
+    parent.bind('<Control-s>', lambda e: save_project())
+    parent.bind('<Control-o>', lambda e: open_project())
+    parent.bind('<Control-l>', lambda e: load_files())
+    parent.bind('<Control-r>', lambda e: reload_files())
+    parent.bind('<Control-e>', lambda e: edit_project())
+    parent.bind('<Control-q>', lambda e: parent.quit())
+
 def create_input_area(parent, settings):
     input_frame = ttk.LabelFrame(parent, text="集計データ出力")
     input_frame.pack(fill=tk.X, padx=5, pady=3)
