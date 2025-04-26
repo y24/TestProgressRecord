@@ -5,6 +5,7 @@ import os
 import sys
 from pathlib import Path
 from typing import List, Dict, Any
+import re
 
 class CreateProjectApp:
     def __init__(self, initial_files: List[str] = None, initial_json_path: str = None):
@@ -157,6 +158,12 @@ class CreateProjectApp:
             
         self.load_project_from_path(file_path)
             
+    def sanitize_filename(self, filename: str) -> str:
+        """ファイル名として不適切な文字を_に置換する"""
+        # Windowsで使用できない文字を定義
+        invalid_chars = r'[<>:"/\\|?*\x00-\x1f]'
+        return re.sub(invalid_chars, '_', filename)
+
     def save_project(self):
         # プロジェクト名の取得
         project_name = self.project_name_entry.get().strip()
@@ -194,8 +201,11 @@ class CreateProjectApp:
         projects_dir = Path("projects")
         projects_dir.mkdir(exist_ok=True)
         
+        # ファイル名のサニタイズ
+        safe_project_name = self.sanitize_filename(project_name)
+        
         # JSONファイルの保存
-        json_path = projects_dir / f"{project_name}.json"
+        json_path = projects_dir / f"{safe_project_name}.json"
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(self.project_data, f, ensure_ascii=False, indent=2)
             
