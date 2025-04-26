@@ -10,7 +10,7 @@ import re
 class CreateProjectApp:
     def __init__(self, initial_files: List[str] = None, initial_json_path: str = None):
         self.root = tk.Tk()
-        self.root.title("プロジェクト作成")
+        self.root.title("Project Editor")
         self.root.geometry("1000x400")
         
         self.project_data = {
