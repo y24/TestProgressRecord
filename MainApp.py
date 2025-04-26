@@ -727,26 +727,23 @@ def edit_settings():
     Dialog.show_messagebox(root=root, type="info", title="ユーザー設定編集", message=f"ユーザー設定ファイルを開きます。\n編集した設定を反映させるにはアプリを再起動するか、File > 再集計 を実行してください。")
     run_file(file_path="UserConfig.json", exit=False)
 
-def create_project():
-    edit_project(on_create=True)
-
 def open_files():
     files = Dialog.select_files(("JSON/Excel/Zipファイル", "*.json;*.xlsx;*.zip"))
     if files: new_process(inputs=list(files))
 
-def edit_project(on_create:bool=False):
+def edit_project(after_save_callback=None):
     def on_project_updated(new_project_data):
         global project_data, project_path
         try:
             project_path = new_project_data.pop("project_path", None)  # パスを取り出して削除
             project_data = new_project_data  # グローバル変数を更新
 
-            if on_create:
-                new_process(inputs=list(project_path))
-            else:
-                # タイトルを更新
-                project_name = project_data.get("project_name", "名称未設定")
-                root.title(f"TestTraQ - {project_name}")
+            if after_save_callback:
+                after_save_callback()
+
+            # タイトルを更新
+            project_name = project_data.get("project_name", "名称未設定")
+            root.title(f"TestTraQ - {project_name}")
         except Exception as e:
             Dialog.show_messagebox(
                 root=root,
@@ -767,12 +764,14 @@ def save_project():
     global project_data, project_path
     """現在のinput_dataをJSONファイルに保存する"""
     
-    # プロジェクトファイルが開かれている場合は上書き
-    if project_path:
-        file_path = project_path 
-    else:
-        create_project()
-        
+    # プロジェクトファイルが開かれていない場合は新規作成
+    if not project_path:
+        def after_create():
+            save_project()
+        edit_project(after_save_callback=after_create)
+        return
+
+    file_path = project_path
     try:
         # 既存のJSONファイルがある場合は読み込む
         existing_data = {}
@@ -800,7 +799,6 @@ def create_menubar(parent):
     file_menu = tk.Menu(menubar, tearoff=0)
     file_menu.add_command(label="再集計", command=reload_files)
     file_menu.add_separator()
-    file_menu.add_command(label="新規プロジェクト", command=create_project)
     file_menu.add_command(label="開く", command=open_files)
     file_menu.add_command(label="保存", command=save_project)
     file_menu.add_separator()
@@ -972,7 +970,7 @@ def new_process(inputs):
     sys.exit()
 
 def reload_files():
-    response = Dialog.ask(title="確認", message="全てのファイルを再集計します。よろしいですか？")
+    response = Dialog.ask(title="確認", message="ファイルの再集計を行いますか？")
     if response == "yes": new_process(inputs=list(input_args))
 
 def create_global_tab(parent):
