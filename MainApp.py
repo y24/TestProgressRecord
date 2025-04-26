@@ -727,9 +727,13 @@ def edit_settings():
     Dialog.show_messagebox(root=root, type="info", title="ユーザー設定編集", message=f"ユーザー設定ファイルを開きます。\n編集した設定を反映させるにはアプリを再起動するか、File > 再集計 を実行してください。")
     run_file(file_path="UserConfig.json", exit=False)
 
-def open_files():
-    files = Dialog.select_files(("JSON/Excel/Zipファイル", "*.json;*.xlsx;*.zip"))
+def load_files():
+    files = Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))
     if files: new_process(inputs=list(files))
+
+def open_project():
+    project_path = Dialog.select_file(("JSONファイル", "*.json"))
+    if project_path: new_process(inputs=[project_path])
 
 def edit_project(after_save_callback=None):
     def on_project_updated(new_project_data):
@@ -799,8 +803,9 @@ def create_menubar(parent):
     file_menu = tk.Menu(menubar, tearoff=0)
     file_menu.add_command(label="再集計", command=reload_files)
     file_menu.add_separator()
-    file_menu.add_command(label="開く", command=open_files)
-    file_menu.add_command(label="保存", command=save_project)
+    file_menu.add_command(label="プロジェクトを開く", command=open_project)
+    file_menu.add_command(label="プロジェクトを保存", command=save_project)
+    file_menu.add_command(label="ファイルを読み込む", command=load_files)
     file_menu.add_separator()
     file_menu.add_command(label="プロジェクト情報設定", command=edit_project)
     file_menu.add_command(label="環境設定", command=edit_settings)
@@ -1104,7 +1109,7 @@ def run(pjdata, pjpath, indata, args, on_reload=False):
             reload_files()
     else:
         # 1件もデータがない場合はメッセージ
-        Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"データがありません。\nFile > プロジェクト情報設定 から取得元を設定してください。")
+        Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"データがありません。以下の方法で設定を行ってください。\n・File > ファイルを読み込む からファイルを開いて保存\n・File > プロジェクト情報設定 から取得元URLを設定")
 
     root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()
