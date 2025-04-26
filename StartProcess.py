@@ -145,6 +145,7 @@ def start():
     parser = argparse.ArgumentParser(description="zipファイル/xlsxファイルを引数として起動します。(複数可)")
     parser.add_argument("--on_reload", action="store_true", help="起動後、データの再集計を行わない")
     parser.add_argument("--debug", action="store_true", help="デバッグモードを有効化")
+    parser.add_argument("--project", help="プロジェクトファイルのパス")
     parser.add_argument("data_files", nargs="*", help="処理するファイルのパス")
     args = parser.parse_args()
 
@@ -161,7 +162,14 @@ def start():
 
     # プロジェクトデータを初期化
     project_data = {}
-    project_path = ""
+    project_path = args.project if args.project else ""
+
+    # プロジェクトファイルのパスが指定されている場合はそのファイルを読み込む
+    if args.project:
+        with open(args.project, "r", encoding="utf-8") as f:
+            json_data = json.load(f)
+        project_data = json_data["project"]
+        project_path = args.project
 
     # ファイルの拡張子を取得
     ext = Utility.get_ext_from_path(inputs[0])

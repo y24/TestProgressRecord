@@ -729,7 +729,7 @@ def edit_settings():
 
 def load_files():
     files = Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))
-    if files: new_process(inputs=list(files))
+    if files: new_process(inputs=list(files), project_path=project_path, on_reload=True)
 
 def open_project():
     project_path = Dialog.select_file(("JSONファイル", "*.json"))
@@ -804,7 +804,7 @@ def create_menubar(parent):
     file_menu.add_command(label="再集計", command=reload_files)
     file_menu.add_separator()
     file_menu.add_command(label="プロジェクトを開く", command=open_project)
-    file_menu.add_command(label="プロジェクトを保存", command=save_project)
+    file_menu.add_command(label="保存", command=save_project)
     file_menu.add_command(label="ファイルを読み込む", command=load_files)
     file_menu.add_separator()
     file_menu.add_command(label="プロジェクト情報設定", command=edit_project)
@@ -968,7 +968,7 @@ def close_all_dialogs():
         if isinstance(widget, tk.Toplevel):
             widget.destroy()
 
-def new_process(inputs, on_reload=False):
+def new_process(inputs, on_reload=False, project_path=None):
     """新しいプロセスを起動"""
     # ダイアログを閉じる
     close_all_dialogs()
@@ -976,6 +976,7 @@ def new_process(inputs, on_reload=False):
     python = sys.executable
     command = [python, sys.argv[0]] + inputs
     if on_reload: command += ["--on_reload"]
+    if project_path: command += ["--project", project_path]
     # 新しいプロセスを起動
     subprocess.Popen(command)
     sys.exit()
