@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import japanize_matplotlib
 import numpy as np
+import json
 
 import WriteData
 from libs import Utility
@@ -743,10 +744,12 @@ def create_menubar(parent):
     # File
     file_menu = tk.Menu(menubar, tearoff=0)
     file_menu.add_command(label="新規プロジェクト", command=create_project)
-    file_menu.add_separator()
     file_menu.add_command(label="プロジェクトを開く", command=open_project)
+    file_menu.add_separator()
     file_menu.add_command(label="ファイルを開く", command=open_files)
     file_menu.add_command(label="再読み込み", command=reload_files)
+    file_menu.add_separator()
+    file_menu.add_command(label="保存", command=save_data)
     file_menu.add_separator()
     file_menu.add_command(label="プロジェクト情報編集", command=edit_project)
     file_menu.add_separator()
@@ -1044,3 +1047,36 @@ def run(data, args):
     root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()
     root.destroy()
+
+def save_data():
+    """現在のinput_dataをJSONファイルに保存する"""
+    # ファイル保存ダイアログを表示
+    file_path = filedialog.asksaveasfilename(
+        defaultextension=".json",
+        filetypes=[("JSON files", "*.json")],
+        title="データを保存"
+    )
+    
+    if not file_path:  # キャンセルされた場合
+        return
+        
+    try:
+        # 既存のJSONファイルがある場合は読み込む
+        existing_data = {}
+        if os.path.exists(file_path):
+            with open(file_path, "r", encoding="utf-8") as f:
+                existing_data = json.load(f)
+        
+        # aggregate_dataキーに現在のinput_dataを保存
+        existing_data["aggregate_data"] = input_data
+        
+        # JSONファイルに保存
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(existing_data, f, ensure_ascii=False, indent=2)
+            
+        # 成功メッセージを表示
+        Dialog.show_messagebox(root, type="info", title="保存完了", message=f"データを保存しました。\n{file_path}")
+        
+    except Exception as e:
+        # エラーメッセージを表示
+        Dialog.show_messagebox(root, type="error", title="保存エラー", message=f"データの保存に失敗しました。\n{str(e)}")
