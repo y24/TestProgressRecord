@@ -211,14 +211,7 @@ class ProjectEditorApp:
             
         # Excelファイルパスの取得
         excel_path = self.write_path_entry.get().strip()
-            
-        # プロジェクトデータの作成
-        project_data = {
-            "project_name": project_name,
-            "files": files,
-            "excel_path": excel_path
-        }
-        
+
         # projectsディレクトリの作成
         projects_dir = Path("projects")
         projects_dir.mkdir(exist_ok=True)
@@ -238,7 +231,14 @@ class ProjectEditorApp:
             except Exception as e:
                 messagebox.showerror("エラー", f"既存のプロジェクトファイルの読み込みに失敗しました: {str(e)}")
                 return
-        
+
+        # プロジェクトデータの作成
+        project_data = {
+            "project_name": project_name,
+            "files": files,
+            "excel_path": excel_path,
+        }
+
         # 既存のデータを保持しつつ、projectキーのデータを更新
         existing_data["project"] = project_data
         
@@ -246,7 +246,7 @@ class ProjectEditorApp:
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(existing_data, f, ensure_ascii=False, indent=2)
             
-        messagebox.showinfo("成功", f"プロジェクト情報を保存しました: {json_path}")
+        messagebox.showinfo("成功", f"プロジェクト情報を保存しました: {safe_project_name}")
         self.file_saved = True
         self.current_project_name = project_name  # 現在のプロジェクト名を更新
 

@@ -15,6 +15,8 @@ from libs import Utility
 from libs import AppConfig
 from libs import Dialog
 
+project_data = None
+
 def _create_row_data(structure: str, values: dict, settings: dict, all_keys: set) -> list:
     """行データを生成する
 
@@ -725,21 +727,24 @@ def edit_settings():
     open_file(file_path="UserConfig.json", exit=False)
 
 def create_project():
-    from ProjectEditorApp import ProjectEditorApp
-    app = ProjectEditorApp()
-    app.run()
+    edit_project(on_create=True)
 
 def open_project():
     inputs = Dialog.select_files(("jsonファイル", "*.json"))
     print(inputs)
 
-def edit_project():
-    def on_project_updated(project_data):
-        try:            
-            # タイトルを更新
-            project_name = project_data.get("project_name", "名称未設定")
-            root.title(f"TestTraQ - {project_name}")
-            
+def edit_project(on_create:bool=False):
+    def on_project_updated(new_project_data):
+        global project_data
+        try:
+            project_data = new_project_data  # グローバル変数を更新
+
+            if on_create:
+                new_process(inputs=list())
+            else:
+                # タイトルを更新
+                project_name = project_data.get("project_name", "名称未設定")
+                root.title(f"TestTraQ - {project_name}")
         except Exception as e:
             Dialog.show_messagebox(
                 root=root,
@@ -756,6 +761,42 @@ def edit_project():
         initial_json_path="UserConfig.json"  # 現在の設定を読み込む
     )
 
+def save_data():
+    global project_data
+    """現在のinput_dataをJSONファイルに保存する"""
+    # ファイル保存ダイアログを表示
+    file_path = filedialog.asksaveasfilename(
+        defaultextension=".json",
+        filetypes=[("JSON files", "*.json")],
+        title="データを保存"
+    )
+    
+    if not file_path:  # キャンセルされた場合
+        return
+        
+    try:
+        # 既存のJSONファイルがある場合は読み込む
+        existing_data = {}
+        if os.path.exists(file_path):
+            with open(file_path, "r", encoding="utf-8") as f:
+                existing_data = json.load(f)
+        
+        # projectキーにproject_dataを保存
+        existing_data["project"] = project_data
+        # aggregate_dataキーに現在のinput_dataを保存
+        existing_data["aggregate_data"] = input_data
+        
+        # JSONファイルに保存
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(existing_data, f, ensure_ascii=False, indent=2)
+            
+        # 成功メッセージを表示
+        Dialog.show_messagebox(root, type="info", title="保存完了", message=f"データを保存しました。\n{file_path}")
+        
+    except Exception as e:
+        # エラーメッセージを表示
+        Dialog.show_messagebox(root, type="error", title="保存エラー", message=f"データの保存に失敗しました。\n{str(e)}")
+
 def create_menubar(parent):
     menubar = tk.Menu(parent)
     parent.config(menu=menubar)
@@ -763,7 +804,7 @@ def create_menubar(parent):
     file_menu = tk.Menu(menubar, tearoff=0)
     file_menu.add_command(label="新規プロジェクト", command=create_project)
     file_menu.add_command(label="プロジェクトを開く", command=open_project)
-    file_menu.add_command(label="プロジェクトの保存", command=save_data)
+    file_menu.add_command(label="保存", command=save_data)
     file_menu.add_separator()
     file_menu.add_command(label="ファイルを開く", command=open_files)
     file_menu.add_command(label="再読み込み", command=reload_files)
@@ -1026,7 +1067,7 @@ def create_byfile_tab(parent):
         update_byfile_tab(selected_file=input_data[0]['selector_label'], count_label=file_count_label, rate_label=file_rate_label, ax=file_ax, canvas=file_canvas, notebook=notebook)
 
 def run(data, args):
-    global root, input_data, settings, input_args
+    global root, input_data, settings, input_args, project_data
     
     # 読込データ
     input_data = data
@@ -1035,11 +1076,12 @@ def run(data, args):
     input_args = args
     # 設定のロード
     settings = AppConfig.load_settings()
+    project_data = settings.get("project", {})  # ここで初期化
 
     # 親ウインドウ生成
     root = tk.Tk()
     # プロジェクト名を取得（未設定の場合は"名称未設定"）
-    project_name = settings.get("project", {}).get("project_name", "名称未設定")
+    project_name = project_data.get("project_name", "名称未設定")
     root.title(f"TestTraQ - {project_name}")
     # ウインドウ表示位置を復元
     root.geometry(settings["app"]["window_position"])
@@ -1066,36 +1108,3 @@ def run(data, args):
     root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()
     root.destroy()
-
-def save_data():
-    """現在のinput_dataをJSONファイルに保存する"""
-    # ファイル保存ダイアログを表示
-    file_path = filedialog.asksaveasfilename(
-        defaultextension=".json",
-        filetypes=[("JSON files", "*.json")],
-        title="データを保存"
-    )
-    
-    if not file_path:  # キャンセルされた場合
-        return
-        
-    try:
-        # 既存のJSONファイルがある場合は読み込む
-        existing_data = {}
-        if os.path.exists(file_path):
-            with open(file_path, "r", encoding="utf-8") as f:
-                existing_data = json.load(f)
-        
-        # aggregate_dataキーに現在のinput_dataを保存
-        existing_data["aggregate_data"] = input_data
-        
-        # JSONファイルに保存
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(existing_data, f, ensure_ascii=False, indent=2)
-            
-        # 成功メッセージを表示
-        Dialog.show_messagebox(root, type="info", title="保存完了", message=f"データを保存しました。\n{file_path}")
-        
-    except Exception as e:
-        # エラーメッセージを表示
-        Dialog.show_messagebox(root, type="error", title="保存エラー", message=f"データの保存に失敗しました。\n{str(e)}")
