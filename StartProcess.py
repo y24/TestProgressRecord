@@ -1,4 +1,4 @@
-import sys, argparse, os, re
+import sys, argparse, os, re, json
 from tqdm import tqdm
 
 import ReadData
@@ -147,6 +147,9 @@ def start():
     parser.add_argument("data_files", nargs="*", help="処理するファイルのパス")
     args = parser.parse_args()
 
+    # 設定ファイルの読み込み
+    settings = AppConfig.load_settings()
+
     # コマンドライン引数がない場合はファイル選択ダイアログを表示
     inputs = args.data_files or Dialog.select_files(("JSON/Excel/Zipファイル", "*.json;*.xlsx;*.zip"))
     if not inputs:
@@ -155,22 +158,46 @@ def start():
     # 入力ファイルの検証
     inputs = validate_input_files(inputs)
 
+    # プロジェクトデータを初期化
+    project_data = {}
+
     # ファイルの拡張子を取得
     ext = Utility.get_ext_from_path(inputs[0])
     if ext == "json":
-        # JSONファイルの場合はファイルをダウンロード
-        files, temp_dirs = FileDownload.process_json_file(inputs[0])
-        # xlsxファイルのみフィルタ
-        files = filter_xlsx_files(files)
+        # JSONファイルから集計データを取得
+        try:
+            with open(inputs[0], "r", encoding="utf-8") as f:
+                json_data = json.load(f)
+
+            # プロジェクトデータを取得
+            if "project" in json_data:
+                project_data = json_data["project"]
+
+            # aggregate_dataキーがある場合はそのデータを使用
+            if "aggregate_data" in json_data:
+                aggregate_data = json_data["aggregate_data"]
+            else:
+                # キーがない場合はファイルをダウンロードして集計
+                files, temp_dirs = FileDownload.process_json_file(inputs[0])
+                # xlsxファイルのみフィルタ
+                files = filter_xlsx_files(files)
+                # 全ファイルの集計処理
+                aggregate_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))]
+
+        except Exception as e:
+            Dialog.show_messagebox(
+                root=None,
+                type="error", 
+                title="JSONファイル読込エラー",
+                message=f"JSONファイルの読み込みに失敗しました。\n{str(e)}"
+            )
+            sys.exit()
     else:
         # xlsx/zipファイルの場合はデータ集計
         files, temp_dirs = get_xlsx_paths(inputs)
 
-    # 設定ファイルの読み込み
-    settings = AppConfig.load_settings()
-
-    # 全ファイルの集計処理
-    aggregate_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))]
+        # 全ファイルの集計処理
+        aggregate_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))]
 
     # デバッグモード時は処理結果を表示
     if args.debug:
@@ -178,7 +205,7 @@ def start():
         pprint(aggregate_data)
 
     # アプリケーションの起動
-    MainApp.run(aggregate_data, inputs)
+    MainApp.run(pjdata=project_data, indata=aggregate_data,  args=inputs)
 
     # 一時ディレクトリの掃除
     if temp_dirs: TempDir.cleanup_old_temp_dirs("_TEMP_")

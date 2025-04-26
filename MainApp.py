@@ -1069,17 +1069,17 @@ def create_byfile_tab(parent):
         file_selector.current(0)
         update_byfile_tab(selected_file=input_data[0]['selector_label'], count_label=file_count_label, rate_label=file_rate_label, ax=file_ax, canvas=file_canvas, notebook=notebook)
 
-def run(data, args):
+def run(pjdata, indata, args):
     global root, input_data, settings, input_args, project_data
     
     # 読込データ
-    input_data = data
+    project_data = pjdata
+    input_data = indata
 
     # 起動時に指定したファイルパス（再読込用）
     input_args = args
     # 設定のロード
     settings = AppConfig.load_settings()
-    project_data = settings.get("project", {})  # ここで初期化
 
     # 親ウインドウ生成
     root = tk.Tk()
@@ -1100,11 +1100,11 @@ def run(data, args):
     create_byfile_tab(tab2)
 
     # データ抽出に失敗したファイルのリスト
-    errors = [r for r in data if "error" in r]
+    errors = [r for r in input_data if "error" in r]
     ers = "\n".join(["  "+ err["file"] for err in errors])
 
     # 1件もデータがなかった場合は終了
-    if not len(data):
+    if not len(input_data):
         Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"1件もデータが抽出できませんでした。終了します。\n\nFile(s):\n{ers}")
         sys.exit()
 
