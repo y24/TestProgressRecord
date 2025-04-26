@@ -174,8 +174,9 @@ class CreateProjectApp:
             messagebox.showerror("エラー", "プロジェクト名称を入力してください")
             return
             
-        # ファイル情報の取得
+        # ファイル情報の取得と空の行の削除
         files = []
+        frames_to_remove = []
         for frame in self.files_frame.winfo_children():
             if isinstance(frame, ttk.Frame):
                 file_info = {
@@ -187,6 +188,14 @@ class CreateProjectApp:
                 # すべてのフィールドが空でない場合のみ追加
                 if any(file_info.values()):
                     files.append(file_info)
+                else:
+                    frames_to_remove.append(frame)
+                
+        # 空の行の入力欄を削除
+        if len(frames_to_remove) > 0:
+            # 最後の1つを残して削除
+            for frame in frames_to_remove[:-1]:
+                frame.destroy()
                 
         if not files:
             messagebox.showerror("エラー", "少なくとも1つのファイル情報を入力してください")
