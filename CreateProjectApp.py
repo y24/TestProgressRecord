@@ -181,8 +181,8 @@ class CreateProjectApp:
                     "identifier": frame.entries["identifier"].get().strip(),
                     "url": frame.entries["url"].get().strip()
                 }
-                # すべてのフィールドが空でない場合のみ追加
-                if any(file_info.values()):
+                # ファイル名とURLが必須
+                if file_info["filename"] and file_info["url"]:
                     files.append(file_info)
                 else:
                     frames_to_remove.append(frame)
@@ -194,7 +194,7 @@ class CreateProjectApp:
                 frame.destroy()
                 
         if not files:
-            messagebox.showerror("エラー", "少なくとも1つのファイル情報を入力してください")
+            messagebox.showerror("エラー", "少なくとも1つのファイル情報を入力してください（ファイル名とURLは必須です）")
             return
             
         # Excelファイルパスの取得
