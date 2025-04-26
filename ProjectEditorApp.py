@@ -8,23 +8,26 @@ from typing import List, Dict, Any, Callable
 import re
 
 class ProjectEditorApp:
-    def __init__(self, parent: tk.Tk, callback: Callable[[Dict[str, Any]], None] = None, 
+    def __init__(self, parent=None, callback: Callable[[Dict[str, Any]], None] = None, 
                  initial_files: List[str] = None, initial_json_path: str = None):
         self.parent = parent
         self.callback = callback
-        self.root = tk.Toplevel(parent)
-        self.root.withdraw()  # まず非表示
-        self.root.title("プロジェクト情報編集")
-        self.root.geometry("1000x400")
-        self.root.transient(parent)  # 親ウィンドウに対してモーダルに
-        self.root.grab_set()  # フォーカスを保持
-        
-        # 親ウインドウの座標+50,+50に表示
-        self.root.update_idletasks()
-        parent_x = parent.winfo_x()
-        parent_y = parent.winfo_y()
-        self.root.geometry(f"1000x400+{parent_x+50}+{parent_y+50}")
-        self.root.deiconify()  # ここで表示
+        if parent is None:
+            self.root = tk.Tk()
+            self.root.title("プロジェクト情報編集")
+            self.root.geometry("1000x400")
+        else:
+            self.root = tk.Toplevel(parent)
+            self.root.withdraw()  # まず非表示
+            self.root.title("プロジェクト情報編集")
+            self.root.geometry("1000x400")
+            self.root.transient(parent)  # 親ウィンドウに対してモーダルに
+            self.root.grab_set()  # フォーカスを保持
+            self.root.update_idletasks()
+            parent_x = parent.winfo_x()
+            parent_y = parent.winfo_y()
+            self.root.geometry(f"1000x400+{parent_x+50}+{parent_y+50}")
+            self.root.deiconify()  # ここで表示
         
         self.file_saved = False
         self.current_project_name = ""
@@ -302,15 +305,5 @@ class ProjectEditorApp:
         return files
 
 if __name__ == "__main__":
-    # テスト用の親ウィンドウを作成
-    root = tk.Tk()
-    root.withdraw()  # 親ウィンドウは非表示
-    
-    def test_callback(project_data):
-        print("プロジェクトデータを受け取りました:", project_data)
-    
-    app = ProjectEditorApp(
-        parent=root,
-        callback=test_callback
-    )
+    app = ProjectEditorApp()
     app.run()
