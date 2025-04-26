@@ -111,7 +111,7 @@ def start():
         pprint(out_data)
 
     # アプリケーションの起動
-    MainApp.launch(out_data, inputs)
+    MainApp.run(out_data, inputs)
 
     # 一時ディレクトリの掃除
     if temp_dirs: Zip.cleanup_old_temp_dirs()

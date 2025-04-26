@@ -723,6 +723,11 @@ def edit_settings():
     Dialog.show_messagebox(root=root, type="info", title="ユーザー設定編集", message=f"ユーザー設定ファイルを開きます。\n編集した設定を反映させるには、File > 再読み込み を実行してください。")
     open_file(file_path="UserConfig.json", exit=False)
 
+def create_project():
+    from CreateProjectApp import CreateProjectApp
+    app = CreateProjectApp()
+    app.run()
+
 def create_menubar(parent):
     menubar = tk.Menu(parent)
     parent.config(menu=menubar)
@@ -735,7 +740,8 @@ def create_menubar(parent):
     menubar.add_cascade(label="File", menu=file_menu)
     # Settings
     settings_menu = tk.Menu(menubar, tearoff=0)
-    settings_menu.add_command(label="設定ファイル編集", command=edit_settings)
+    settings_menu.add_command(label="アプリ設定", command=edit_settings)
+    settings_menu.add_command(label="プロジェクト作成", command=create_project)
     menubar.add_cascade(label="Settings", menu=settings_menu)
 
 def create_input_area(parent, settings):
@@ -988,7 +994,7 @@ def create_byfile_tab(parent):
         file_selector.current(0)
         update_byfile_tab(selected_file=input_data[0]['selector_label'], count_label=file_count_label, rate_label=file_rate_label, ax=file_ax, canvas=file_canvas, notebook=notebook)
 
-def launch(data, args):
+def run(data, args):
     global root, input_data, settings, input_args
     
     # 読込データ
