@@ -13,6 +13,7 @@ class ProjectEditorApp:
         self.root.title("ProjectEditor")
         self.root.geometry("1000x400")
         self.file_saved = False
+        self.current_project_name = ""  # 現在のプロジェクト名を保持
         
         self.project_data = {
             "project": {
@@ -133,6 +134,7 @@ class ProjectEditorApp:
             # プロジェクト名を設定
             self.project_name_entry.delete(0, tk.END)
             self.project_name_entry.insert(0, project_data.get("project_name", ""))
+            self.current_project_name = project_data.get("project_name", "")  # 現在のプロジェクト名を保存
             
             # Excelファイルパスを設定
             self.excel_path_entry.delete(0, tk.END)
@@ -174,6 +176,11 @@ class ProjectEditorApp:
         if not project_name:
             messagebox.showerror("エラー", "プロジェクト名称を入力してください")
             return
+            
+        # プロジェクト名が変更された場合の確認
+        if self.current_project_name and project_name != self.current_project_name:
+            if not messagebox.askokcancel("確認", "プロジェクト名が変更されました。\n新たなプロジェクトファイルが作成されますが、よろしいですか？"):
+                return
             
         # ファイル情報の取得と空の行の削除
         files = []
@@ -240,6 +247,7 @@ class ProjectEditorApp:
             
         messagebox.showinfo("成功", f"プロジェクト情報を保存しました: {json_path}")
         self.file_saved = True
+        self.current_project_name = project_name  # 現在のプロジェクト名を更新
         
     def run(self):
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
@@ -249,7 +257,7 @@ class ProjectEditorApp:
         if self.file_saved:
             messagebox.showinfo(
                 "保存完了",
-                "プロジェクトファイルが保存されました。\n設定を反映するには、File > 読み込み を実行してください。"
+                "プロジェクトファイルが保存されました。\n設定を反映するには、データの再読み込みを実行してください。"
             )
         self.root.destroy() 
 
