@@ -963,15 +963,21 @@ def close_all_dialogs():
         if isinstance(widget, tk.Toplevel):
             widget.destroy()
 
-def new_process(inputs):
+def new_process(inputs, on_reload=False):
+    """新しいプロセスを起動"""
+    # ダイアログを閉じる
     close_all_dialogs()
+    # コマンドライン引数の設定
     python = sys.executable
-    subprocess.Popen([python, sys.argv[0]] + inputs)
+    command = [python, sys.argv[0]] + inputs
+    if on_reload: command += ["--on_reload"]
+    # 新しいプロセスを起動
+    subprocess.Popen(command)
     sys.exit()
 
 def reload_files():
-    response = Dialog.ask(title="確認", message="ファイルの再集計を行いますか？")
-    if response == "yes": new_process(inputs=list(input_args))
+    response = Dialog.ask(title="確認", message="最新のデータを集計しますか？")
+    if response == "yes": new_process(inputs=list(input_args), on_reload=True)
 
 def create_global_tab(parent):
     # 全体タブ
@@ -1054,7 +1060,7 @@ def create_byfile_tab(parent):
         file_selector.current(0)
         update_byfile_tab(selected_file=input_data[0]['selector_label'], count_label=file_count_label, rate_label=file_rate_label, ax=file_ax, canvas=file_canvas, notebook=notebook)
 
-def run(pjdata, pjpath, indata, args):
+def run(pjdata, pjpath, indata, args, on_reload=False):
     global root, input_data, settings, input_args, project_data, project_path
     
     # 読込データ
@@ -1089,8 +1095,15 @@ def run(pjdata, pjpath, indata, args):
     errors = [r for r in input_data if "error" in r]
     ers = "\n".join(["  "+ err["file"] for err in errors])
 
-    # 1件もデータがない場合はメッセージ
-    if not len(input_data):
+    if len(errors):
+        Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"以下のファイルはデータが抽出できませんでした。\n\nFile(s):\n{ers}")
+
+    if len(input_data):
+        # プロジェクトファイルを読み込み時、初回のみ再集計の確認を表示
+        if pjpath and not on_reload:
+            reload_files()
+    else:
+        # 1件もデータがない場合はメッセージ
         Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"データがありません。\nFile > プロジェクト情報設定 から取得元を設定してください。")
 
     root.protocol("WM_DELETE_WINDOW", on_closing)
