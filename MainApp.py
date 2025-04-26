@@ -998,6 +998,11 @@ def create_summary_tab(parent):
     total_frame = ttk.Frame(parent)
     total_frame.pack(fill=tk.X, padx=5, pady=5)
 
+    # プロジェクト名称
+    project_name = project_data["project_name"] or "名称未設定"
+    project_name_label = ttk.Label(total_frame, text=project_name, anchor="w")
+    project_name_label.pack(fill=tk.X, padx=20)    
+
     # グラフ表示(全体)
     total_fig, total_ax = plt.subplots(figsize=(8, 0.25))
     total_canvas = FigureCanvasTkAgg(total_fig, master=total_frame)
