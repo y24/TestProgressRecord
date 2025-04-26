@@ -194,7 +194,7 @@ class ProjectEditorApp:
             
         # プロジェクト名が変更された場合の確認
         if self.current_project_name and project_name != self.current_project_name:
-            if not messagebox.askokcancel("確認", "プロジェクト名が変更されました。\n新たなプロジェクトファイルが作成されますが、よろしいですか？"):
+            if not messagebox.askokcancel("確認", "プロジェクト名が変更されています。\n新たにプロジェクトファイルが作成されますが、よろしいですか？"):
                 return
             
         # ファイル情報の取得と空の行の削除
@@ -255,7 +255,7 @@ class ProjectEditorApp:
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(existing_data, f, ensure_ascii=False, indent=2)
             
-        messagebox.showinfo("成功", f"プロジェクト情報を保存しました: {safe_project_name}")
+        messagebox.showinfo("成功", f"保存しました: {safe_project_name}")
         self.file_saved = True
         self.current_project_name = project_name  # 現在のプロジェクト名を更新
 

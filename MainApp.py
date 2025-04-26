@@ -261,7 +261,7 @@ def save_to_csv(data, filename):
     # 保存完了
     response = Dialog.ask(title="保存完了", message=f"CSVデータを保存しました。\n{file_path}\n\nファイルを開きますか？")
     if response == "yes":
-        open_file(file_path=file_path)
+        run_file(file_path=file_path)
 
 def update_byfile_tab(selected_file, count_label, rate_label, ax, canvas, notebook):
     # タブ切り替え
@@ -317,7 +317,7 @@ def update_byfile_tab(selected_file, count_label, rate_label, ax, canvas, notebo
     notebook.select(current_tab)
 
 def create_click_handler(filepath):
-    return lambda event: open_file(file_path=filepath)
+    return lambda event: run_file(file_path=filepath)
 
 def make_results_text(results, incompleted):
     # 各結果テキストの生成
@@ -681,7 +681,7 @@ def write_to_excel(file_path, table_name):
         AppConfig.save_settings(settings)
         response = Dialog.ask(title="保存完了", message=f'"{table_name}"シートにデータを書き込みました。\n{file_path}\n\nこのアプリを終了して、書込先ファイルを開きますか？')
         if response == "yes":
-            open_file(file_path=file_path, exit=True)
+            run_file(file_path=file_path, exit=True)
 
 def select_write_file(entry):
     filepath = filedialog.askopenfilename(title="書込先ファイルを選択", defaultextension=".xlsx", filetypes=[("Excel file", "*.xlsx")])
@@ -689,7 +689,7 @@ def select_write_file(entry):
         entry.delete(0, tk.END)  # 既存の内容をクリア
         entry.insert(0, filepath)  # 新しいファイルパスをセット
 
-def open_file(file_path, exit:bool=False):
+def run_file(file_path, exit:bool=False):
     if os.path.isfile(file_path):
         try:
             os.startfile(file_path)  # Windows
@@ -724,16 +724,15 @@ def copy_to_clipboard(data, filename_only=False):
     root.update()
 
 def edit_settings():
-    Dialog.show_messagebox(root=root, type="info", title="ユーザー設定編集", message=f"ユーザー設定ファイルを開きます。\n編集した設定を反映させるには、File > 再読み込み を実行してください。")
-    open_file(file_path="UserConfig.json", exit=False)
+    Dialog.show_messagebox(root=root, type="info", title="ユーザー設定編集", message=f"ユーザー設定ファイルを開きます。\n編集した設定を反映させるにはアプリを再起動するか、File > 再集計 を実行してください。")
+    run_file(file_path="UserConfig.json", exit=False)
 
 def create_project():
     edit_project(on_create=True)
 
-def open_project():
-    open_projects = Dialog.select_files(("jsonファイル", "*.json"))
-    if open_projects:
-        new_process(inputs=list(open_projects))
+def open_files():
+    files = Dialog.select_files(("JSON/Excel/Zipファイル", "*.json;*.xlsx;*.zip"))
+    if files: new_process(inputs=list(files))
 
 def edit_project(on_create:bool=False):
     def on_project_updated(new_project_data):
@@ -743,7 +742,7 @@ def edit_project(on_create:bool=False):
             project_data = new_project_data  # グローバル変数を更新
 
             if on_create:
-                new_process(inputs=list())
+                new_process(inputs=list(project_path))
             else:
                 # タイトルを更新
                 project_name = project_data.get("project_name", "名称未設定")
@@ -802,9 +801,8 @@ def create_menubar(parent):
     file_menu.add_command(label="再集計", command=reload_files)
     file_menu.add_separator()
     file_menu.add_command(label="新規プロジェクト", command=create_project)
-    file_menu.add_command(label="プロジェクトを開く", command=open_project)
-    file_menu.add_command(label="プロジェクトを保存", command=save_project)
-    file_menu.add_command(label="ファイルを開く", command=open_files)
+    file_menu.add_command(label="開く", command=open_files)
+    file_menu.add_command(label="保存", command=save_project)
     file_menu.add_separator()
     file_menu.add_command(label="プロジェクト情報設定", command=edit_project)
     file_menu.add_command(label="環境設定", command=edit_settings)
@@ -830,7 +828,7 @@ def create_input_area(parent, settings):
     submit_frame = ttk.Frame(input_frame)
     submit_frame.grid(row=2, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W)
     ttk.Button(submit_frame, text="Excelへ書込", command=lambda: write_to_excel(file_path_entry.get(), table_name_entry.get())).pack(side=tk.LEFT, padx=2, pady=(0,2))
-    # ttk.Button(submit_frame, text="書込先を開く", command=lambda: open_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=2, pady=5)
+    # ttk.Button(submit_frame, text="書込先を開く", command=lambda: run_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=2, pady=5)
 
     ttk.Button(submit_frame, text="CSV保存", command=lambda: save_to_csv(WriteData.convert_to_2d_array(data=input_data, settings=settings), f'進捗集計_{Utility.get_today_str()}')).pack(side=tk.LEFT, padx=2, pady=(0,2))
     ttk.Button(submit_frame, text="クリップボードにコピー", command=lambda: copy_to_clipboard(WriteData.convert_to_2d_array(data=input_data, settings=settings)), width=22).pack(side=tk.LEFT, padx=2, pady=(0,2))
@@ -970,18 +968,11 @@ def close_all_dialogs():
 def new_process(inputs):
     close_all_dialogs()
     python = sys.executable
-    if project_path:
-        subprocess.Popen([python, sys.argv[0]] + [project_path] + inputs)
-    else:
-        subprocess.Popen([python, sys.argv[0]] + inputs)
+    subprocess.Popen([python, sys.argv[0]] + inputs)
     sys.exit()
 
-def open_files():
-    inputs = Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))
-    if inputs: new_process(inputs=list(inputs))
-
 def reload_files():
-    response = Dialog.ask(title="確認", message="全てのファイルを再読み込みします。よろしいですか？")
+    response = Dialog.ask(title="確認", message="全てのファイルを再集計します。よろしいですか？")
     if response == "yes": new_process(inputs=list(input_args))
 
 def create_global_tab(parent):
