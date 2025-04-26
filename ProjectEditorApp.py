@@ -231,7 +231,7 @@ class ProjectEditorApp:
         if self.file_saved:
             messagebox.showinfo(
                 "保存完了",
-                "プロジェクトファイルが保存されました。\n設定を反映するには、File > ファイルを再読み込み を実行してください。"
+                "プロジェクトファイルが保存されました。\n設定を反映するには、File > 読み込み を実行してください。"
             )
         self.root.destroy() 
 

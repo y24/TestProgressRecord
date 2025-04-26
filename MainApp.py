@@ -723,6 +723,15 @@ def edit_settings():
     Dialog.show_messagebox(root=root, type="info", title="ユーザー設定編集", message=f"ユーザー設定ファイルを開きます。\n編集した設定を反映させるには、File > 再読み込み を実行してください。")
     open_file(file_path="UserConfig.json", exit=False)
 
+def create_project():
+    from ProjectEditorApp import ProjectEditorApp
+    app = ProjectEditorApp()
+    app.run()
+
+def open_project():
+    inputs = Dialog.select_files(("jsonファイル", "*.json"))
+    print(inputs)
+
 def edit_project():
     from ProjectEditorApp import ProjectEditorApp
     app = ProjectEditorApp()
@@ -733,9 +742,12 @@ def create_menubar(parent):
     parent.config(menu=menubar)
     # File
     file_menu = tk.Menu(menubar, tearoff=0)
-    file_menu.add_command(label="ファイルを開く", command=load_files)
+    file_menu.add_command(label="新規プロジェクト", command=create_project)
     file_menu.add_separator()
-    file_menu.add_command(label="プロジェクトを再読み込み", command=reload_files)
+    file_menu.add_command(label="プロジェクトを開く", command=open_project)
+    file_menu.add_command(label="ファイルを開く", command=open_files)
+    file_menu.add_command(label="再読み込み", command=reload_files)
+    file_menu.add_separator()
     file_menu.add_command(label="プロジェクト情報編集", command=edit_project)
     file_menu.add_separator()
     file_menu.add_command(label="アプリ設定", command=edit_settings)
@@ -904,7 +916,7 @@ def new_process(inputs):
     subprocess.Popen([python, sys.argv[0]] + inputs)
     sys.exit()
 
-def load_files():
+def open_files():
     inputs = Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))
     if inputs: new_process(inputs=list(inputs))
 
