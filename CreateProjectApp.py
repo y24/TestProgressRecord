@@ -11,7 +11,7 @@ class CreateProjectApp:
     def __init__(self, initial_files: List[str] = None, initial_json_path: str = None):
         self.root = tk.Tk()
         self.root.title("プロジェクト作成")
-        self.root.geometry("800x600")
+        self.root.geometry("1000x400")
         
         self.project_data = {
             "project_name": "",
@@ -93,14 +93,6 @@ class CreateProjectApp:
         if file_data:
             url_entry.insert(0, file_data.get("url", ""))
         
-        # 環境別フラグ
-        ttk.Label(frame, text="環境別フラグ:").grid(row=0, column=6, padx=5, pady=2)
-        env_flag_var = tk.StringVar(value="False")
-        env_flag_check = ttk.Checkbutton(frame, variable=env_flag_var, onvalue="True", offvalue="False")
-        env_flag_check.grid(row=0, column=7, padx=5, pady=2)
-        if file_data:
-            env_flag_var.set(str(file_data.get("env_flag", False)))
-        
         # 削除ボタン
         ttk.Button(frame, text="削除", command=lambda: frame.destroy()).grid(row=0, column=8, padx=5, pady=2)
         
@@ -108,8 +100,7 @@ class CreateProjectApp:
         frame.entries = {
             "filename": filename_entry,
             "identifier": identifier_entry,
-            "url": url_entry,
-            "env_flag": env_flag_var
+            "url": url_entry
         }
         
     def select_excel_file(self):
@@ -182,8 +173,7 @@ class CreateProjectApp:
                 file_info = {
                     "filename": frame.entries["filename"].get().strip(),
                     "identifier": frame.entries["identifier"].get().strip(),
-                    "url": frame.entries["url"].get().strip(),
-                    "env_flag": frame.entries["env_flag"].get() == "True"
+                    "url": frame.entries["url"].get().strip()
                 }
                 # すべてのフィールドが空でない場合のみ追加
                 if any(file_info.values()):
