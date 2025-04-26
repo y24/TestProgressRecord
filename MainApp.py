@@ -723,7 +723,7 @@ def edit_settings():
     Dialog.show_messagebox(root=root, type="info", title="ユーザー設定編集", message=f"ユーザー設定ファイルを開きます。\n編集した設定を反映させるには、File > 再読み込み を実行してください。")
     open_file(file_path="UserConfig.json", exit=False)
 
-def create_project():
+def edit_project():
     from ProjectEditorApp import ProjectEditorApp
     app = ProjectEditorApp()
     app.run()
@@ -736,7 +736,7 @@ def create_menubar(parent):
     file_menu.add_command(label="ファイルを開く", command=load_files)
     file_menu.add_separator()
     file_menu.add_command(label="プロジェクトを再読み込み", command=reload_files)
-    file_menu.add_command(label="プロジェクト情報編集", command=create_project)
+    file_menu.add_command(label="プロジェクト情報編集", command=edit_project)
     file_menu.add_separator()
     file_menu.add_command(label="アプリ設定", command=edit_settings)
     file_menu.add_separator()
