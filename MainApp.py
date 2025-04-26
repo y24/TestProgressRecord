@@ -1115,9 +1115,10 @@ def run(pjdata, pjpath, indata, args, on_reload=False):
         Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"以下のファイルはデータが抽出できませんでした。\n\nFile(s):\n{ers}")
 
     if len(input_data):
-        # プロジェクトファイルを読み込み時、初回のみ再集計の確認を表示
-        if pjpath and not on_reload:
-            reload_files()
+        # プロジェクトファイルを読込時、初回のみ再集計の確認を表示
+        if pjpath and not on_reload: reload_files()
+        # 再集計後にプロジェクトを保存
+        if pjpath and on_reload: save_project()
     else:
         # 1件もデータがない場合はメッセージ
         Dialog.show_messagebox(root, type="warning", title="抽出エラー", message=f"データがありません。以下の方法で設定を行ってください。\n・File > ファイルを読み込む からファイルを開いて保存\n・File > プロジェクト情報設定 から取得元URLを設定")
