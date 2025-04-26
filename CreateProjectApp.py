@@ -184,7 +184,9 @@ class CreateProjectApp:
                     "url": frame.entries["url"].get().strip(),
                     "env_flag": frame.entries["env_flag"].get() == "True"
                 }
-                files.append(file_info)
+                # すべてのフィールドが空でない場合のみ追加
+                if any(file_info.values()):
+                    files.append(file_info)
                 
         if not files:
             messagebox.showerror("エラー", "少なくとも1つのファイル情報を入力してください")
