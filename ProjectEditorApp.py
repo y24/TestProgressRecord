@@ -9,7 +9,8 @@ import re
 
 class ProjectEditorApp:
     def __init__(self, parent=None, callback: Callable[[Dict[str, Any]], None] = None, 
-                 initial_files: List[str] = None, project_path: str = None):
+                 initial_files: List[str] = None, project_path: str = None,
+                 aggregate_data: List[Dict[str, Any]] = None):
         self.parent = parent
         self.callback = callback
         if parent is None:
@@ -31,12 +32,14 @@ class ProjectEditorApp:
         
         self.file_saved = False
         self.current_project_name = ""
+        self.aggregate_data = aggregate_data
         
         self.project_data = {
             "project": {
                 "project_name": "",
                 "files": [],
-                "excel_path": ""
+                "write_path": "",
+                "data_sheet": ""
             }
         }
         
@@ -61,7 +64,7 @@ class ProjectEditorApp:
         
         # プロジェクト名称
         ttk.Label(self.root, text="プロジェクト名称:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.project_name_entry = ttk.Entry(self.root, width=50)
+        self.project_name_entry = ttk.Entry(self.root, width=60)
         self.project_name_entry.grid(row=0, column=1, padx=5, pady=5, sticky="w")
         
         # ファイル情報フレーム
@@ -72,11 +75,21 @@ class ProjectEditorApp:
         ttk.Button(self.files_frame, text="Add", command=self.add_file_info).pack(padx=5, pady=5, anchor="w")
         
         # 集計データ書込先
-        ttk.Label(self.root, text="集計データ書込先:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
-        self.write_path_entry = ttk.Entry(self.root, width=80)
-        self.write_path_entry.grid(row=3, column=1, padx=5, pady=5, sticky="ew")
-        ttk.Button(self.root, text="参照", command=self.select_excel_file).grid(row=3, column=2, padx=5, pady=5)
+        self.output_frame = ttk.LabelFrame(self.root, text="集計データ出力")
+        self.output_frame.grid(row=2, column=0, columnspan=3, padx=5, pady=3, sticky="ew")
         
+        # 書込先
+        ttk.Label(self.output_frame, text="書込先:").grid(row=0, column=0, sticky=tk.W, padx=2, pady=3)
+        self.write_path_entry = ttk.Entry(self.output_frame, width=80)
+        self.write_path_entry.grid(row=0, column=1)
+        ttk.Button(self.output_frame, text="...", width=3, command=self.select_excel_file).grid(row=0, column=2, padx=2, pady=3)
+
+        # データシート名
+        ttk.Label(self.output_frame, text="データシート名:").grid(row=0, column=3, padx=(4,2))
+        self.data_sheet_entry = ttk.Entry(self.output_frame, width=20)
+        self.data_sheet_entry.insert(0, "DATA")
+        self.data_sheet_entry.grid(row=0, column=4, padx=2)
+
         # ボタンフレーム
         button_frame = ttk.Frame(self.root)
         button_frame.grid(row=4, column=0, columnspan=2, pady=20)
@@ -146,7 +159,11 @@ class ProjectEditorApp:
             
             # Excelファイルパスを設定
             self.write_path_entry.delete(0, tk.END)
-            self.write_path_entry.insert(0, project_data.get("excel_path", ""))
+            self.write_path_entry.insert(0, project_data.get("write_path", ""))
+            
+            # データシート名を設定
+            self.data_sheet_entry.delete(0, tk.END)
+            self.data_sheet_entry.insert(0, project_data.get("data_sheet", ""))
             
             # 既存のファイル行をクリア
             for widget in self.files_frame.winfo_children():
@@ -218,8 +235,9 @@ class ProjectEditorApp:
             for frame in frames_to_remove[:-1]:
                 frame.destroy()
             
-        # Excelファイルパスの取得
-        excel_path = self.write_path_entry.get().strip()
+        # 書込先Excelファイルパスの取得
+        write_path = self.write_path_entry.get().strip()
+        data_sheet = self.data_sheet_entry.get().strip()
 
         # projectsディレクトリの作成
         projects_dir = Path("projects")
@@ -245,11 +263,16 @@ class ProjectEditorApp:
         json_project_data = {
             "project_name": project_name,
             "files": files,
-            "excel_path": excel_path
+            "write_path": write_path,
+            "data_sheet": data_sheet
         }
 
         # 既存のデータを保持しつつ、projectキーのデータを更新
         existing_data["project"] = json_project_data
+        
+        # aggregate_dataが存在する場合は保存
+        if self.aggregate_data is not None:
+            existing_data["aggregate_data"] = self.aggregate_data
         
         # JSONファイルの保存
         with open(json_path, "w", encoding="utf-8") as f:
@@ -291,7 +314,8 @@ class ProjectEditorApp:
                 project_data = {
                     "project_name": self.project_name_entry.get().strip(),
                     "files": self.get_file_info(),
-                    "excel_path": self.write_path_entry.get().strip()
+                    "write_path": self.write_path_entry.get().strip(),
+                    "data_sheet": self.data_sheet_entry.get().strip()
                 }
                 
                 # データのバリデーション

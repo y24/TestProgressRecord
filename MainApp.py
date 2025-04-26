@@ -761,7 +761,8 @@ def edit_project(after_save_callback=None):
     editor = ProjectEditorApp(
         parent=root,
         callback=on_project_updated,
-        project_path=project_path
+        project_path=project_path,
+        aggregate_data=input_data  # aggregate_dataを渡す
     )
 
 def save_project():
