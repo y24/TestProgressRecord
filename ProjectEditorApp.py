@@ -4,16 +4,30 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Callable
 import re
 
 class ProjectEditorApp:
-    def __init__(self, initial_files: List[str] = None, initial_json_path: str = None):
-        self.root = tk.Tk()
-        self.root.title("ProjectEditor")
+    def __init__(self, parent: tk.Tk, callback: Callable[[Dict[str, Any]], None] = None, 
+                 initial_files: List[str] = None, initial_json_path: str = None):
+        self.parent = parent
+        self.callback = callback
+        self.root = tk.Toplevel(parent)
+        self.root.withdraw()  # まず非表示
+        self.root.title("プロジェクト情報編集")
         self.root.geometry("1000x400")
+        self.root.transient(parent)  # 親ウィンドウに対してモーダルに
+        self.root.grab_set()  # フォーカスを保持
+        
+        # 親ウインドウの座標+50,+50に表示
+        self.root.update_idletasks()
+        parent_x = parent.winfo_x()
+        parent_y = parent.winfo_y()
+        self.root.geometry(f"1000x400+{parent_x+50}+{parent_y+50}")
+        self.root.deiconify()  # ここで表示
+        
         self.file_saved = False
-        self.current_project_name = ""  # 現在のプロジェクト名を保持
+        self.current_project_name = ""
         
         self.project_data = {
             "project": {
@@ -26,7 +40,6 @@ class ProjectEditorApp:
         self.initial_files = initial_files or []
         self.create_widgets()
         
-        # 初期JSONファイルが指定されている場合は読み込む
         if initial_json_path:
             self.load_project_from_path(initial_json_path)
         
@@ -38,8 +51,7 @@ class ProjectEditorApp:
         # ファイルメニュー
         file_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="File", menu=file_menu)
-        file_menu.add_command(label="プロジェクトを読込", command=self.load_project)
-        file_menu.add_command(label="プロジェクトを保存", command=self.save_project)
+        file_menu.add_command(label="プロジェクトファイルを読込", command=self.load_project)
         
         # プロジェクト名称
         ttk.Label(self.root, text="プロジェクト名称:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
@@ -64,7 +76,8 @@ class ProjectEditorApp:
         button_frame.grid(row=4, column=0, columnspan=2, pady=20)
         
         # 保存ボタン
-        ttk.Button(button_frame, text="保存", command=self.save_project).pack(side="left", padx=5)
+        ttk.Button(button_frame, text="OK", command=self.save_project).pack(side="left", padx=5)
+        ttk.Button(button_frame, text="キャンセル", command=self.root.destroy).pack(side="left", padx=5)
         
         # 初期ファイルがある場合は追加
         if self.initial_files:
@@ -119,7 +132,7 @@ class ProjectEditorApp:
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                project_data = data["project"]
+                project_data = data.get("project", {})
                 
             # プロジェクト名を設定
             self.project_name_entry.delete(0, tk.END)
@@ -233,31 +246,71 @@ class ProjectEditorApp:
         messagebox.showinfo("成功", f"プロジェクト情報を保存しました: {json_path}")
         self.file_saved = True
         self.current_project_name = project_name  # 現在のプロジェクト名を更新
+
+        if self.callback:
+            try:
+                # データのバリデーション
+                if not project_data["project_name"]:
+                    raise ValueError("プロジェクト名が入力されていません")
+                # コールバックでデータを返す
+                self.callback(project_data)
+            except Exception as e:
+                messagebox.showerror("エラー", f"データの保存に失敗しました: {str(e)}")
+                return
+
+        # 保存後にウインドウを閉じる
+        self.root.destroy()
         
     def run(self):
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.mainloop()
 
     def on_closing(self):
-        if self.file_saved:
-            messagebox.showinfo(
-                "保存完了",
-                "プロジェクトファイルが保存されました。\n設定を反映するには、データの再読み込みを実行してください。"
-            )
-        self.root.destroy() 
+        if self.file_saved and self.callback:
+            try:
+                # プロジェクトデータを収集
+                project_data = {
+                    "project_name": self.project_name_entry.get().strip(),
+                    "files": self.get_file_info(),
+                    "excel_path": self.write_path_entry.get().strip()
+                }
+                
+                # データのバリデーション
+                if not project_data["project_name"]:
+                    raise ValueError("プロジェクト名が入力されていません")
+                
+                # コールバックでデータを返す
+                self.callback(project_data)
+                
+            except Exception as e:
+                messagebox.showerror("エラー", f"データの保存に失敗しました: {str(e)}")
+                return
+                
+        self.root.destroy()
+        
+    def get_file_info(self) -> List[Dict[str, str]]:
+        """現在のファイル情報を取得する"""
+        files = []
+        for frame in self.files_frame.winfo_children():
+            if isinstance(frame, ttk.Frame):
+                file_info = {
+                    "identifier": frame.entries["identifier"].get().strip(),
+                    "url": frame.entries["url"].get().strip()
+                }
+                if file_info["url"]:  # URLが入力されている場合のみ追加
+                    files.append(file_info)
+        return files
 
 if __name__ == "__main__":
-    # 引数の解析
-    args = sys.argv[1:]
-    initial_files = []
-    initial_json_path = None
+    # テスト用の親ウィンドウを作成
+    root = tk.Tk()
+    root.withdraw()  # 親ウィンドウは非表示
     
-    for arg in args:
-        if arg.endswith('.json'):
-            initial_json_path = arg
-        else:
-            initial_files.append(arg)
-            
-    app = ProjectEditorApp(initial_files=initial_files if initial_files else None,
-                         initial_json_path=initial_json_path)
+    def test_callback(project_data):
+        print("プロジェクトデータを受け取りました:", project_data)
+    
+    app = ProjectEditorApp(
+        parent=root,
+        callback=test_callback
+    )
     app.run()

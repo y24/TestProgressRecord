@@ -734,9 +734,27 @@ def open_project():
     print(inputs)
 
 def edit_project():
+    def on_project_updated(project_data):
+        try:            
+            # タイトルを更新
+            project_name = project_data.get("project_name", "名称未設定")
+            root.title(f"TestTraQ - {project_name}")
+            
+        except Exception as e:
+            Dialog.show_messagebox(
+                root=root,
+                type="error",
+                title="更新エラー",
+                message=f"プロジェクト情報の更新に失敗しました: {str(e)}"
+            )
+
+    # ProjectEditorAppを子ウインドウとして起動
     from ProjectEditorApp import ProjectEditorApp
-    app = ProjectEditorApp()
-    app.run()
+    editor = ProjectEditorApp(
+        parent=root,
+        callback=on_project_updated,
+        initial_json_path="UserConfig.json"  # 現在の設定を読み込む
+    )
 
 def create_menubar(parent):
     menubar = tk.Menu(parent)
@@ -750,7 +768,7 @@ def create_menubar(parent):
     file_menu.add_command(label="ファイルを開く", command=open_files)
     file_menu.add_command(label="再読み込み", command=reload_files)
     file_menu.add_separator()
-    file_menu.add_command(label="プロジェクト情報編集", command=edit_project)
+    file_menu.add_command(label="プロジェクト情報を編集", command=edit_project)
     file_menu.add_separator()
     file_menu.add_command(label="アプリ設定", command=edit_settings)
     file_menu.add_separator()
@@ -1020,7 +1038,9 @@ def run(data, args):
 
     # 親ウインドウ生成
     root = tk.Tk()
-    root.title("TestTraQ")
+    # プロジェクト名を取得（未設定の場合は"名称未設定"）
+    project_name = settings.get("project", {}).get("project_name", "名称未設定")
+    root.title(f"TestTraQ - {project_name}")
     # ウインドウ表示位置を復元
     root.geometry(settings["app"]["window_position"])
 
