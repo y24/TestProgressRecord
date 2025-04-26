@@ -3,7 +3,7 @@ from tqdm import tqdm
 
 import ReadData
 import MainApp
-from libs import Utility, Dialog, Zip, AppConfig, TempDir
+from libs import Utility, Dialog, Zip, AppConfig, TempDir, FileDownload
 
 def get_xlsx_paths(inputs):
     """
@@ -128,11 +128,23 @@ def validate_input_files(inputs):
     
     return inputs
 
+def filter_xlsx_files(inputs):
+    """
+    xlsxファイル以外のパスを除去する
+    
+    Args:
+        inputs (list): 入力ファイルのパスリスト
+        
+    Returns:
+        list: xlsxファイルのみのパスリスト
+    """
+    return [file_path for file_path in inputs if Utility.get_ext_from_path(file_path) == "xlsx"]
+
 def start():
     # コマンドライン引数の設定
     parser = argparse.ArgumentParser(description="zipファイル/xlsxファイルを引数として起動します。(複数可)")
     parser.add_argument("--debug", action="store_true", help="デバッグモードを有効化")
-    parser.add_argument("data_files", nargs="*", help="zipファイル/xlsxファイルのパス")
+    parser.add_argument("data_files", nargs="*", help="処理するファイルのパス")
     args = parser.parse_args()
 
     # コマンドライン引数がない場合はファイル選択ダイアログを表示
@@ -146,12 +158,15 @@ def start():
     # ファイルの拡張子を取得
     ext = Utility.get_ext_from_path(inputs[0])
     if ext == "json":
-        # JSONファイルの場合はプロジェクトを開く
-        print(inputs[0])
+        # JSONファイルの場合はファイルをダウンロード
+        files, temp_dirs = FileDownload.process_json_file(inputs[0])
+        # xlsxファイルのみフィルタ
+        files = filter_xlsx_files(files)
     else:
         # xlsx/zipファイルの場合はデータ集計
         files, temp_dirs = get_xlsx_paths(inputs)
 
+    # 設定ファイルの読み込み
     settings = AppConfig.load_settings()
 
     # 全ファイルの集計処理
