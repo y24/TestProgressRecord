@@ -205,12 +205,10 @@ class ProjectEditorApp:
         excel_path = self.excel_path_entry.get().strip()
             
         # プロジェクトデータの作成
-        self.project_data = {
-            "project": {
-                "project_name": project_name,
-                "files": files,
-                "excel_path": excel_path
-            }
+        project_data = {
+            "project_name": project_name,
+            "files": files,
+            "excel_path": excel_path
         }
         
         # projectsディレクトリの作成
@@ -222,8 +220,23 @@ class ProjectEditorApp:
         
         # JSONファイルの保存
         json_path = projects_dir / f"{safe_project_name}.json"
+        
+        # 既存のJSONファイルがある場合は読み込む
+        existing_data = {}
+        if json_path.exists():
+            try:
+                with open(json_path, "r", encoding="utf-8") as f:
+                    existing_data = json.load(f)
+            except Exception as e:
+                messagebox.showerror("エラー", f"既存のプロジェクトファイルの読み込みに失敗しました: {str(e)}")
+                return
+        
+        # 既存のデータを保持しつつ、projectキーのデータを更新
+        existing_data["project"] = project_data
+        
+        # JSONファイルの保存
         with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(self.project_data, f, ensure_ascii=False, indent=2)
+            json.dump(existing_data, f, ensure_ascii=False, indent=2)
             
         messagebox.showinfo("成功", f"プロジェクト情報を保存しました: {json_path}")
         self.file_saved = True
