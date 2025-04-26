@@ -7,10 +7,10 @@ from pathlib import Path
 from typing import List, Dict, Any
 import re
 
-class CreateProjectApp:
+class ProjectEditorApp:
     def __init__(self, initial_files: List[str] = None, initial_json_path: str = None):
         self.root = tk.Tk()
-        self.root.title("Project Editor")
+        self.root.title("ProjectEditor")
         self.root.geometry("1000x400")
         
         self.project_data = {
@@ -33,9 +33,9 @@ class CreateProjectApp:
         
         # ファイルメニュー
         file_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="ファイル", menu=file_menu)
-        file_menu.add_command(label="読込", command=self.load_project)
-        file_menu.add_command(label="保存", command=self.save_project)
+        menubar.add_cascade(label="File", menu=file_menu)
+        file_menu.add_command(label="プロジェクトを読込", command=self.load_project)
+        file_menu.add_command(label="プロジェクトを保存", command=self.save_project)
         
         # プロジェクト名称
         ttk.Label(self.root, text="プロジェクト名称:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
@@ -236,6 +236,6 @@ if __name__ == "__main__":
         else:
             initial_files.append(arg)
             
-    app = CreateProjectApp(initial_files=initial_files if initial_files else None,
+    app = ProjectEditorApp(initial_files=initial_files if initial_files else None,
                          initial_json_path=initial_json_path)
     app.run()

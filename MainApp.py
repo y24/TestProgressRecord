@@ -724,8 +724,8 @@ def edit_settings():
     open_file(file_path="UserConfig.json", exit=False)
 
 def create_project():
-    from CreateProjectApp import CreateProjectApp
-    app = CreateProjectApp()
+    from ProjectEditorApp import ProjectEditorApp
+    app = ProjectEditorApp()
     app.run()
 
 def create_menubar(parent):
@@ -733,16 +733,15 @@ def create_menubar(parent):
     parent.config(menu=menubar)
     # File
     file_menu = tk.Menu(menubar, tearoff=0)
-    file_menu.add_command(label="開く", command=load_files)
-    file_menu.add_command(label="再読み込み", command=reload_files)
+    file_menu.add_command(label="ファイルを開く", command=load_files)
+    file_menu.add_command(label="ファイルを再読み込み", command=reload_files)
+    file_menu.add_separator()
+    file_menu.add_command(label="プロジェクト情報編集", command=create_project)
+    file_menu.add_separator()
+    file_menu.add_command(label="アプリ設定", command=edit_settings)
     file_menu.add_separator()
     file_menu.add_command(label="終了", command=parent.quit)
     menubar.add_cascade(label="File", menu=file_menu)
-    # Settings
-    settings_menu = tk.Menu(menubar, tearoff=0)
-    settings_menu.add_command(label="アプリ設定", command=edit_settings)
-    settings_menu.add_command(label="プロジェクト作成", command=create_project)
-    menubar.add_cascade(label="Settings", menu=settings_menu)
 
 def create_input_area(parent, settings):
     input_frame = ttk.LabelFrame(parent, text="集計データ出力")
