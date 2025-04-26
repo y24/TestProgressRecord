@@ -14,9 +14,12 @@ def select_files(ext:tuple):
 
 def show_messagebox(root, type:str, title:str, message:str):
     # 一時的な Toplevel を作成（非表示）
-    temp_window = Toplevel(root)
+    temp_window = Toplevel(root if root else None)
     temp_window.withdraw()  # ウィンドウを非表示にする
-    temp_window.geometry(f"1x1+{root.winfo_x()+50}+{root.winfo_y()+50}")  # 位置を指定
+    
+    # rootが指定されている場合のみ位置を指定
+    if root:
+        temp_window.geometry(f"1x1+{root.winfo_x()+50}+{root.winfo_y()+50}")  # 位置を指定
 
     # そのウィンドウを親にして messagebox を表示
     if type == "info":
