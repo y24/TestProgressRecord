@@ -160,6 +160,7 @@ def start():
 
     # プロジェクトデータを初期化
     project_data = {}
+    project_path = ""
 
     # ファイルの拡張子を取得
     ext = Utility.get_ext_from_path(inputs[0])
@@ -172,6 +173,7 @@ def start():
             # プロジェクトデータを取得
             if "project" in json_data:
                 project_data = json_data["project"]
+                project_path = inputs[0]
 
             # aggregate_dataキーがある場合はそのデータを使用
             if "aggregate_data" in json_data:
@@ -205,7 +207,7 @@ def start():
         pprint(aggregate_data)
 
     # アプリケーションの起動
-    MainApp.run(pjdata=project_data, indata=aggregate_data,  args=inputs)
+    MainApp.run(pjdata=project_data, pjpath=project_path, indata=aggregate_data,  args=inputs)
 
     # 一時ディレクトリの掃除
     if temp_dirs: TempDir.cleanup_old_temp_dirs("_TEMP_")

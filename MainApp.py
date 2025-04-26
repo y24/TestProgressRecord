@@ -761,7 +761,7 @@ def edit_project(on_create:bool=False):
     editor = ProjectEditorApp(
         parent=root,
         callback=on_project_updated,
-        initial_json_path="UserConfig.json"  # 現在の設定を読み込む
+        project_path=project_path
     )
 
 def save_project():
@@ -773,9 +773,6 @@ def save_project():
         file_path = project_path 
     else:
         create_project()
-    
-    if not file_path:  # キャンセルされた場合
-        return
         
     try:
         # 既存のJSONファイルがある場合は読み込む
@@ -802,16 +799,15 @@ def create_menubar(parent):
     parent.config(menu=menubar)
     # File
     file_menu = tk.Menu(menubar, tearoff=0)
+    file_menu.add_command(label="再集計", command=reload_files)
+    file_menu.add_separator()
     file_menu.add_command(label="新規プロジェクト", command=create_project)
     file_menu.add_command(label="プロジェクトを開く", command=open_project)
-    file_menu.add_command(label="保存", command=save_project)
-    file_menu.add_separator()
+    file_menu.add_command(label="プロジェクトを保存", command=save_project)
     file_menu.add_command(label="ファイルを開く", command=open_files)
-    file_menu.add_command(label="再読み込み", command=reload_files)
     file_menu.add_separator()
-    file_menu.add_command(label="プロジェクト情報を編集", command=edit_project)
-    file_menu.add_separator()
-    file_menu.add_command(label="アプリ設定", command=edit_settings)
+    file_menu.add_command(label="プロジェクト情報設定", command=edit_project)
+    file_menu.add_command(label="環境設定", command=edit_settings)
     file_menu.add_separator()
     file_menu.add_command(label="終了", command=parent.quit)
     menubar.add_cascade(label="File", menu=file_menu)
@@ -975,7 +971,7 @@ def new_process(inputs):
     close_all_dialogs()
     python = sys.executable
     if project_path:
-        subprocess.Popen([python, sys.argv[0]] + [project_path])
+        subprocess.Popen([python, sys.argv[0]] + [project_path] + inputs)
     else:
         subprocess.Popen([python, sys.argv[0]] + inputs)
     sys.exit()
@@ -1069,11 +1065,12 @@ def create_byfile_tab(parent):
         file_selector.current(0)
         update_byfile_tab(selected_file=input_data[0]['selector_label'], count_label=file_count_label, rate_label=file_rate_label, ax=file_ax, canvas=file_canvas, notebook=notebook)
 
-def run(pjdata, indata, args):
-    global root, input_data, settings, input_args, project_data
+def run(pjdata, pjpath, indata, args):
+    global root, input_data, settings, input_args, project_data, project_path
     
     # 読込データ
     project_data = pjdata
+    project_path = pjpath
     input_data = indata
 
     # 起動時に指定したファイルパス（再読込用）

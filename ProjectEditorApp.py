@@ -9,7 +9,7 @@ import re
 
 class ProjectEditorApp:
     def __init__(self, parent=None, callback: Callable[[Dict[str, Any]], None] = None, 
-                 initial_files: List[str] = None, initial_json_path: str = None):
+                 initial_files: List[str] = None, project_path: str = None):
         self.parent = parent
         self.callback = callback
         if parent is None:
@@ -43,8 +43,8 @@ class ProjectEditorApp:
         self.initial_files = initial_files or []
         self.create_widgets()
         
-        if initial_json_path:
-            self.load_project_from_path(initial_json_path)
+        if project_path:
+            self.load_project_from_path(project_path)
         
     def create_widgets(self):
         # メニューバーの作成
