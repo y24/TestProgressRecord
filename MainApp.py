@@ -731,8 +731,9 @@ def create_project():
     edit_project(on_create=True)
 
 def open_project():
-    inputs = Dialog.select_files(("jsonファイル", "*.json"))
-    print(inputs)
+    open_projects = Dialog.select_files(("jsonファイル", "*.json"))
+    if open_projects:
+        new_process(inputs=list(open_projects))
 
 def edit_project(on_create:bool=False):
     def on_project_updated(new_project_data):
