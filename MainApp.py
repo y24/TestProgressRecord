@@ -817,22 +817,11 @@ def create_menubar(parent):
 def create_input_area(parent, settings):
     input_frame = ttk.LabelFrame(parent, text="集計データ出力")
     input_frame.pack(fill=tk.X, padx=5, pady=3)
-    
-    ttk.Label(input_frame, text="書込先:").grid(row=0, column=0, sticky=tk.W, padx=2, pady=3)
-    file_path_entry = ttk.Entry(input_frame, width=80)
-    file_path_entry.insert(0, settings["app"]["write"]["filepath"])
-    file_path_entry.grid(row=0, column=1)
-    ttk.Button(input_frame, text="...", width=3, command=lambda: select_write_file(file_path_entry)).grid(row=0, column=2, padx=2, pady=3)
-
-    ttk.Label(input_frame, text="データシート名:").grid(row=0, column=3, padx=(4,2))
-    table_name_entry = ttk.Entry(input_frame, width=20)
-    table_name_entry.insert(0, settings["app"]["write"]["table_name"])
-    table_name_entry.grid(row=0, column=4, padx=2)
 
     submit_frame = ttk.Frame(input_frame)
     submit_frame.grid(row=2, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W)
-    ttk.Button(submit_frame, text="Excelへ書込", command=lambda: write_to_excel(file_path_entry.get(), table_name_entry.get())).pack(side=tk.LEFT, padx=2, pady=(0,2))
-    # ttk.Button(submit_frame, text="書込先を開く", command=lambda: run_file(field_data["filepath"].get())).pack(side=tk.LEFT, padx=2, pady=5)
+    ttk.Button(submit_frame, text="Excelへ書込", command=lambda: write_to_excel(project_data["write_path"], project_data["data_sheet_name"])).pack(side=tk.LEFT, padx=2, pady=(0,2))
+    ttk.Button(submit_frame, text="書込先を開く", command=lambda: run_file(project_data["write_path"])).pack(side=tk.LEFT, padx=2, pady=5)
 
     ttk.Button(submit_frame, text="CSV保存", command=lambda: save_to_csv(WriteData.convert_to_2d_array(data=input_data, settings=settings), f'進捗集計_{Utility.get_today_str()}')).pack(side=tk.LEFT, padx=2, pady=(0,2))
     ttk.Button(submit_frame, text="クリップボードにコピー", command=lambda: copy_to_clipboard(WriteData.convert_to_2d_array(data=input_data, settings=settings)), width=22).pack(side=tk.LEFT, padx=2, pady=(0,2))
@@ -1111,7 +1100,7 @@ def run(pjdata, pjpath, indata, args, on_reload=False):
             reload_files()
     else:
         # 1件もデータがない場合はメッセージ
-        Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"データがありません。以下の方法で設定を行ってください。\n・File > ファイルを読み込む からファイルを開いて保存\n・File > プロジェクト情報設定 から取得元URLを設定")
+        Dialog.show_messagebox(root, type="warning", title="抽出エラー", message=f"データがありません。以下の方法で設定を行ってください。\n・File > ファイルを読み込む からファイルを開いて保存\n・File > プロジェクト情報設定 から取得元URLを設定")
 
     root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()

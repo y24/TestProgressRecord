@@ -39,7 +39,7 @@ class ProjectEditorApp:
                 "project_name": "",
                 "files": [],
                 "write_path": "",
-                "data_sheet": ""
+                "data_sheet_name": ""
             }
         }
         
@@ -163,7 +163,7 @@ class ProjectEditorApp:
             
             # データシート名を設定
             self.data_sheet_entry.delete(0, tk.END)
-            self.data_sheet_entry.insert(0, project_data.get("data_sheet", ""))
+            self.data_sheet_entry.insert(0, project_data.get("data_sheet_name", ""))
             
             # 既存のファイル行をクリア
             for widget in self.files_frame.winfo_children():
@@ -264,7 +264,7 @@ class ProjectEditorApp:
             "project_name": project_name,
             "files": files,
             "write_path": write_path,
-            "data_sheet": data_sheet
+            "data_sheet_name": data_sheet
         }
 
         # 既存のデータを保持しつつ、projectキーのデータを更新
@@ -315,7 +315,7 @@ class ProjectEditorApp:
                     "project_name": self.project_name_entry.get().strip(),
                     "files": self.get_file_info(),
                     "write_path": self.write_path_entry.get().strip(),
-                    "data_sheet": self.data_sheet_entry.get().strip()
+                    "data_sheet_name": self.data_sheet_entry.get().strip()
                 }
                 
                 # データのバリデーション
