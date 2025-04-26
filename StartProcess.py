@@ -199,17 +199,11 @@ def start():
                 aggregate_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))]
 
         except Exception as e:
-            Dialog.show_messagebox(
-                root=None,
-                type="error", 
-                title="JSONファイル読込エラー",
-                message=f"JSONファイルの読み込みに失敗しました。\n{str(e)}"
-            )
-            sys.exit()
+            Dialog.show_messagebox(root=None, type="error", title="ファイル読込エラー", message=f"{str(e)}")
+            aggregate_data = []
     else:
         # xlsx/zipファイルの場合はデータ集計
         files, temp_dirs = get_xlsx_paths(inputs)
-
         # 全ファイルの集計処理
         aggregate_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))]
 

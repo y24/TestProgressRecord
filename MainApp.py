@@ -724,7 +724,7 @@ def copy_to_clipboard(data, filename_only=False):
     root.update()
 
 def edit_settings():
-    Dialog.show_messagebox(root=root, type="info", title="ユーザー設定編集", message=f"ユーザー設定ファイルを開きます。\n編集した設定を反映させるにはアプリを再起動するか、File > 再集計 を実行してください。")
+    Dialog.show_messagebox(root=root, type="info", title="ユーザー設定編集", message=f"ユーザー設定ファイルを開きます。\n編集した設定を反映させるにはアプリを再起動するか、Data > 再集計 を実行してください。")
     run_file(file_path="UserConfig.json", exit=False)
 
 def load_files():
@@ -987,8 +987,36 @@ def new_process(inputs, on_reload=False, project_path=None):
     sys.exit()
 
 def reload_files():
+    # 再集計の確認ダイアログを表示
     response = Dialog.ask(root=root, title="確認", message=f"最新のデータを集計しますか？\n最終読込日時: {Utility.get_latest_load_time(input_data)}")
-    if response == "yes": new_process(inputs=list(input_args), on_reload=True)
+    if response == "yes":
+        # プロジェクトファイルを開いている場合
+        if project_path:
+            try:
+                # プロジェクトファイルを読み込み
+                with open(project_path, "r", encoding="utf-8") as f:
+                    project_json = json.load(f)
+                
+                # 古い集計データを削除
+                if "aggregate_data" in project_json:
+                    del project_json["aggregate_data"]
+                
+                # プロジェクトファイル保存
+                with open(project_path, "w", encoding="utf-8") as f:
+                    json.dump(project_json, f, ensure_ascii=False, indent=2)
+            except Exception as e:
+                # エラー発生時
+                Dialog.show_messagebox(root=root, type="error", title="保存エラー", message=f"プロジェクトファイルの更新に失敗しました。\n{str(e)}")
+                return
+
+        # 再集計用の新プロセス起動
+        if not project_data.get("files"):
+            # URLの設定がない場合、集計データからパスを取得
+            file_paths = [item["filepath"] for item in input_data if "filepath" in item]
+            new_process(inputs=file_paths, on_reload=True)
+        else:
+            # URLの設定がある場合
+            new_process(inputs=list(input_args), on_reload=True)
 
 def create_global_tab(parent):
     # 全体タブ

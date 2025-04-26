@@ -62,7 +62,7 @@ def download_sharepoint_file(url: str, temp_dir: str) -> str:
                     
         return file_path
     except Exception as e:
-        raise Exception(f"ファイルのダウンロードに失敗しました: {str(e)}")
+        raise Exception(f"ファイルのダウンロードに失敗しました。\n{str(e)}")
 
 def process_json_file(json_path: str) -> List[str]:
     """
@@ -97,7 +97,7 @@ def process_json_file(json_path: str) -> List[str]:
             return downloaded_files, temp_dir
             
     except Exception as e:
-        raise Exception(f"JSONファイルの処理中にエラーが発生しました: {str(e)}")
+        raise Exception(str(e))
 
 
 def main():

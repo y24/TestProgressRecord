@@ -34,7 +34,7 @@ def show_messagebox(root, type:str, title:str, message:str):
     # 一時ウィンドウを削除
     temp_window.destroy()
 
-def ask(root, title, message):
+def ask(root, title:str, message:str):
     # 一時的な Toplevel を作成（非表示）
     temp_window = Toplevel(root if root else None)
     temp_window.withdraw()  # ウィンドウを非表示にする
