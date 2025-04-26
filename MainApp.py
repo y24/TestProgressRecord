@@ -804,16 +804,16 @@ def create_menubar(parent):
     parent.config(menu=menubar)
     # File
     file_menu = tk.Menu(menubar, tearoff=0)
-    file_menu.add_command(label="再集計", command=reload_files)
+    file_menu.add_command(label="再集計", command=reload_files, accelerator="Ctrl+R")
     file_menu.add_separator()
-    file_menu.add_command(label="プロジェクトを開く", command=open_project)
-    file_menu.add_command(label="保存", command=save_project)
-    file_menu.add_command(label="ファイルを読み込む", command=load_files)
+    file_menu.add_command(label="プロジェクトを開く", command=open_project, accelerator="Ctrl+O")
+    file_menu.add_command(label="保存", command=save_project, accelerator="Ctrl+S")
+    file_menu.add_command(label="ファイルを読み込む", command=load_files, accelerator="Ctrl+L")
     file_menu.add_separator()
-    file_menu.add_command(label="プロジェクト情報設定", command=edit_project)
+    file_menu.add_command(label="プロジェクト情報設定", command=edit_project, accelerator="Ctrl+E")
     file_menu.add_command(label="環境設定", command=edit_settings)
     file_menu.add_separator()
-    file_menu.add_command(label="終了", command=parent.quit)
+    file_menu.add_command(label="終了", command=parent.quit, accelerator="Ctrl+Q")
     menubar.add_cascade(label="File", menu=file_menu)
 
     # キーバインドの追加
@@ -1007,7 +1007,7 @@ def create_summary_tab(parent):
     total_frame.pack(fill=tk.X, padx=5, pady=5)
 
     # プロジェクト名称
-    project_name = project_data["project_name"] or "名称未設定"
+    project_name = project_data.get("project_name", "名称未設定")
     project_name_label = ttk.Label(total_frame, text=project_name, anchor="w")
     project_name_label.pack(fill=tk.X, padx=20)    
 
