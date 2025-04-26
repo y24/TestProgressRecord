@@ -1092,7 +1092,7 @@ def run(pjdata, pjpath, indata, args):
     # 1件もデータがなかった場合は終了
     if not len(input_data):
         Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"1件もデータが抽出できませんでした。終了します。\n\nFile(s):\n{ers}")
-        sys.exit()
+        # sys.exit()
 
     root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()

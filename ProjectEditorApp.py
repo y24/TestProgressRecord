@@ -15,7 +15,7 @@ class ProjectEditorApp:
         if parent is None:
             self.root = tk.Tk()
             self.root.title("プロジェクトの作成")
-            self.root.geometry("1000x400")
+            self.root.geometry("900x400")
         else:
             self.root = tk.Toplevel(parent)
             self.root.withdraw()  # まず非表示
@@ -62,18 +62,18 @@ class ProjectEditorApp:
         # プロジェクト名称
         ttk.Label(self.root, text="プロジェクト名称:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.project_name_entry = ttk.Entry(self.root, width=50)
-        self.project_name_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+        self.project_name_entry.grid(row=0, column=1, padx=5, pady=5, sticky="w")
         
         # ファイル情報フレーム
         self.files_frame = ttk.LabelFrame(self.root, text="取得元情報")
-        self.files_frame.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
+        self.files_frame.grid(row=1, column=0, columnspan=3, padx=5, pady=5, sticky="nsew")
         
         # ファイル情報追加ボタン
         ttk.Button(self.files_frame, text="Add", command=self.add_file_info).pack(padx=5, pady=5, anchor="w")
         
         # 集計データ書込先
         ttk.Label(self.root, text="集計データ書込先:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
-        self.write_path_entry = ttk.Entry(self.root, width=50)
+        self.write_path_entry = ttk.Entry(self.root, width=80)
         self.write_path_entry.grid(row=3, column=1, padx=5, pady=5, sticky="ew")
         ttk.Button(self.root, text="参照", command=self.select_excel_file).grid(row=3, column=2, padx=5, pady=5)
         
