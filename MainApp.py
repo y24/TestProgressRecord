@@ -1013,10 +1013,13 @@ def reload_files():
         if not project_data.get("files"):
             # URLの設定がない場合、集計データからパスを取得
             file_paths = [item["filepath"] for item in input_data if "filepath" in item]
-            new_process(inputs=file_paths, on_reload=True)
+            if len(file_paths) > 0:
+                new_process(inputs=file_paths, project_path=project_path, on_reload=True)
+            else:
+                Dialog.show_messagebox(root=root, type="warning", title="読込ファイルなし", message=f"再読み込みするファイルが設定されていません。")
         else:
             # URLの設定がある場合
-            new_process(inputs=list(input_args), on_reload=True)
+            new_process(inputs=list(input_args), project_path=project_path, on_reload=True)
 
 def create_global_tab(parent):
     # 全体タブ
@@ -1141,7 +1144,8 @@ def run(pjdata, pjpath, indata, args, on_reload=False):
     errors = [r for r in input_data if "error" in r]
     ers = "\n".join(["  "+ err["file"] for err in errors])
 
-    if len(errors):
+    # エラーあり、かつ初回集計の場合はメッセージ
+    if len(errors) and not on_reload:
         Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"以下のファイルはデータが抽出できませんでした。\n\nFile(s):\n{ers}")
 
     if len(input_data):
