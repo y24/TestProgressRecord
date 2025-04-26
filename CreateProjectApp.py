@@ -137,8 +137,6 @@ class CreateProjectApp:
             # ファイル情報を設定
             for file_data in project_data.get("files", []):
                 self.add_file_info(file_data=file_data)
-                
-            messagebox.showinfo("成功", "プロジェクト情報を読み込みました")
             
         except Exception as e:
             messagebox.showerror("エラー", f"プロジェクトファイルの読み込みに失敗しました: {str(e)}")
