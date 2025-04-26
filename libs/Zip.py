@@ -1,21 +1,8 @@
 import zipfile
 import tempfile
 import os
-import shutil
-import glob
 
 TEMP_DIR_PREFIX = "_TEMP_"  # 一時フォルダの識別用プレフィックス
-
-def cleanup_old_temp_dirs():
-    """
-    スクリプトの起動時に、過去の一時フォルダを削除する。
-    """
-    temp_base_dir = tempfile.gettempdir()
-    temp_dirs = glob.glob(os.path.join(temp_base_dir, TEMP_DIR_PREFIX + "*"))
-
-    for temp_dir in temp_dirs:
-        if os.path.isdir(temp_dir):
-            shutil.rmtree(temp_dir)
 
 def extract_files_from_zip(zip_path, extensions=None):
      """
@@ -51,11 +38,3 @@ def extract_files_from_zip(zip_path, extensions=None):
  
      return filtered_files, temp_dir
 
-def cleanup_temp_dir(temp_dir):
-    """
-    指定された一時フォルダを削除する。
-
-    :param temp_dir: 削除する一時フォルダのパス
-    """
-    if os.path.exists(temp_dir):
-        shutil.rmtree(temp_dir)

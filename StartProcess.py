@@ -3,7 +3,7 @@ from tqdm import tqdm
 
 import ReadData
 import MainApp
-from libs import Utility, Dialog, Zip, AppConfig
+from libs import Utility, Dialog, Zip, AppConfig, TempDir
 
 def get_xlsx_paths(inputs):
     """
@@ -166,7 +166,7 @@ def start():
     MainApp.run(aggregate_data, inputs)
 
     # 一時ディレクトリの掃除
-    if temp_dirs: Zip.cleanup_old_temp_dirs()
+    if temp_dirs: TempDir.cleanup_old_temp_dirs("_TEMP_")
 
 if __name__ == "__main__":
     start()
