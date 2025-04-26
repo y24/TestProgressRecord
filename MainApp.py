@@ -263,7 +263,7 @@ def save_to_csv(data, filename):
     if response == "yes":
         run_file(file_path=file_path)
 
-def update_byfile_tab(selected_file, count_label, rate_label, ax, canvas, notebook):
+def update_byfile_tab(selected_file, count_label, rate_label, last_load_time_label, ax, canvas, notebook):
     # タブ切り替え
     current_tab = notebook.index(notebook.select()) if notebook.tabs() else 0
     for widget in notebook.winfo_children():
@@ -288,7 +288,7 @@ def update_byfile_tab(selected_file, count_label, rate_label, ax, canvas, notebo
         by_name_data = data['by_name']
 
     # 集計情報の更新
-    update_info_label(data=stats_data, count_label=count_label, rate_label=rate_label, detail=True)
+    update_info_label(data=stats_data, count_label=count_label, rate_label=rate_label, last_load_time_label=last_load_time_label, detail=True)
     update_bar_chart(data=total_data, incompleted_count=incompleted, ax=ax, canvas=canvas, show_label=False)
 
     # ツールチップを更新
@@ -828,7 +828,7 @@ def create_input_area(parent, settings):
     ttk.Button(submit_frame, text="CSV保存", command=lambda: save_to_csv(WriteData.convert_to_2d_array(data=input_data, settings=settings), f'進捗集計_{Utility.get_today_str()}')).pack(side=tk.LEFT, padx=2, pady=(0,2))
     ttk.Button(submit_frame, text="クリップボードにコピー", command=lambda: copy_to_clipboard(WriteData.convert_to_2d_array(data=input_data, settings=settings)), width=22).pack(side=tk.LEFT, padx=2, pady=(0,2))
 
-def update_info_label(data, count_label, rate_label, detail=True):
+def update_info_label(data, count_label, rate_label, last_load_time_label, detail=True):
     if len(data) == 0 or"error" in data:
         # データなしまたはエラー時
         all = None
@@ -853,9 +853,13 @@ def update_info_label(data, count_label, rate_label, detail=True):
     # 消化率テキスト
     filled_rate_text = f'消化率: {Utility.meke_rate_text(filled, available)} [{filled or "-"}/{available or "-"}]'
 
+    # 読込日時
+    last_load_time_text = f'読込日時: {Utility.get_latest_load_time(input_data)}'
+
     # 表示を更新
     count_label.config(text=count_text)
     rate_label.config(text=f'{completed_rate_text}  |  {filled_rate_text}')
+    last_load_time_label.config(text=last_load_time_text)
 
 def update_bar_chart(data, incompleted_count, ax, canvas, show_label=True):
     # 表示順を固定
@@ -1016,8 +1020,12 @@ def create_summary_tab(parent):
     total_rate_label = ttk.Label(total_frame, anchor="w")
     total_rate_label.pack(fill=tk.X, padx=20)
 
+    # 最終読込日時
+    last_load_time_label = ttk.Label(total_frame, anchor="w")
+    last_load_time_label.pack(fill=tk.X, padx=20)
+
     # テストケース数、完了率を更新
-    update_info_label(data=Utility.sum_values(filtered_data, "stats"), count_label=total_count_label, rate_label=total_rate_label, detail=True)
+    update_info_label(data=Utility.sum_values(filtered_data, "stats"), count_label=total_count_label, rate_label=total_rate_label, last_load_time_label=last_load_time_label, detail=True)
 
     # ファイル別データ表示部
     create_summary_filelist_area(parent=parent)
@@ -1032,7 +1040,7 @@ def create_byfile_tab(parent):
     # ファイル選択プルダウン
     file_selector = ttk.Combobox(by_file_frame, values=[file["selector_label"] for file in input_data], state="readonly")
     file_selector.pack(fill=tk.X, padx=20, pady=5)
-    file_selector.bind("<<ComboboxSelected>>", lambda event: update_byfile_tab(selected_file=file_selector.get(), count_label=file_count_label, rate_label=file_rate_label, ax=file_ax, canvas=file_canvas, notebook=notebook))
+    file_selector.bind("<<ComboboxSelected>>", lambda event: update_byfile_tab(selected_file=file_selector.get(), count_label=file_count_label, rate_label=file_rate_label, last_load_time_label=file_last_load_time_label, ax=file_ax, canvas=file_canvas, notebook=notebook))
 
     # テストケース数(ファイル別)
     file_count_label = ttk.Label(by_file_frame, anchor="w")
@@ -1041,6 +1049,10 @@ def create_byfile_tab(parent):
     # 完了率(ファイル別)
     file_rate_label = ttk.Label(by_file_frame, anchor="w")
     file_rate_label.pack(fill=tk.X, padx=20)
+
+    # 最終読込日時(ファイル別)
+    file_last_load_time_label = ttk.Label(by_file_frame, anchor="w")
+    file_last_load_time_label.pack(fill=tk.X, padx=20)
 
     # グラフ表示(ファイル別)
     file_fig, file_ax = plt.subplots(figsize=(6, 0.1))
@@ -1056,7 +1068,7 @@ def create_byfile_tab(parent):
     # グリッド表示
     if input_data:
         file_selector.current(0)
-        update_byfile_tab(selected_file=input_data[0]['selector_label'], count_label=file_count_label, rate_label=file_rate_label, ax=file_ax, canvas=file_canvas, notebook=notebook)
+        update_byfile_tab(selected_file=input_data[0]['selector_label'], count_label=file_count_label, rate_label=file_rate_label, last_load_time_label=file_last_load_time_label, ax=file_ax, canvas=file_canvas, notebook=notebook)
 
 def run(pjdata, pjpath, indata, args, on_reload=False):
     global root, input_data, settings, input_args, project_data, project_path
