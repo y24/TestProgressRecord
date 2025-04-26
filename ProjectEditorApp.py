@@ -14,7 +14,7 @@ class ProjectEditorApp:
         self.callback = callback
         if parent is None:
             self.root = tk.Tk()
-            self.root.title("プロジェクト情報編集")
+            self.root.title("プロジェクトの作成")
             self.root.geometry("1000x400")
         else:
             self.root = tk.Toplevel(parent)

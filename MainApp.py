@@ -763,15 +763,15 @@ def edit_project(on_create:bool=False):
         initial_json_path="UserConfig.json"  # 現在の設定を読み込む
     )
 
-def save_data():
-    global project_data
+def save_project():
+    global project_data, project_path
     """現在のinput_dataをJSONファイルに保存する"""
-    # ファイル保存ダイアログを表示
-    file_path = filedialog.asksaveasfilename(
-        defaultextension=".json",
-        filetypes=[("JSON files", "*.json")],
-        title="データを保存"
-    )
+    
+    # プロジェクトファイルが開かれている場合は上書き
+    if project_path:
+        file_path = project_path 
+    else:
+        create_project()
     
     if not file_path:  # キャンセルされた場合
         return
@@ -791,10 +791,7 @@ def save_data():
         # JSONファイルに保存
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(existing_data, f, ensure_ascii=False, indent=2)
-            
-        # 成功メッセージを表示
-        Dialog.show_messagebox(root, type="info", title="保存完了", message=f"データを保存しました。\n{file_path}")
-        
+       
     except Exception as e:
         # エラーメッセージを表示
         Dialog.show_messagebox(root, type="error", title="保存エラー", message=f"データの保存に失敗しました。\n{str(e)}")
@@ -806,7 +803,7 @@ def create_menubar(parent):
     file_menu = tk.Menu(menubar, tearoff=0)
     file_menu.add_command(label="新規プロジェクト", command=create_project)
     file_menu.add_command(label="プロジェクトを開く", command=open_project)
-    file_menu.add_command(label="保存", command=save_data)
+    file_menu.add_command(label="保存", command=save_project)
     file_menu.add_separator()
     file_menu.add_command(label="ファイルを開く", command=open_files)
     file_menu.add_command(label="再読み込み", command=reload_files)
@@ -976,7 +973,10 @@ def close_all_dialogs():
 def new_process(inputs):
     close_all_dialogs()
     python = sys.executable
-    subprocess.Popen([python, sys.argv[0]] + inputs)
+    if project_path:
+        subprocess.Popen([python, sys.argv[0]] + [project_path])
+    else:
+        subprocess.Popen([python, sys.argv[0]] + inputs)
     sys.exit()
 
 def open_files():
