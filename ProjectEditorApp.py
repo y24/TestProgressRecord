@@ -15,9 +15,11 @@ class ProjectEditorApp:
         self.file_saved = False
         
         self.project_data = {
-            "project_name": "",
-            "files": [],
-            "excel_path": ""
+            "project": {
+                "project_name": "",
+                "files": [],
+                "excel_path": ""
+            }
         }
         
         self.initial_files = initial_files or []
@@ -125,7 +127,8 @@ class ProjectEditorApp:
         """指定されたパスのJSONファイルを読み込む"""
         try:
             with open(file_path, "r", encoding="utf-8") as f:
-                project_data = json.load(f)
+                data = json.load(f)
+                project_data = data["project"]
                 
             # プロジェクト名を設定
             self.project_name_entry.delete(0, tk.END)
@@ -203,9 +206,11 @@ class ProjectEditorApp:
             
         # プロジェクトデータの作成
         self.project_data = {
-            "project_name": project_name,
-            "files": files,
-            "excel_path": excel_path
+            "project": {
+                "project_name": project_name,
+                "files": files,
+                "excel_path": excel_path
+            }
         }
         
         # projectsディレクトリの作成
