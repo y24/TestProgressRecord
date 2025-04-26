@@ -194,3 +194,33 @@ def simplify_date(date_str: str) -> str:
         return f"{dt.month}/{dt.day}"
     except ValueError:
         return date_str  # パース失敗時は元の文字列を返す
+
+def get_latest_load_time(data):
+    """
+    各ファイルの最終読込日時から最も遅い日時を取得する
+    
+    Args:
+        data (list): ファイルデータのリスト
+        
+    Returns:
+        str: 最も遅い最終読込日時（YYYY-MM-DD HH:MM:SS形式）
+    """
+    from datetime import datetime
+    
+    # 最終読込日時が存在するファイルのみを抽出
+    valid_times = [
+        item["last_load_time"] 
+        for item in data 
+        if "last_load_time" in item and item["last_load_time"]
+    ]
+    
+    if not valid_times:
+        return ""
+        
+    # 日時文字列をdatetimeオブジェクトに変換して比較
+    latest_time = max(
+        datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S") 
+        for time_str in valid_times
+    )
+    
+    return latest_time.strftime("%Y-%m-%d %H:%M:%S")

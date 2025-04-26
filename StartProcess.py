@@ -1,5 +1,6 @@
 import sys, argparse, os, re, json
 from tqdm import tqdm
+from datetime import datetime
 
 import ReadData
 import MainApp
@@ -82,6 +83,8 @@ def file_processor(file, settings, id):
         if file["temp_dir"] else ""
     )
     result["selector_label"] = make_selector_label(result, id)
+    # 最終読込日時を記録
+    result["last_load_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     return result
 
