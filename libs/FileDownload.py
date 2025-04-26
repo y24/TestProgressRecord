@@ -4,7 +4,6 @@ import tempfile
 import urllib.parse
 import requests
 from typing import List
-from pathlib import Path
 
 def is_sharepoint_url(url: str) -> bool:
     """URLがSharePointのURLかどうかを判定する"""
