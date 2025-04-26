@@ -58,6 +58,9 @@ class CreateProjectApp:
         if self.initial_files:
             for file in self.initial_files:
                 self.add_file_info(file)
+        else:
+            # 初期ファイルがない場合は1つの空の入力欄を追加
+            self.add_file_info()
         
         # グリッドの設定
         self.root.grid_columnconfigure(1, weight=1)
