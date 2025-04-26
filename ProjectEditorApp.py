@@ -232,15 +232,15 @@ class ProjectEditorApp:
                 messagebox.showerror("エラー", f"既存のプロジェクトファイルの読み込みに失敗しました: {str(e)}")
                 return
 
-        # プロジェクトデータの作成
-        project_data = {
+        # JSONファイルに保存するプロジェクトデータ
+        json_project_data = {
             "project_name": project_name,
             "files": files,
-            "excel_path": excel_path,
+            "excel_path": excel_path
         }
 
         # 既存のデータを保持しつつ、projectキーのデータを更新
-        existing_data["project"] = project_data
+        existing_data["project"] = json_project_data
         
         # JSONファイルの保存
         with open(json_path, "w", encoding="utf-8") as f:
@@ -253,10 +253,17 @@ class ProjectEditorApp:
         if self.callback:
             try:
                 # データのバリデーション
-                if not project_data["project_name"]:
+                if not project_name:
                     raise ValueError("プロジェクト名が入力されていません")
+                
+                # コールバック用のデータ（project_pathを含む）
+                callback_data = {
+                    **json_project_data,
+                    "project_path": str(json_path)  # コールバックでのみ渡す
+                }
+                
                 # コールバックでデータを返す
-                self.callback(project_data)
+                self.callback(callback_data)
             except Exception as e:
                 messagebox.showerror("エラー", f"データの保存に失敗しました: {str(e)}")
                 return

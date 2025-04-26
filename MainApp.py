@@ -16,6 +16,7 @@ from libs import AppConfig
 from libs import Dialog
 
 project_data = None
+project_path = None
 
 def _create_row_data(structure: str, values: dict, settings: dict, all_keys: set) -> list:
     """行データを生成する
@@ -735,8 +736,9 @@ def open_project():
 
 def edit_project(on_create:bool=False):
     def on_project_updated(new_project_data):
-        global project_data
+        global project_data, project_path
         try:
+            project_path = new_project_data.pop("project_path", None)  # パスを取り出して削除
             project_data = new_project_data  # グローバル変数を更新
 
             if on_create:
