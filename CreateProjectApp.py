@@ -27,6 +27,16 @@ class CreateProjectApp:
             self.load_project_from_path(initial_json_path)
         
     def create_widgets(self):
+        # メニューバーの作成
+        menubar = tk.Menu(self.root)
+        self.root.config(menu=menubar)
+        
+        # ファイルメニュー
+        file_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="ファイル", menu=file_menu)
+        file_menu.add_command(label="読込", command=self.load_project)
+        file_menu.add_command(label="保存", command=self.save_project)
+        
         # プロジェクト名称
         ttk.Label(self.root, text="プロジェクト名称:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.project_name_entry = ttk.Entry(self.root, width=50)
@@ -49,8 +59,6 @@ class CreateProjectApp:
         button_frame = ttk.Frame(self.root)
         button_frame.grid(row=4, column=0, columnspan=2, pady=20)
         
-        # 読込ボタン
-        ttk.Button(button_frame, text="読込", command=self.load_project).pack(side="left", padx=5)
         # 保存ボタン
         ttk.Button(button_frame, text="保存", command=self.save_project).pack(side="left", padx=5)
         
@@ -72,29 +80,29 @@ class CreateProjectApp:
         
         # ファイル名
         ttk.Label(frame, text="ファイル名:").grid(row=0, column=0, padx=5, pady=2)
-        filename_entry = ttk.Entry(frame, width=30)
+        filename_entry = ttk.Entry(frame, width=40)
         filename_entry.grid(row=0, column=1, padx=5, pady=2)
         if initial_file:
             filename_entry.insert(0, initial_file)
         if file_data:
             filename_entry.insert(0, file_data.get("filename", ""))
         
-        # 識別子
-        ttk.Label(frame, text="識別子:").grid(row=0, column=2, padx=5, pady=2)
-        identifier_entry = ttk.Entry(frame, width=20)
-        identifier_entry.grid(row=0, column=3, padx=5, pady=2)
-        if file_data:
-            identifier_entry.insert(0, file_data.get("identifier", ""))
-        
         # URL
-        ttk.Label(frame, text="URL:").grid(row=0, column=4, padx=5, pady=2)
-        url_entry = ttk.Entry(frame, width=30)
-        url_entry.grid(row=0, column=5, padx=5, pady=2)
+        ttk.Label(frame, text="URL:").grid(row=0, column=2, padx=5, pady=2)
+        url_entry = ttk.Entry(frame, width=40)
+        url_entry.grid(row=0, column=3, padx=5, pady=2)
         if file_data:
             url_entry.insert(0, file_data.get("url", ""))
-        
+
+        # 識別子
+        ttk.Label(frame, text="識別子:").grid(row=0, column=4, padx=5, pady=2)
+        identifier_entry = ttk.Entry(frame, width=20)
+        identifier_entry.grid(row=0, column=5, padx=5, pady=2)
+        if file_data:
+            identifier_entry.insert(0, file_data.get("identifier", ""))
+
         # 削除ボタン
-        ttk.Button(frame, text="削除", command=lambda: frame.destroy()).grid(row=0, column=8, padx=5, pady=2)
+        ttk.Button(frame, text="削除", command=lambda: frame.destroy()).grid(row=0, column=7, padx=5, pady=2)
         
         # エントリを保持
         frame.entries = {
