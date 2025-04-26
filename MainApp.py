@@ -654,7 +654,7 @@ def create_summary_filelist_area(parent):
 def write_to_excel(file_path, table_name):
     # ファイルパス未入力
     if not file_path:
-        Dialog.show_messagebox(root, type="warning", title="Error", message=f"書込先のファイルを選択してください。")
+        Dialog.show_messagebox(root=root, type="warning", title="Error", message=f"書込先のファイルを選択してください。")
         return
 
     # 確認
@@ -670,10 +670,10 @@ def write_to_excel(file_path, table_name):
     try:
         result = WriteData.execute(input_data, file_path, table_name)
     except ValueError as e:
-        Dialog.show_messagebox(root, type="warning", title="データなし", message=e)
+        Dialog.show_messagebox(root=root, type="warning", title="データなし", message=e)
         return
     except PermissionError as e:
-        Dialog.show_messagebox(root, type="error", title="保存失敗", message=e)
+        Dialog.show_messagebox(root=root, type="error", title="保存失敗", message=e)
         return
 
     # 成功したら設定を保存
@@ -697,11 +697,11 @@ def run_file(file_path, exit:bool=False):
             subprocess.run(["xdg-open", file_path])  # Linux/Mac
         # ファイルを開いたあと終了する
         except Exception as e:
-            Dialog.show_messagebox(root, type="error", title="Error", message=f"ファイルを開けませんでした。\n{e}")
+            Dialog.show_messagebox(root=root, type="error", title="Error", message=f"ファイルを開けませんでした。\n{e}")
         if exit:
             sys.exit()
     else:
-        Dialog.show_messagebox(root, type="error", title="Error", message="指定されたファイルが見つかりません")
+        Dialog.show_messagebox(root=root, type="error", title="Error", message="指定されたファイルが見つかりません")
 
 def copy_to_clipboard(data, filename_only=False):
     """クリップボードにデータをコピーする
@@ -977,7 +977,7 @@ def new_process(inputs, on_reload=False, project_path=None):
     sys.exit()
 
 def reload_files():
-    response = Dialog.ask(title="確認", message="最新のデータを集計しますか？")
+    response = Dialog.ask(root=root, title="確認", message=f"最新のデータを集計しますか？\n最終読込日時: {Utility.get_latest_load_time(input_data)}")
     if response == "yes": new_process(inputs=list(input_args), on_reload=True)
 
 def create_global_tab(parent):
