@@ -1089,10 +1089,9 @@ def run(pjdata, pjpath, indata, args):
     errors = [r for r in input_data if "error" in r]
     ers = "\n".join(["  "+ err["file"] for err in errors])
 
-    # 1件もデータがなかった場合は終了
+    # 1件もデータがない場合はメッセージ
     if not len(input_data):
-        Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"1件もデータが抽出できませんでした。終了します。\n\nFile(s):\n{ers}")
-        # sys.exit()
+        Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"データがありません。\nFile > プロジェクト情報設定 から取得元を設定してください。")
 
     root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()
