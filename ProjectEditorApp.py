@@ -41,6 +41,9 @@ class ProjectEditorApp:
         }
         
         self.initial_files = initial_files or []
+        self.project_loaded = False
+        if project_path:
+            self.project_loaded = True
         self.create_widgets()
         
         if project_path:
@@ -86,8 +89,7 @@ class ProjectEditorApp:
         if self.initial_files:
             for file in self.initial_files:
                 self.add_file_info(file)
-        else:
-            # 初期ファイルがない場合は空の入力欄を1つ追加
+        elif not self.project_loaded:
             self.add_file_info()
         
         # グリッドの設定
@@ -146,9 +148,16 @@ class ProjectEditorApp:
             self.write_path_entry.delete(0, tk.END)
             self.write_path_entry.insert(0, project_data.get("excel_path", ""))
             
+            # 既存のファイル行をクリア
+            for widget in self.files_frame.winfo_children():
+                if isinstance(widget, ttk.Frame):
+                    widget.destroy()
+            
             # ファイル情報を設定
             for file_data in project_data.get("files", []):
                 self.add_file_info(file_data=file_data)
+            
+            self.project_loaded = True
             
         except Exception as e:
             messagebox.showerror("エラー", f"プロジェクトファイルの読み込みに失敗しました: {str(e)}")

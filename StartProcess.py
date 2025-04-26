@@ -210,7 +210,11 @@ def start():
     MainApp.run(pjdata=project_data, pjpath=project_path, indata=aggregate_data,  args=inputs)
 
     # 一時ディレクトリの掃除
-    if temp_dirs: TempDir.cleanup_old_temp_dirs("_TEMP_")
+    try:
+        if temp_dirs:
+            TempDir.cleanup_old_temp_dirs("_TEMP_")
+    except NameError:
+        pass
 
 if __name__ == "__main__":
     start()
