@@ -734,8 +734,8 @@ def create_menubar(parent):
     # File
     file_menu = tk.Menu(menubar, tearoff=0)
     file_menu.add_command(label="ファイルを開く", command=load_files)
-    file_menu.add_command(label="ファイルを再読み込み", command=reload_files)
     file_menu.add_separator()
+    file_menu.add_command(label="プロジェクトを再読み込み", command=reload_files)
     file_menu.add_command(label="プロジェクト情報編集", command=create_project)
     file_menu.add_separator()
     file_menu.add_command(label="アプリ設定", command=edit_settings)

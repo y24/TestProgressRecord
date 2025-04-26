@@ -12,6 +12,7 @@ class ProjectEditorApp:
         self.root = tk.Tk()
         self.root.title("ProjectEditor")
         self.root.geometry("1000x400")
+        self.file_saved = False
         
         self.project_data = {
             "project_name": "",
@@ -220,9 +221,19 @@ class ProjectEditorApp:
             json.dump(self.project_data, f, ensure_ascii=False, indent=2)
             
         messagebox.showinfo("成功", f"プロジェクト情報を保存しました: {json_path}")
+        self.file_saved = True
         
     def run(self):
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.mainloop()
+
+    def on_closing(self):
+        if self.file_saved:
+            messagebox.showinfo(
+                "保存完了",
+                "プロジェクトファイルが保存されました。\n設定を反映するには、File > ファイルを再読み込み を実行してください。"
+            )
+        self.root.destroy() 
 
 if __name__ == "__main__":
     # 引数の解析
