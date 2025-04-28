@@ -16,7 +16,7 @@ class ProjectEditorApp:
         if parent is None:
             self.root = tk.Tk()
             self.root.title("プロジェクトの作成")
-            self.root.geometry("900x400")
+            self.root.geometry("1080x400")
         else:
             self.root = tk.Toplevel(parent)
             self.root.withdraw()  # まず非表示
@@ -123,15 +123,23 @@ class ProjectEditorApp:
         if file_data:
             identifier_entry.insert(0, file_data.get("identifier", ""))
 
+        # ファイルタイプ選択
+        file_type_var = tk.StringVar(value="local")  # デフォルトはlocal
+        ttk.Radiobutton(frame, text="ローカル", variable=file_type_var, value="local").grid(row=0, column=3, padx=5, pady=2)
+        ttk.Radiobutton(frame, text="SharePoint", variable=file_type_var, value="sharepoint").grid(row=0, column=4, padx=5, pady=2)
+        if file_data:
+            file_type_var.set(file_data.get("type", "local"))
+
         # ファイルパス/URL
-        ttk.Label(frame, text="ファイルパス/URL:").grid(row=0, column=3, padx=5, pady=2)
-        path_entry = ttk.Entry(frame, width=100)
-        path_entry.grid(row=0, column=4, padx=5, pady=2)
+        ttk.Label(frame, text="パスまたはURL:").grid(row=0, column=5, padx=5, pady=2)
+        path_entry = ttk.Entry(frame, width=80)
+        path_entry.grid(row=0, column=6, padx=5, pady=2)
         if file_data:
             path_entry.insert(0, file_data.get("path", ""))
         
         # エントリを保持
         frame.entries = {
+            "type": file_type_var,
             "identifier": identifier_entry,
             "path": path_entry
         }
@@ -220,10 +228,11 @@ class ProjectEditorApp:
         for frame in self.files_frame.winfo_children():
             if isinstance(frame, ttk.Frame):
                 file_info = {
+                    "type": frame.entries["type"].get(),
                     "identifier": frame.entries["identifier"].get().strip(),
                     "path": frame.entries["path"].get().strip()
                 }
-                # ファイル名とファイルパスが必須
+                # ファイルパスが必須
                 if file_info["path"]:
                     files.append(file_info)
                 else:
@@ -337,6 +346,7 @@ class ProjectEditorApp:
         for frame in self.files_frame.winfo_children():
             if isinstance(frame, ttk.Frame):
                 file_info = {
+                    "type": frame.entries["type"].get(),
                     "identifier": frame.entries["identifier"].get().strip(),
                     "path": frame.entries["path"].get().strip()
                 }
