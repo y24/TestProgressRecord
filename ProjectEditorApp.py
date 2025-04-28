@@ -52,7 +52,17 @@ class ProjectEditorApp:
         self.create_widgets()
         
         if project_path:
+            # プロジェクトファイルを開いている場合はロード
             self.load_project_from_path(project_path)
+        elif aggregate_data:
+            # ファイル指定で開いている(名称未設定)場合は集計データからファイル情報を追加
+            for data in aggregate_data:
+                if "filepath" in data:
+                    self.add_file_info(file_data={
+                        "type": "local",
+                        "identifier": data.get("file", ""),
+                        "path": data["filepath"]
+                    })
         
     def create_widgets(self):
         # メニューバーの作成
