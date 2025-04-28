@@ -177,7 +177,7 @@ def start():
     # ファイルの拡張子を取得
     ext = Utility.get_ext_from_path(inputs[0])
     if ext == "json":
-        # JSONファイルから集計データを取得
+        # プロジェクトファイル(jsonファイル)の場合
         try:
             with open(inputs[0], "r", encoding="utf-8") as f:
                 json_data = json.load(f)
@@ -187,22 +187,41 @@ def start():
                 project_data = json_data["project"]
                 project_path = inputs[0]
 
-            # aggregate_dataキーがある場合はそのデータを使用
+            # 記録済みのデータ（aggregate_data）がある場合はそのデータを使用
             if "aggregate_data" in json_data:
                 aggregate_data = json_data["aggregate_data"]
             else:
-                # キーがない場合はファイルをダウンロードして集計
-                files, temp_dirs = FileDownload.process_json_file(inputs[0])
-                # xlsxファイルのみフィルタ
-                files = filter_xlsx_files(files)
-                # 全ファイルの集計処理
-                aggregate_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))]
+                # ファイルの種類に応じて処理を分岐
+                local_files = []
+                sharepoint_files = []
+                
+                # プロジェクトデータからファイル情報を取得
+                if "project" in json_data and "files" in json_data["project"]:
+                    for file in json_data["project"]["files"]:
+                        if file.get("type") == "local":
+                            local_files.append(file.get("path"))
+                        elif file.get("type") == "sharepoint":
+                            sharepoint_files.append(file.get("path"))
+                
+                # localファイルの処理
+                if local_files:
+                    files, temp_dirs = get_xlsx_paths(local_files)
+                    aggregate_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))]
+                
+                # sharepointファイルの処理
+                if sharepoint_files:
+                    files, temp_dirs = FileDownload.process_json_file(inputs[0])
+                    # xlsxファイルのみフィルタ
+                    files = filter_xlsx_files(files)
+                    # 全ファイルの集計処理
+                    aggregate_data.extend([file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))])
 
         except Exception as e:
             Dialog.show_messagebox(root=None, type="error", title="ファイル読込エラー", message=f"{str(e)}")
+            # プロジェクトファイルの読込に失敗した場合はデータ0件とする
             aggregate_data = []
     else:
-        # xlsx/zipファイルの場合はデータ集計
+        # xlsx/zipファイルを指定した場合
         files, temp_dirs = get_xlsx_paths(inputs)
         # 全ファイルの集計処理
         aggregate_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))]
