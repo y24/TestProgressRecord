@@ -57,7 +57,7 @@ class ProjectEditorApp:
             for data in aggregate_data:
                 if "filepath" in data:
                     self.add_file_info(file_data={
-                        "type": None,
+                        "type": "local",
                         "identifier": data.get("file", ""),
                         "path": data["filepath"]
                     })
