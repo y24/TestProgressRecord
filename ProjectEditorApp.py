@@ -138,7 +138,7 @@ class ProjectEditorApp:
         rb_sharepoint = ttk.Radiobutton(frame, text="SharePoint", variable=file_type_var, value="sharepoint")
         rb_sharepoint.grid(row=0, column=4, padx=(2,5), pady=0)
 
-        # ファイルタイプの初期値をセット（ラジオボタン作成後！）
+        # ファイルタイプの初期値をセット
         if file_data and "type" in file_data:
             file_type_var.set(file_data["type"])
         else:
