@@ -68,7 +68,7 @@ class ProjectEditorApp:
         self.project_name_entry.grid(row=0, column=1, padx=5, pady=5, sticky="w")
         
         # ファイル情報フレーム
-        self.files_frame = ttk.LabelFrame(self.root, text="取得元URL")
+        self.files_frame = ttk.LabelFrame(self.root, text="取得元ファイルパス/URL")
         self.files_frame.grid(row=1, column=0, columnspan=3, padx=5, pady=5, sticky="nsew")
         
         # ファイル情報追加ボタン
@@ -123,17 +123,17 @@ class ProjectEditorApp:
         if file_data:
             identifier_entry.insert(0, file_data.get("identifier", ""))
 
-        # URL
-        ttk.Label(frame, text="URL:").grid(row=0, column=3, padx=5, pady=2)
-        url_entry = ttk.Entry(frame, width=100)
-        url_entry.grid(row=0, column=4, padx=5, pady=2)
+        # ファイルパス/URL
+        ttk.Label(frame, text="ファイルパス/URL:").grid(row=0, column=3, padx=5, pady=2)
+        path_entry = ttk.Entry(frame, width=100)
+        path_entry.grid(row=0, column=4, padx=5, pady=2)
         if file_data:
-            url_entry.insert(0, file_data.get("url", ""))
+            path_entry.insert(0, file_data.get("path", ""))
         
         # エントリを保持
         frame.entries = {
             "identifier": identifier_entry,
-            "url": url_entry
+            "path": path_entry
         }
         
     def select_excel_file(self):
@@ -221,10 +221,10 @@ class ProjectEditorApp:
             if isinstance(frame, ttk.Frame):
                 file_info = {
                     "identifier": frame.entries["identifier"].get().strip(),
-                    "url": frame.entries["url"].get().strip()
+                    "path": frame.entries["path"].get().strip()
                 }
-                # ファイル名とURLが必須
-                if file_info["url"]:
+                # ファイル名とファイルパスが必須
+                if file_info["path"]:
                     files.append(file_info)
                 else:
                     frames_to_remove.append(frame)
@@ -338,9 +338,9 @@ class ProjectEditorApp:
             if isinstance(frame, ttk.Frame):
                 file_info = {
                     "identifier": frame.entries["identifier"].get().strip(),
-                    "url": frame.entries["url"].get().strip()
+                    "path": frame.entries["path"].get().strip()
                 }
-                if file_info["url"]:  # URLが入力されている場合のみ追加
+                if file_info["path"]:  # ファイルパスが入力されている場合のみ追加
                     files.append(file_info)
         return files
 
