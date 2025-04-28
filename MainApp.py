@@ -736,12 +736,14 @@ def open_project():
     if project_path: new_process(inputs=[project_path])
 
 def edit_project(after_save_callback=None):
+    """プロジェクト設定を編集する"""
     def on_project_updated(new_project_data):
         global project_data, project_path
         try:
             project_path = new_project_data.pop("project_path", None)  # パスを取り出して削除
             project_data = new_project_data  # グローバル変数を更新
 
+            # コールバックがあれば実行
             if after_save_callback:
                 after_save_callback()
 
@@ -761,7 +763,7 @@ def edit_project(after_save_callback=None):
         parent=root,
         callback=on_project_updated,
         project_path=project_path,
-        aggregate_data=input_data  # aggregate_dataを渡す
+        aggregate_data=input_data
     )
 
 def save_project():

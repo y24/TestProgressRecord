@@ -306,7 +306,7 @@ class ProjectEditorApp:
         # 既存のデータを保持しつつ、projectキーのデータを更新
         existing_data["project"] = json_project_data
         
-        # aggregate_dataが存在する場合は保存
+        # 親ウインドウの集計データが渡されている場合は一緒に保存
         if self.aggregate_data is not None:
             existing_data["aggregate_data"] = self.aggregate_data
         
