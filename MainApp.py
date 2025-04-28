@@ -745,9 +745,8 @@ def edit_project(after_save_callback=None):
             if after_save_callback:
                 after_save_callback()
 
-            # タイトルを更新
-            project_name = project_data.get("project_name", "名称未設定")
-            root.title(f"TestTraQ - {project_name}")
+            # ウィンドウタイトルを更新
+            update_window_title(root)
         except Exception as e:
             Dialog.show_messagebox(
                 root=root,
@@ -838,7 +837,7 @@ def create_input_area(parent, settings):
     ttk.Button(submit_frame, text="CSV保存", command=lambda: save_to_csv(WriteData.convert_to_2d_array(data=input_data, settings=settings), f'進捗集計_{Utility.get_today_str()}')).pack(side=tk.LEFT, padx=2, pady=(0,2))
     ttk.Button(submit_frame, text="クリップボードにコピー", command=lambda: copy_to_clipboard(WriteData.convert_to_2d_array(data=input_data, settings=settings)), width=22).pack(side=tk.LEFT, padx=2, pady=(0,2))
 
-def update_info_label(data, count_label, last_load_time_label, detail=True):
+def update_info_label(data, count_label, last_load_time_label=None, detail=True):
     if len(data) == 0 or"error" in data:
         # データなしまたはエラー時
         all = None
@@ -863,12 +862,14 @@ def update_info_label(data, count_label, last_load_time_label, detail=True):
     # 消化率テキスト
     filled_rate_text = f'消化率: {Utility.meke_rate_text(filled, available)} [{filled or "-"}/{available or "-"}]'
 
-    # 読込日時
-    last_load_time_text = f'読込日時: {Utility.get_latest_load_time(input_data)}'
-
-    # 表示を更新
+    # 集計表示を更新
     count_label.config(text=f'{count_text}  |  {completed_rate_text}  |  {filled_rate_text}')
-    last_load_time_label.config(text=last_load_time_text)
+
+    # 読込日時
+    if last_load_time_label:
+        last_load_time_text = f'読込日時: {Utility.get_latest_load_time(input_data)}'
+        # 読込日時を更新
+        last_load_time_label.config(text=last_load_time_text)
 
 def update_bar_chart(data, incompleted_count, ax, canvas, show_label=True):
     # 表示順を固定
@@ -1065,12 +1066,8 @@ def create_summary_tab(parent):
     total_count_label = ttk.Label(total_frame, anchor="w")
     total_count_label.pack(fill=tk.X, padx=20)
 
-    # 最終読込日時
-    last_load_time_label = ttk.Label(total_frame, anchor="w")
-    last_load_time_label.pack(fill=tk.X, padx=20)
-
     # テストケース数、完了率を更新
-    update_info_label(data=Utility.sum_values(filtered_data, "stats"), count_label=total_count_label, last_load_time_label=last_load_time_label, detail=True)
+    update_info_label(data=Utility.sum_values(filtered_data, "stats"), count_label=total_count_label, detail=True)
 
     # ファイル別データ表示部
     create_summary_filelist_area(parent=parent)
@@ -1111,6 +1108,15 @@ def create_byfile_tab(parent):
         file_selector.current(0)
         update_byfile_tab(selected_file=input_data[0]['selector_label'], count_label=file_count_label, last_load_time_label=file_last_load_time_label, ax=file_ax, canvas=file_canvas, notebook=notebook)
 
+def update_window_title(root):
+    global project_data
+    # プロジェクト名を取得（未設定の場合は"名称未設定"）
+    project_name = project_data.get("project_name", "名称未設定")
+    # 読込日時を取得
+    last_load_time = f" (Updated: {Utility.get_latest_load_time(input_data)})"
+    # ウィンドウタイトルを更新
+    root.title(f"TestTraQ - {project_name}{last_load_time}")
+
 def run(pjdata, pjpath, indata, args, on_reload=False):
     global root, input_data, settings, input_args, project_data, project_path
     
@@ -1126,9 +1132,8 @@ def run(pjdata, pjpath, indata, args, on_reload=False):
 
     # 親ウインドウ生成
     root = tk.Tk()
-    # プロジェクト名を取得（未設定の場合は"名称未設定"）
-    project_name = project_data.get("project_name", "名称未設定")
-    root.title(f"TestTraQ - {project_name}")
+    # ウィンドウタイトルを更新
+    update_window_title(root)
     # ウインドウ表示位置を復元
     root.geometry(settings["app"]["window_position"])
 
