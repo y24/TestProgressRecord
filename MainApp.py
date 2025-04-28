@@ -1119,6 +1119,47 @@ def update_window_title(root):
     # ウィンドウタイトルを更新
     root.title(f"TestTraQ - {project_name}{last_load_time}")
 
+def _needs_reload(input_data):
+    """再集計が必要かどうかを判定する
+
+    Args:
+        input_data: 集計データ
+
+    Returns:
+        bool: 再集計が必要な場合はTrue
+    """
+    for data in input_data:
+        if "last_loaded" in data and "last_updated" in data:
+            last_loaded = datetime.strptime(data["last_loaded"], "%Y-%m-%d %H:%M:%S")
+            last_updated = datetime.strptime(data["last_updated"], "%Y-%m-%d %H:%M:%S")
+            if last_updated > last_loaded:
+                return True
+    return False
+
+def _update_file_timestamps(input_data):
+    """input_dataの各ファイルの更新日時をチェックして更新する
+    sourceがlocalのファイルのみ更新日時をチェックする
+
+    Args:
+        input_data: 集計データ
+
+    Returns:
+        list: 更新された集計データ
+    """
+    updated_data = []
+    for data in input_data:
+        if "filepath" in data and data.get("source") == "local":
+            filepath = data["filepath"]
+            if os.path.exists(filepath):
+                # ファイルの最終更新日時を取得
+                last_modified = datetime.fromtimestamp(os.path.getmtime(filepath))
+                # 文字列形式に変換
+                last_modified_str = last_modified.strftime("%Y-%m-%d %H:%M:%S")
+                # 更新日時を更新
+                data["last_updated"] = last_modified_str
+        updated_data.append(data)
+    return updated_data
+
 def run(pjdata, pjpath, indata, args, on_reload=False):
     global root, input_data, settings, input_args, project_data, project_path
     
@@ -1126,6 +1167,10 @@ def run(pjdata, pjpath, indata, args, on_reload=False):
     project_data = pjdata
     project_path = pjpath
     input_data = indata
+
+    # プロジェクトファイルを開いた場合、ファイルの更新日時をチェック
+    if pjpath:
+        input_data = _update_file_timestamps(input_data)
 
     # 起動時に指定したファイルパス（再読込用）
     input_args = args
@@ -1158,10 +1203,12 @@ def run(pjdata, pjpath, indata, args, on_reload=False):
         Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"以下のファイルはデータが抽出できませんでした。\n\nFile(s):\n{ers}")
 
     if len(input_data):
-        # プロジェクトファイルを読込時、初回のみ再集計の確認を表示
-        if pjpath and not on_reload: reload_files()
+        # プロジェクトファイルを読込時、初回のみ再集計を促す
+        if pjpath and not on_reload and _needs_reload(input_data):
+            reload_files()
         # 再集計後にプロジェクトを保存
-        if pjpath and on_reload: save_project()
+        if pjpath and on_reload:
+            save_project()
     else:
         # 1件もデータがない場合はメッセージ
         Dialog.show_messagebox(root, type="warning", title="抽出エラー", message=f"データがありません。以下の方法で設定を行ってください。\n・File > ファイルを読み込む からファイルを開いて保存\n・File > プロジェクト情報設定 から取得元URLを設定")
