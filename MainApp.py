@@ -1042,7 +1042,9 @@ def create_summary_tab(parent):
     # プロジェクト名称
     project_name = project_data.get("project_name", "名称未設定")
     project_name_label = ttk.Label(total_frame, text=project_name, anchor="w")
-    project_name_label.pack(fill=tk.X, padx=20)    
+    project_name_label.pack(fill=tk.X, padx=20)
+    project_name_label.config(cursor="hand2", font=("Meiryo UI", 9, "underline"))
+    project_name_label.bind("<Button-1>", lambda e: edit_project())
 
     # グラフ表示(全体)
     total_fig, total_ax = plt.subplots(figsize=(8, 0.25))
