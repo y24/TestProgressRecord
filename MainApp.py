@@ -805,9 +805,9 @@ def create_menubar(parent):
     parent.config(menu=menubar)
     # File
     file_menu = tk.Menu(menubar, tearoff=0)
-    file_menu.add_command(label="プロジェクトを開く", command=open_project, accelerator="Ctrl+O")
+    file_menu.add_command(label="開く", command=open_project, accelerator="Ctrl+O")
     file_menu.add_command(label="保存", command=save_project, accelerator="Ctrl+S")
-    file_menu.add_command(label="ファイルを読み込む", command=load_files, accelerator="Ctrl+L")
+    file_menu.add_command(label="読込ファイルの再選択", command=load_files, accelerator="Ctrl+L")
     file_menu.add_separator()
     file_menu.add_command(label="プロジェクト設定", command=edit_project, accelerator="Ctrl+E")
     file_menu.add_command(label="環境設定", command=edit_settings)
