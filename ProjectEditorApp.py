@@ -13,21 +13,23 @@ class ProjectEditorApp:
                  aggregate_data: List[Dict[str, Any]] = None):
         self.parent = parent
         self.callback = callback
+        window_title = "プロジェクト設定"
+        window_size = "1040x400"
         if parent is None:
             self.root = tk.Tk()
-            self.root.title("プロジェクトの作成")
-            self.root.geometry("1040x400")
+            self.root.title(window_title)
+            self.root.geometry(window_size)
         else:
             self.root = tk.Toplevel(parent)
             self.root.withdraw()  # まず非表示
-            self.root.title("プロジェクト情報編集")
-            self.root.geometry("1040x400")
+            self.root.title(window_title)
+            self.root.geometry(window_size)
             self.root.transient(parent)  # 親ウィンドウに対してモーダルに
             self.root.grab_set()  # フォーカスを保持
             self.root.update_idletasks()
             parent_x = parent.winfo_x()
             parent_y = parent.winfo_y()
-            self.root.geometry(f"1040x400+{parent_x+50}+{parent_y+50}")
+            self.root.geometry(f"{window_size}+{parent_x+50}+{parent_y+50}")
             self.root.deiconify()  # ここで表示
         
         self.file_saved = False
