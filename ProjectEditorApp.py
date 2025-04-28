@@ -9,7 +9,7 @@ import re
 
 class ProjectEditorApp:
     def __init__(self, parent=None, callback: Callable[[Dict[str, Any]], None] = None, 
-                 initial_files: List[str] = None, project_path: str = None,
+                 initial_files: List[Dict[str, Any]] = None, project_path: str = None,
                  aggregate_data: List[Dict[str, Any]] = None):
         self.parent = parent
         self.callback = callback
@@ -57,7 +57,7 @@ class ProjectEditorApp:
             for data in aggregate_data:
                 if "filepath" in data:
                     self.add_file_info(file_data={
-                        "type": "local",
+                        "type": None,
                         "identifier": data.get("file", ""),
                         "path": data["filepath"]
                     })
@@ -117,7 +117,7 @@ class ProjectEditorApp:
         self.root.grid_columnconfigure(1, weight=1)
         self.root.grid_rowconfigure(1, weight=1)
         
-    def add_file_info(self, initial_file: str = None, file_data: Dict[str, Any] = None):
+    def add_file_info(self, file_data: Dict[str, Any] = None):
         frame = ttk.Frame(self.files_frame)
         frame.pack(fill="x", padx=5, pady=5)
         
@@ -137,12 +137,6 @@ class ProjectEditorApp:
         rb_local.grid(row=0, column=3, padx=(5,2), pady=0)
         rb_sharepoint = ttk.Radiobutton(frame, text="SharePoint", variable=file_type_var, value="sharepoint")
         rb_sharepoint.grid(row=0, column=4, padx=(2,5), pady=0)
-
-        # ファイルタイプの初期値をセット
-        if file_data and "type" in file_data:
-            file_type_var.set(file_data["type"])
-        else:
-            file_type_var.set("local")
 
         # ファイルパス/URL
         ttk.Label(frame, text="パスまたはURL:").grid(row=0, column=5, padx=2, pady=2)
@@ -167,9 +161,17 @@ class ProjectEditorApp:
             else:
                 file_button.grid_remove()
 
+        # ファイル選択ボタン
         file_button = ttk.Button(frame, text="...", width=3, command=select_file)
         file_button.grid(row=0, column=7, padx=2, pady=2)
-        
+
+        # ファイルタイプの初期値をセット
+        if file_data and "type" in file_data:
+            file_type_var.set(file_data["type"])
+        else:
+            # 初期値はローカル
+            file_type_var.set("local")
+
         # 初期表示時のボタンの表示/非表示を設定
         update_file_button_visibility()
         
@@ -227,10 +229,6 @@ class ProjectEditorApp:
             messagebox.showerror("エラー", f"プロジェクトファイルの読み込みに失敗しました: {str(e)}")
             
     def load_project(self):
-        # 既存のファイル情報をクリア
-        for widget in self.files_frame.winfo_children():
-            widget.destroy()
-            
         # JSONファイルを選択
         file_path = filedialog.askopenfilename(
             title="プロジェクトファイルを選択",
@@ -238,9 +236,14 @@ class ProjectEditorApp:
             initialdir="projects"
         )
         
-        if not file_path:
-            return
-            
+        # キャンセル時は中断
+        if not file_path: return
+
+        # 既存のファイル情報をクリア
+        for widget in self.files_frame.winfo_children():
+            widget.destroy()
+
+        # プロジェクトファイルを読み込む
         self.load_project_from_path(file_path)
             
     def sanitize_filename(self, filename: str) -> str:
