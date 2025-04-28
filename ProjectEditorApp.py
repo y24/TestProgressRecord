@@ -47,8 +47,6 @@ class ProjectEditorApp:
         
         self.initial_files = initial_files or []
         self.project_loaded = False
-        if project_path:
-            self.project_loaded = True
         self.create_widgets()
         
         if project_path:
@@ -94,7 +92,7 @@ class ProjectEditorApp:
         ttk.Label(self.output_frame, text="書込先:").grid(row=0, column=0, sticky=tk.W, padx=2, pady=3)
         self.write_path_entry = ttk.Entry(self.output_frame, width=80)
         self.write_path_entry.grid(row=0, column=1)
-        ttk.Button(self.output_frame, text="...", width=3, command=self.select_excel_file).grid(row=0, column=2, padx=2, pady=3)
+        ttk.Button(self.output_frame, text="...", width=3, command=self.select_excel_file).grid(row=0, column=2, padx=3, pady=3)
 
         # データシート名
         ttk.Label(self.output_frame, text="データシート名:").grid(row=0, column=3, padx=(4,2))
@@ -114,8 +112,6 @@ class ProjectEditorApp:
         if self.initial_files:
             for file in self.initial_files:
                 self.add_file_info(file)
-        elif not self.project_loaded:
-            self.add_file_info()
         
         # グリッドの設定
         self.root.grid_columnconfigure(1, weight=1)
@@ -129,23 +125,29 @@ class ProjectEditorApp:
         ttk.Button(frame, text="×", width=2, command=lambda: frame.destroy()).grid(row=0, column=0, padx=5, pady=2)
 
         # 識別子
-        ttk.Label(frame, text="識別子:").grid(row=0, column=1, padx=5, pady=2)
+        ttk.Label(frame, text="識別子:").grid(row=0, column=1, padx=4, pady=2)
         identifier_entry = ttk.Entry(frame, width=20)
-        identifier_entry.grid(row=0, column=2, padx=5, pady=2)
+        identifier_entry.grid(row=0, column=2, padx=2, pady=2)
         if file_data:
             identifier_entry.insert(0, file_data.get("identifier", ""))
 
         # ファイルタイプ選択
-        file_type_var = tk.StringVar(value="local")  # デフォルトはlocal
-        ttk.Radiobutton(frame, text="ローカル", variable=file_type_var, value="local").grid(row=0, column=3, padx=5, pady=2)
-        ttk.Radiobutton(frame, text="SharePoint", variable=file_type_var, value="sharepoint").grid(row=0, column=4, padx=5, pady=2)
-        if file_data:
-            file_type_var.set(file_data.get("type", "local"))
+        file_type_var = tk.StringVar()  # 初期値は空でOK
+        rb_local = ttk.Radiobutton(frame, text="ローカル", variable=file_type_var, value="local")
+        rb_local.grid(row=0, column=3, padx=(5,2), pady=0)
+        rb_sharepoint = ttk.Radiobutton(frame, text="SharePoint", variable=file_type_var, value="sharepoint")
+        rb_sharepoint.grid(row=0, column=4, padx=(2,5), pady=0)
+
+        # ファイルタイプの初期値をセット（ラジオボタン作成後！）
+        if file_data and "type" in file_data:
+            file_type_var.set(file_data["type"])
+        else:
+            file_type_var.set("local")
 
         # ファイルパス/URL
-        ttk.Label(frame, text="パスまたはURL:").grid(row=0, column=5, padx=5, pady=2)
+        ttk.Label(frame, text="パスまたはURL:").grid(row=0, column=5, padx=2, pady=2)
         path_entry = ttk.Entry(frame, width=80)
-        path_entry.grid(row=0, column=6, padx=5, pady=2)
+        path_entry.grid(row=0, column=6, padx=2, pady=2)
         if file_data:
             path_entry.insert(0, file_data.get("path", ""))
 
@@ -166,7 +168,7 @@ class ProjectEditorApp:
                 file_button.grid_remove()
 
         file_button = ttk.Button(frame, text="...", width=3, command=select_file)
-        file_button.grid(row=0, column=7, padx=5, pady=2)
+        file_button.grid(row=0, column=7, padx=2, pady=2)
         
         # 初期表示時のボタンの表示/非表示を設定
         update_file_button_visibility()
