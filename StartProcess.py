@@ -87,6 +87,8 @@ def file_processor(file, settings, id):
     result["last_loaded"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     # ファイルの更新日時を記録
     result["last_updated"] = datetime.fromtimestamp(os.path.getmtime(file["fullpath"])).strftime("%Y-%m-%d %H:%M:%S")
+    # ファイルのソースを記録
+    result["source"] = "sharepoint" if file.get("type") == "sharepoint" else "local"
     
     return result
 
