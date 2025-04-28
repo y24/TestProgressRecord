@@ -16,7 +16,7 @@ class ProjectEditorApp:
         if parent is None:
             self.root = tk.Tk()
             self.root.title("プロジェクトの作成")
-            self.root.geometry("1080x400")
+            self.root.geometry("1040x400")
         else:
             self.root = tk.Toplevel(parent)
             self.root.withdraw()  # まず非表示
@@ -136,6 +136,31 @@ class ProjectEditorApp:
         path_entry.grid(row=0, column=6, padx=5, pady=2)
         if file_data:
             path_entry.insert(0, file_data.get("path", ""))
+
+        # ファイル選択ボタン
+        def select_file():
+            file_path = filedialog.askopenfilename(
+                title="Excelファイルを選択",
+                filetypes=[("Excel files", "*.xlsx")]
+            )
+            if file_path:
+                path_entry.delete(0, tk.END)
+                path_entry.insert(0, file_path)
+
+        def update_file_button_visibility(*args):
+            if file_type_var.get() == "local":
+                file_button.grid()
+            else:
+                file_button.grid_remove()
+
+        file_button = ttk.Button(frame, text="...", width=3, command=select_file)
+        file_button.grid(row=0, column=7, padx=5, pady=2)
+        
+        # 初期表示時のボタンの表示/非表示を設定
+        update_file_button_visibility()
+        
+        # ラジオボタンの選択が変更された時のイベントハンドラを設定
+        file_type_var.trace_add("write", update_file_button_visibility)
         
         # エントリを保持
         frame.entries = {
