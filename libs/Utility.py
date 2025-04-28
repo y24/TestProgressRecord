@@ -209,9 +209,9 @@ def get_latest_load_time(data):
     
     # 最終読込日時が存在するファイルのみを抽出
     valid_times = [
-        item["last_load_time"] 
+        item["last_loaded"] 
         for item in data 
-        if "last_load_time" in item and item["last_load_time"]
+        if "last_loaded" in item and item["last_loaded"]
     ]
     
     if not valid_times:

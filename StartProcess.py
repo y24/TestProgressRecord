@@ -84,7 +84,9 @@ def file_processor(file, settings, id):
     )
     result["selector_label"] = make_selector_label(result, id)
     # 最終読込日時を記録
-    result["last_load_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    result["last_loaded"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # ファイルの更新日時を記録
+    result["last_updated"] = datetime.fromtimestamp(os.path.getmtime(file["fullpath"])).strftime("%Y-%m-%d %H:%M:%S")
     
     return result
 
