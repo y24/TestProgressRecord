@@ -748,8 +748,8 @@ def edit_project(after_save_callback=None):
             if after_save_callback:
                 after_save_callback()
 
-            # 編集中フラグON
-            change_flg = True
+            # 編集中フラグOFF（編集画面を閉じるときに保存している）
+            change_flg = False
 
             # ウィンドウタイトルを更新
             update_window_title(root)

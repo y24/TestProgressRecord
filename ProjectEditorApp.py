@@ -105,7 +105,7 @@ class ProjectEditorApp:
         button_frame.grid(row=4, column=0, columnspan=2, pady=20)
         
         # 保存ボタン
-        ttk.Button(button_frame, text="OK", command=self.save_project).pack(side="left", padx=5)
+        ttk.Button(button_frame, text="保存", command=self.save_project).pack(side="left", padx=5)
         ttk.Button(button_frame, text="キャンセル", command=self.root.destroy).pack(side="left", padx=5)
         
         # 初期ファイルがある場合は追加
@@ -297,7 +297,7 @@ class ProjectEditorApp:
         # ファイル名のサニタイズ
         safe_project_name = self.sanitize_filename(project_name)
         
-        # JSONファイルの保存
+        # JSONファイル名
         json_path = projects_dir / f"{safe_project_name}.json"
         
         # 既存のJSONファイルがある場合は読み込む
@@ -329,7 +329,7 @@ class ProjectEditorApp:
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(existing_data, f, ensure_ascii=False, indent=2)
             
-        messagebox.showinfo("成功", f"保存しました: {safe_project_name}")
+        messagebox.showinfo("成功", f"プロジェクトファイルを保存しました。\n{safe_project_name}.json")
         self.file_saved = True
         self.current_project_name = project_name  # 現在のプロジェクト名を更新
 
