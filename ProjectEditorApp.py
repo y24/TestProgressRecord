@@ -33,7 +33,7 @@ class ProjectEditorApp:
             self.root.deiconify()  # ここで表示
         
         self.file_saved = False
-        self.current_project_name = ""
+        self.project_path = project_path
         self.aggregate_data = aggregate_data
         
         self.project_data = {
@@ -204,7 +204,6 @@ class ProjectEditorApp:
             # プロジェクト名を設定
             self.project_name_entry.delete(0, tk.END)
             self.project_name_entry.insert(0, project_data.get("project_name", ""))
-            self.current_project_name = project_data.get("project_name", "")  # 現在のプロジェクト名を保存
             
             # Excelファイルパスを設定
             self.write_path_entry.delete(0, tk.END)
@@ -259,11 +258,6 @@ class ProjectEditorApp:
             messagebox.showerror("エラー", "プロジェクト名称を入力してください")
             return
             
-        # プロジェクト名が変更された場合の確認
-        if self.current_project_name and project_name != self.current_project_name:
-            if not messagebox.askokcancel("確認", "プロジェクト名が変更されています。\n新たにプロジェクトファイルが作成されますが、よろしいですか？"):
-                return
-            
         # ファイル情報の取得と空の行の削除
         files = []
         frames_to_remove = []
@@ -290,15 +284,17 @@ class ProjectEditorApp:
         write_path = self.write_path_entry.get().strip()
         data_sheet = self.data_sheet_entry.get().strip()
 
-        # projectsディレクトリの作成
-        projects_dir = Path("projects")
-        projects_dir.mkdir(exist_ok=True)
-        
-        # ファイル名のサニタイズ
-        safe_project_name = self.sanitize_filename(project_name)
-        
-        # JSONファイル名
-        json_path = projects_dir / f"{safe_project_name}.json"
+        # 保存先のパスを決定
+        if self.project_path:
+            json_path = Path(self.project_path)
+        else:
+            # projectsディレクトリの作成
+            projects_dir = Path("projects")
+            projects_dir.mkdir(exist_ok=True)
+            
+            # ファイル名のサニタイズ
+            safe_project_name = self.sanitize_filename(project_name)
+            json_path = projects_dir / f"{safe_project_name}.json"
         
         # 既存のJSONファイルがある場合は読み込む
         existing_data = {}
@@ -329,9 +325,8 @@ class ProjectEditorApp:
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(existing_data, f, ensure_ascii=False, indent=2)
             
-        messagebox.showinfo("成功", f"プロジェクトファイルを保存しました。\n{safe_project_name}.json")
+        messagebox.showinfo("成功", f"プロジェクトファイルを保存しました。\n{json_path.name}")
         self.file_saved = True
-        self.current_project_name = project_name  # 現在のプロジェクト名を更新
 
         if self.callback:
             try:
