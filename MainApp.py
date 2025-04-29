@@ -739,7 +739,7 @@ def open_project():
 def edit_project(after_save_callback=None):
     """プロジェクト設定を編集する"""
     def on_project_updated(new_project_data):
-        global project_data, project_path
+        global project_data, project_path, change_flg
         try:
             project_path = new_project_data.pop("project_path", None)  # パスを取り出して削除
             project_data = new_project_data  # グローバル変数を更新
@@ -748,8 +748,12 @@ def edit_project(after_save_callback=None):
             if after_save_callback:
                 after_save_callback()
 
+            # 編集中フラグON
+            change_flg = True
+
             # ウィンドウタイトルを更新
             update_window_title(root)
+
         except Exception as e:
             Dialog.show_messagebox(
                 root=root,
@@ -768,7 +772,7 @@ def edit_project(after_save_callback=None):
     )
 
 def save_project():
-    global project_data, project_path
+    global project_data, project_path, change_flg
     """現在のinput_dataをJSONファイルに保存する"""
     
     # プロジェクトファイルが開かれていない場合は新規作成
@@ -796,6 +800,12 @@ def save_project():
         # JSONファイルに保存
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(existing_data, f, ensure_ascii=False, indent=2)
+
+        # 編集中フラグOFF
+        change_flg = False
+
+        # ウィンドウタイトルを更新
+        update_window_title(root)
        
     except Exception as e:
         # エラーメッセージを表示
@@ -1113,11 +1123,14 @@ def create_byfile_tab(parent):
         update_byfile_tab(selected_file=input_data[0]['selector_label'], count_label=file_count_label, last_load_time_label=file_last_load_time_label, ax=file_ax, canvas=file_canvas, notebook=notebook)
 
 def update_window_title(root):
-    global project_data
-    # プロジェクト名を取得（未設定の場合は"名称未設定"）
-    project_name = project_data.get("project_name", "名称未設定")
+    global project_data, change_flg
+    # プロジェクト名（未設定の場合は"名称未設定"）
+    title = project_data.get('project_name', '名称未設定')
+    # 編集中フラグがONの場合は"*"を表示
+    if change_flg:
+        title = f"* {title}"
     # ウィンドウタイトルを更新
-    root.title(f"TestTraQ - {project_name}")
+    root.title(f"TestTraQ - {title}")
 
 def _needs_reload(input_data):
     """再集計が必要かどうかを判定する
@@ -1162,14 +1175,16 @@ def _update_file_timestamps(input_data):
 
 def run(pjdata, pjpath, indata, args, on_reload=False, on_change=False):
     global root, input_data, settings, input_args, project_data, project_path, change_flg
-    
-    # 編集中フラグ
-    change_flg = on_change
 
-    # 読込データ
+    # データの初期化
     project_data = pjdata
     project_path = pjpath
     input_data = indata
+
+    # 編集中フラグの初期化
+    change_flg = on_change
+    # プロジェクトファイル未保存かつファイルがある場合は編集中フラグON
+    if not pjpath and len(input_data): change_flg = True
 
     # プロジェクトファイルを開いた場合、各ファイルの更新日時を一時的に最新化（編集中フラグは変更しない）
     if pjpath:
