@@ -736,6 +736,14 @@ def open_project():
     project_path = Dialog.select_file(("JSONファイル", "*.json"))
     if project_path: new_process(inputs=[project_path], on_reload=False, on_change=False)
 
+def update_labels():
+    """プロジェクト情報に関連するラベルを更新する"""
+    # プロジェクト名の更新
+    project_name = project_data.get("project_name", "名称未設定")
+    project_name_label.config(text=project_name)
+    # ウィンドウタイトルも更新
+    update_window_title(root)
+
 def edit_project(after_save_callback=None):
     """プロジェクト設定を編集する"""
     def on_project_updated(new_project_data):
@@ -744,15 +752,15 @@ def edit_project(after_save_callback=None):
             project_path = new_project_data.pop("project_path", None)  # パスを取り出して削除
             project_data = new_project_data  # グローバル変数を更新
 
+            # ラベルを更新
+            update_labels()
+
             # コールバックがあれば実行
             if after_save_callback:
                 after_save_callback()
 
             # 編集中フラグOFF（編集画面を閉じるときに保存している）
             change_flg = False
-
-            # ウィンドウタイトルを更新
-            update_window_title(root)
 
         except Exception as e:
             Dialog.show_messagebox(
@@ -1055,6 +1063,7 @@ def create_summary_tab(parent):
     total_frame.pack(fill=tk.X, padx=5, pady=5)
 
     # プロジェクト名称
+    global project_name_label
     project_name = project_data.get("project_name", "名称未設定")
     project_name_label = ttk.Label(total_frame, text=project_name, anchor="w")
     project_name_label.pack(fill=tk.X, padx=20)
