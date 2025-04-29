@@ -729,7 +729,7 @@ def edit_settings():
 
 def load_files():
     files = Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))
-    if files: new_process(inputs=list(files), project_path=project_path, on_reload=True)
+    if files: new_process(inputs=list(files), project_path=project_path, on_reload=False)
 
 def open_project():
     project_path = Dialog.select_file(("JSONファイル", "*.json"))
@@ -1114,10 +1114,8 @@ def update_window_title(root):
     global project_data
     # プロジェクト名を取得（未設定の場合は"名称未設定"）
     project_name = project_data.get("project_name", "名称未設定")
-    # 読込日時を取得
-    last_load_time = f" (Updated: {Utility.get_latest_load_time(input_data)})"
     # ウィンドウタイトルを更新
-    root.title(f"TestTraQ - {project_name}{last_load_time}")
+    root.title(f"TestTraQ - {project_name}")
 
 def _needs_reload(input_data):
     """再集計が必要かどうかを判定する
@@ -1168,12 +1166,13 @@ def run(pjdata, pjpath, indata, args, on_reload=False):
     project_path = pjpath
     input_data = indata
 
-    # プロジェクトファイルを開いた場合、ファイルの更新日時をチェック
+    # プロジェクトファイルを開いた場合、各ファイルの更新日時を最新化
     if pjpath:
         input_data = _update_file_timestamps(input_data)
 
     # 起動時に指定したファイルパス（再読込用）
     input_args = args
+
     # 設定のロード
     settings = AppConfig.load_settings()
 
@@ -1184,11 +1183,11 @@ def run(pjdata, pjpath, indata, args, on_reload=False):
     # ウインドウ表示位置を復元
     root.geometry(settings["app"]["window_position"])
 
-    # メニューバー
+    # メニューバー生成
     create_menubar(parent=root)
-    # グローバルタブ
-    tab1, tab2 = create_global_tab(parent=root)
 
+    # グローバルタブ生成
+    tab1, tab2 = create_global_tab(parent=root)
     # タブ1：全体集計タブ
     create_summary_tab(tab1)
     # タブ2：ファイル別集計タブ
@@ -1198,20 +1197,21 @@ def run(pjdata, pjpath, indata, args, on_reload=False):
     errors = [r for r in input_data if "error" in r]
     ers = "\n".join(["  "+ err["file"] for err in errors])
 
-    # エラーあり、かつ初回集計の場合はメッセージ
+    # エラーあり、かつ初回集計時にメッセージ（リロードして2回目以降はメッセージなし）
     if len(errors) and not on_reload:
         Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"以下のファイルはデータが抽出できませんでした。\n\nFile(s):\n{ers}")
 
+    # データがある場合の処理
     if len(input_data):
-        # プロジェクトファイルを読込時、初回のみ再集計を促す
+        # プロジェクトファイルを読込時、ファイルが更新されている場合は再集計を促す
         if pjpath and not on_reload and _needs_reload(input_data):
             reload_files()
-        # 再集計後にプロジェクトを保存
+        # 再集計後の起動時にはプロジェクトを保存
         if pjpath and on_reload:
             save_project()
     else:
         # 1件もデータがない場合はメッセージ
-        Dialog.show_messagebox(root, type="warning", title="抽出エラー", message=f"データがありません。以下の方法で設定を行ってください。\n・File > ファイルを読み込む からファイルを開いて保存\n・File > プロジェクト情報設定 から取得元URLを設定")
+        Dialog.show_messagebox(root, type="warning", title="抽出エラー", message=f"データがありません。File > プロジェクト情報設定 からデータ取得元を設定してください。")
 
     root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()
