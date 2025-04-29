@@ -734,7 +734,7 @@ def load_files():
 
 def open_project():
     project_path = Dialog.select_file(("JSONファイル", "*.json"))
-    if project_path: new_process(inputs=[project_path])
+    if project_path: new_process(inputs=[project_path], on_reload=False, on_change=False)
 
 def edit_project(after_save_callback=None):
     """プロジェクト設定を編集する"""
