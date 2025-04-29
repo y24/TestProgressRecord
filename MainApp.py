@@ -259,7 +259,7 @@ def save_to_csv(data, filename):
         writer.writerows(data)
 
     # 保存完了
-    response = Dialog.ask(title="保存完了", message=f"CSVデータを保存しました。\n{file_path}\n\nファイルを開きますか？")
+    response = Dialog.ask_question(title="保存完了", message=f"CSVデータを保存しました。\n{file_path}\n\nファイルを開きますか？")
     if response == "yes":
         run_file(file_path=file_path)
 
@@ -658,7 +658,7 @@ def write_to_excel(file_path, table_name):
         return
 
     # 確認
-    response = Dialog.ask(title="保存確認", message=f'{len(input_data)}件のファイルから取得したデータをすべて書き込みます。よろしいですか？')
+    response = Dialog.ask_question(title="保存確認", message=f'{len(input_data)}件のファイルから取得したデータをすべて書き込みます。よろしいですか？')
     if response == "no":
         return
 
@@ -679,7 +679,7 @@ def write_to_excel(file_path, table_name):
     # 成功したら設定を保存
     if result:
         AppConfig.save_settings(settings)
-        response = Dialog.ask(title="保存完了", message=f'"{table_name}"シートにデータを書き込みました。\n{file_path}\n\nこのアプリを終了して、書込先ファイルを開きますか？')
+        response = Dialog.ask_question(title="保存完了", message=f'"{table_name}"シートにデータを書き込みました。\n{file_path}\n\nこのアプリを終了して、書込先ファイルを開きますか？')
         if response == "yes":
             run_file(file_path=file_path, exit=True)
 
@@ -724,8 +724,9 @@ def copy_to_clipboard(data, filename_only=False):
     root.update()
 
 def edit_settings():
-    Dialog.show_messagebox(root=root, type="info", title="ユーザー設定編集", message=f"ユーザー設定ファイルを開きます。\n編集した設定を反映させるにはアプリを再起動するか、Data > 再集計 を実行してください。")
-    run_file(file_path="UserConfig.json", exit=False)
+    response = Dialog.ask_question(root=root, title="環境設定", message=f"環境設定ファイル(UserConfig.json)を開きますか？\n※編集した設定を反映させるにはアプリを再起動するか、Data > 再集計 を実行してください。")
+    if response == "yes":
+        run_file(file_path="UserConfig.json", exit=False)
 
 def load_files():
     files = Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))
@@ -992,7 +993,7 @@ def new_process(inputs, on_reload=False, on_change=False, project_path=None):
 
 def reload_files():
     # 再集計の確認ダイアログを表示
-    response = Dialog.ask(root=root, title="確認", message=f"最新のデータを集計しますか？\n最終読込日時: {Utility.get_latest_load_time(input_data)}")
+    response = Dialog.ask_question(root=root, title="確認", message=f"最新のデータを集計しますか？\n最終読込日時: {Utility.get_latest_load_time(input_data)}")
     if response == "yes":
         # プロジェクトファイルを開いている場合
         if project_path:
