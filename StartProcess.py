@@ -150,7 +150,8 @@ def filter_xlsx_files(inputs):
 def start():
     # コマンドライン引数の設定
     parser = argparse.ArgumentParser(description="zipファイル/xlsxファイルを引数として起動します。(複数可)")
-    parser.add_argument("--on_reload", action="store_true", help="起動後、データの再集計を行わない")
+    parser.add_argument("--on_reload", action="store_true", help="データ再集計時のフラグ")
+    parser.add_argument("--on_change", action="store_true", help="プロジェクトファイル編集時のフラグ")
     parser.add_argument("--debug", action="store_true", help="デバッグモードを有効化")
     parser.add_argument("--project", help="プロジェクトファイルのパス")
     parser.add_argument("data_files", nargs="*", help="処理するファイルのパス")
@@ -236,7 +237,7 @@ def start():
         pprint(aggregate_data)
 
     # アプリケーションの起動
-    MainApp.run(pjdata=project_data, pjpath=project_path, indata=aggregate_data, args=inputs, on_reload=args.on_reload)
+    MainApp.run(pjdata=project_data, pjpath=project_path, indata=aggregate_data, args=inputs, on_reload=args.on_reload, on_change=args.on_change)
 
     # 一時ディレクトリの掃除
     try:

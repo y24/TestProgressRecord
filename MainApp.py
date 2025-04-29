@@ -729,7 +729,7 @@ def edit_settings():
 
 def load_files():
     files = Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))
-    if files: new_process(inputs=list(files), project_path=project_path, on_reload=False)
+    if files: new_process(inputs=list(files), project_path=project_path, on_reload=False, on_change=True)
 
 def open_project():
     project_path = Dialog.select_file(("JSONファイル", "*.json"))
@@ -976,7 +976,7 @@ def close_all_dialogs():
         if isinstance(widget, tk.Toplevel):
             widget.destroy()
 
-def new_process(inputs, on_reload=False, project_path=None):
+def new_process(inputs, on_reload=False, on_change=False, project_path=None):
     """新しいプロセスを起動"""
     # ダイアログを閉じる
     close_all_dialogs()
@@ -984,6 +984,7 @@ def new_process(inputs, on_reload=False, project_path=None):
     python = sys.executable
     command = [python, sys.argv[0]] + inputs
     if on_reload: command += ["--on_reload"]
+    if on_change: command += ["--on_change"]
     if project_path: command += ["--project", project_path]
     # 新しいプロセスを起動
     subprocess.Popen(command)
@@ -1014,15 +1015,15 @@ def reload_files():
 
         # 再集計用の新プロセス起動
         if not project_data.get("files"):
-            # URLの設定がない場合、集計データからパスを取得
+            # 取得元の設定がない場合、集計データからパスを取得して起動
             file_paths = [item["filepath"] for item in input_data if "filepath" in item]
             if len(file_paths) > 0:
-                new_process(inputs=file_paths, project_path=project_path, on_reload=True)
+                new_process(inputs=file_paths, project_path=project_path, on_reload=True, on_change=False)
             else:
                 Dialog.show_messagebox(root=root, type="warning", title="読込ファイルなし", message=f"再読み込みするファイルが設定されていません。")
         else:
-            # URLの設定がある場合
-            new_process(inputs=list(input_args), project_path=project_path, on_reload=True)
+            # 取得元の設定がある場合、通常通りプロジェクトファイルを読み込む
+            new_process(inputs=list(input_args), project_path=project_path, on_reload=True, on_change=False)
 
 def create_global_tab(parent):
     # 全体タブ
@@ -1158,15 +1159,18 @@ def _update_file_timestamps(input_data):
         updated_data.append(data)
     return updated_data
 
-def run(pjdata, pjpath, indata, args, on_reload=False):
-    global root, input_data, settings, input_args, project_data, project_path
+def run(pjdata, pjpath, indata, args, on_reload=False, on_change=False):
+    global root, input_data, settings, input_args, project_data, project_path, change_flg
     
+    # 編集中フラグ
+    change_flg = on_change
+
     # 読込データ
     project_data = pjdata
     project_path = pjpath
     input_data = indata
 
-    # プロジェクトファイルを開いた場合、各ファイルの更新日時を最新化
+    # プロジェクトファイルを開いた場合、各ファイルの更新日時を一時的に最新化（編集中フラグは変更しない）
     if pjpath:
         input_data = _update_file_timestamps(input_data)
 
