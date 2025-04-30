@@ -41,7 +41,7 @@ def get_daily(data, results: list[str], completed_label:str, completed_results: 
     for date, counts in sorted(result_count.items()):
         counts = {**counts}  # 辞書のディープコピー
         if date == "no_date":
-            no_date_data = counts
+            no_date_data = {"no_date": counts}  # 日付なしデータは"no_date"キーに格納
         else:
             out_data[date] = counts
     return out_data, no_date_data
@@ -80,8 +80,9 @@ def get_total_all_date(data, data_no_date, excludes:list[str]):
         for key, count in values.items():
             result[key] = result.get(key, 0) + count
     # 日付なしデータ
-    for key, count in data_no_date.items():
-        result[key] = result.get(key, 0) + count
+    if "no_date" in data_no_date:
+        for key, count in data_no_date["no_date"].items():
+            result[key] = result.get(key, 0) + count
     # Completedは除く
     for exclude in excludes:
         result.pop(exclude, None)
