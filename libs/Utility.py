@@ -203,23 +203,24 @@ def simplify_date(date_str: str) -> str:
     except ValueError:
         return date_str  # パース失敗時は元の文字列を返す
 
-def get_latest_load_time(data):
+def get_latest_time(data, key="last_loaded"):
     """
-    各ファイルの最終読込日時から最も遅い日時を取得する
+    各ファイルの指定された日時キーから最も遅い日時を取得する
     
     Args:
         data (list): ファイルデータのリスト
+        key (str): 日時を取得するキー名。デフォルトは"last_loaded"
         
     Returns:
-        str: 最も遅い最終読込日時（YYYY-MM-DD HH:MM:SS形式）
+        str: 最も遅い日時（YYYY-MM-DD HH:MM:SS形式）
     """
     from datetime import datetime
     
-    # 最終読込日時が存在するファイルのみを抽出
+    # 指定されたキーの日時が存在するファイルのみを抽出
     valid_times = [
-        item["last_loaded"] 
+        item[key] 
         for item in data 
-        if "last_loaded" in item and item["last_loaded"]
+        if key in item and item[key]
     ]
     
     if not valid_times:

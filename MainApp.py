@@ -803,7 +803,7 @@ def save_project():
         # aggregate_dataキーに現在のinput_dataを保存
         existing_data["aggregate_data"] = input_data
         # 最終読込日時を保存（最も遅い日時を使用）
-        existing_data["last_loaded"] = Utility.get_latest_load_time(input_data)
+        existing_data["last_loaded"] = Utility.get_latest_time(input_data)
         
         # JSONファイルに保存
         with open(file_path, "w", encoding="utf-8") as f:
@@ -888,7 +888,7 @@ def update_info_label(data, count_label, last_load_time_label=None, detail=True)
 
     # 読込日時
     if last_load_time_label:
-        last_load_time_text = f'読込日時: {Utility.get_latest_load_time(input_data)}'
+        last_load_time_text = f'読込日時: {Utility.get_latest_time(input_data)}'
         # 読込日時を更新
         last_load_time_label.config(text=last_load_time_text)
 
@@ -980,8 +980,13 @@ def update_bar_chart(data, incompleted_count, ax, canvas, show_label=True):
         canvas.draw()
 
 def save_window_position():
-    # ウインドウの位置情報を保存
-    settings["app"]["window_position"] = root.geometry()
+    # ウインドウの位置情報とサイズを保存
+    geometry = root.geometry()
+    # geometryからサイズと位置情報を取得 (例: "400x300+200+100" -> "400x300" と "+200+100")
+    size, position = geometry.split("+", 1)
+    position = "+" + position
+    settings["app"]["window_size"] = size
+    settings["app"]["window_position"] = position
     AppConfig.save_settings(settings)
 
 def on_closing():
@@ -1011,7 +1016,9 @@ def new_process(inputs, on_reload=False, on_change=False, project_path=None):
 
 def reload_files():
     # 再集計の確認ダイアログを表示
-    response = Dialog.ask_question(root=root, title="確認", message=f"最新のデータを集計しますか？\n最終読込日時: {Utility.get_latest_load_time(input_data)}")
+    last_loaded = Utility.get_latest_time(input_data)
+    last_updated = Utility.get_latest_time(input_data, key="last_updated")
+    response = Dialog.ask_question(root=root, title="確認", message=f"ファイルが更新されています。最新のデータを集計しますか？\n\n最終読込日時: {last_loaded}\n最終更新日時: {last_updated}")
     if response == "yes":
         # プロジェクトファイルを開いている場合
         if project_path:
@@ -1210,7 +1217,8 @@ def run(pjdata, pjpath, indata, args, on_reload=False, on_change=False):
     # ウィンドウタイトルを更新
     update_window_title(root)
     # ウインドウ表示位置を復元
-    root.geometry(settings["app"]["window_position"])
+    geometry = f"{settings['app']['window_size']}{settings['app']['window_position']}"
+    root.geometry(geometry)
 
     # メニューバー生成
     create_menubar(parent=root)

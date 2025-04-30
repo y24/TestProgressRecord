@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import os
 import subprocess
+from libs import AppConfig
 
 class LauncherApp:
     def __init__(self):
@@ -9,6 +10,15 @@ class LauncherApp:
         self.root.title("TestTraQ - Launcher")
         self.root.geometry("400x300")
         self.root.resizable(False, False)
+        
+        # 設定の読み込み
+        self.settings = AppConfig.load_settings()
+        
+        # ウィンドウ位置の復元
+        self.window_size = "400x300"
+        geometry = f"{self.window_size}{self.settings['app']['window_position']}"
+        print(geometry)
+        self.root.geometry(geometry)
         
         # メインフレーム
         main_frame = ttk.Frame(self.root, padding="10")
@@ -44,6 +54,22 @@ class LauncherApp:
         
         # プロジェクトリストの更新
         self.update_project_list()
+        
+        # ウィンドウ終了時のイベントを設定
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+    def save_window_position(self):
+        # ウインドウの位置情報を保存
+        geometry = self.root.geometry()
+        # geometryから位置情報のみを取得 (例: "400x300+200+100" -> "+200+100")
+        position = geometry.split(self.window_size)[1]
+        self.settings["app"]["window_position"] = position
+        AppConfig.save_settings(settings=self.settings)
+
+    def on_closing(self):
+        """ウィンドウ終了時の処理"""
+        self.save_window_position()
+        self.root.quit()
     
     def update_project_list(self):
         """projectsフォルダ内のJSONファイルをリストに表示"""
@@ -67,7 +93,7 @@ class LauncherApp:
     def open_new_project(self):
         """新規プロジェクトを開く"""
         subprocess.Popen(["python", "MainApp.py"])
-        self.root.quit()  # ランチャーを終了
+        self.root.quit()
     
     def open_selected_project(self):
         """選択したプロジェクトを開く"""
@@ -75,7 +101,7 @@ class LauncherApp:
         if selection:
             project_file = os.path.join("projects", self.project_list.get(selection[0]))
             subprocess.Popen(["python", "StartProcess.py", project_file])
-            self.root.quit()  # ランチャーを終了
+            self.root.quit()
     
     def run(self):
         """アプリケーションを実行"""
