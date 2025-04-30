@@ -31,17 +31,17 @@ def _create_row_data(structure: str, values: dict, settings: dict, all_keys: set
         list: 表示用の行データ
     """
     completed = settings["test_status"]["labels"]["completed"]
-    filled = settings["test_status"]["labels"]["filled"]
+    executed = settings["test_status"]["labels"]["executed"]
 
     if structure == 'daily':
         return [values[0]] + [values[1].get(k, 0) for k in Utility.sort_by_master(
-            master_list=settings["test_status"]["results"] + [filled, completed],
+            master_list=settings["test_status"]["results"] + [executed, completed],
             input_list=all_keys
         )]
     elif structure == 'by_env':
         env, date, data = values
         return [env, date] + [data.get(k, 0) for k in Utility.sort_by_master(
-            master_list=settings["test_status"]["results"] + [filled, completed],
+            master_list=settings["test_status"]["results"] + [executed, completed],
             input_list=all_keys
         )]
     elif structure == 'by_name':
@@ -66,7 +66,7 @@ def _insert_tree_rows(tree: ttk.Treeview, structure: str, data: dict, settings: 
     # データが空の場合（by_envのみ）
     if structure == 'by_env' and not data:
         dummy_row = ["環境名を取得できませんでした", "-"] + ["-" for _ in Utility.sort_by_master(
-            master_list=settings["test_status"]["results"] + [settings["test_status"]["labels"]["filled"]],
+            master_list=settings["test_status"]["results"] + [settings["test_status"]["labels"]["executed"]],
             input_list=all_keys
         )]
         tree.insert('', 'end', values=dummy_row)
@@ -131,7 +131,7 @@ def _get_columns(structure: str, settings: dict, all_keys: set) -> list:
         list: 列名のリスト
     """
     completed = settings["test_status"]["labels"]["completed"]
-    filled = settings["test_status"]["labels"]["filled"]
+    executed = settings["test_status"]["labels"]["executed"]
     
     column_definitions = {
         'by_env': ["環境名", "日付"],
@@ -147,7 +147,7 @@ def _get_columns(structure: str, settings: dict, all_keys: set) -> list:
         
     # その他の場合は結果列を追加
     result_columns = Utility.sort_by_master(
-        master_list=settings["test_status"]["results"] + [filled, completed],
+        master_list=settings["test_status"]["results"] + [executed, completed],
         input_list=all_keys
     )
     
@@ -273,7 +273,7 @@ def update_byfile_tab(selected_file, count_label, last_load_time_label, ax, canv
 
     # ファイル別結果
     if "error" in data:
-        stats_data = {'all': 0, 'excluded': 0, 'available': 0, 'filled': 0, 'completed': 0, 'incompleted': 0}
+        stats_data = {'all': 0, 'excluded': 0, 'available': 0, 'executed': 0, 'completed': 0, 'incompleted': 0}
         total_data = Utility.initialize_dict(settings["test_status"]["results"])
         incompleted = 0
         daily_data = {}
@@ -369,11 +369,11 @@ def _extract_file_data(file_data: dict) -> dict:
             },
             "state": "???",
             "completed": "",
-            "filled": "",
+            "executed": "",
             "available": "",
             "incompleted": 0,
             "comp_rate_text": "",
-            "filled_rate_text": "",
+            "executed_rate_text": "",
             "start_date": "",
             "last_update": "",
             "error_type": file_data["error"]["type"],
@@ -393,11 +393,11 @@ def _extract_file_data(file_data: dict) -> dict:
         "all": stats["all"],
         "excluded": stats["excluded"],
         "completed": stats["completed"],
-        "filled": stats["filled"],
+        "executed": stats["executed"],
         "available": stats["available"],
         "incompleted": stats["incompleted"],
         "comp_rate_text": Utility.meke_rate_text(stats["completed"], stats["available"]),
-        "filled_rate_text": Utility.meke_rate_text(stats["filled"], stats["available"]),
+        "executed_rate_text": Utility.meke_rate_text(stats["executed"], stats["available"]),
         "start_date": run_data["start_date"],
         "last_update": run_data["last_update"]
     }
@@ -464,24 +464,24 @@ def update_filelist_table(table_frame):
 
         # 消化率・完了率ラベル
         if display_data["on_error"]:
-            filled_rate_export = ""
-            filled_rate_display = "-"
-            filled_rate_tooltip = "消化率: -"
+            executed_rate_export = ""
+            executed_rate_display = "-"
+            executed_rate_tooltip = "消化率: -"
             comp_rate_export = ""
             comp_rate_display = "-"
             comp_rate_tooltip = "完了率: -"
         else:
-            filled_rate_export = display_data["filled_rate_text"]
-            filled_rate_display = display_data["filled_rate_text"]
-            filled_rate_tooltip = f'消化率: {display_data["filled_rate_text"]} ({display_data["filled"]}/{display_data["available"]})'
+            executed_rate_export = display_data["executed_rate_text"]
+            executed_rate_display = display_data["executed_rate_text"]
+            executed_rate_tooltip = f'消化率: {display_data["executed_rate_text"]} ({display_data["executed"]}/{display_data["available"]})'
             comp_rate_export = display_data["comp_rate_text"]
             comp_rate_display = display_data["comp_rate_text"]
             comp_rate_tooltip = f'完了率: {display_data["comp_rate_text"]} ({display_data["completed"]}/{display_data["available"]})'
 
         # 消化率
-        filled_rate_label = ttk.Label(table_frame, text=filled_rate_display)
-        filled_rate_label.grid(row=index, column=col_idx, padx=padx, pady=pady)
-        ToolTip(filled_rate_label, msg=filled_rate_tooltip, delay=0.3, follow=False)
+        executed_rate_label = ttk.Label(table_frame, text=executed_rate_display)
+        executed_rate_label.grid(row=index, column=col_idx, padx=padx, pady=pady)
+        ToolTip(executed_rate_label, msg=executed_rate_tooltip, delay=0.3, follow=False)
         col_idx += 1
 
         # 完了率
@@ -492,7 +492,7 @@ def update_filelist_table(table_frame):
 
         # エクスポート用データ
         export_row.append(display_data["completed"]) # 完了数
-        export_row.append(filled_rate_export) # 消化率
+        export_row.append(executed_rate_export) # 消化率
         export_row.append(comp_rate_export) # 完了率
 
         # エラー時赤色・ワーニング時オレンジ色
@@ -864,13 +864,13 @@ def update_info_label(data, count_label, last_load_time_label=None, detail=True)
         all = None
         available  = None
         completed = None
-        filled = None
+        executed = None
         excluded = None
     else:
         all = data["all"]
         available = data["available"]
         completed = data["completed"]
-        filled = data["filled"]
+        executed = data["executed"]
         excluded = data["excluded"]
 
     # ケース数テキスト
@@ -881,10 +881,10 @@ def update_info_label(data, count_label, last_load_time_label=None, detail=True)
     # 完了率テキスト
     completed_rate_text = f'完了率: {Utility.meke_rate_text(completed, available)} [{completed or "-"}/{available or "-"}]'
     # 消化率テキスト
-    filled_rate_text = f'消化率: {Utility.meke_rate_text(filled, available)} [{filled or "-"}/{available or "-"}]'
+    executed_rate_text = f'消化率: {Utility.meke_rate_text(executed, available)} [{executed or "-"}/{available or "-"}]'
 
     # 集計表示を更新
-    count_label.config(text=f'{count_text}  |  {completed_rate_text}  |  {filled_rate_text}')
+    count_label.config(text=f'{count_text}  |  {completed_rate_text}  |  {executed_rate_text}')
 
     # 読込日時
     if last_load_time_label:

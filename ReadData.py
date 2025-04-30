@@ -8,7 +8,7 @@ from libs import Utility
 logger = Logger.get_logger(__name__, console=True, file=False, trace_line=False)
 
 # 日付ごとのデータ集計
-def get_daily(data, results: list[str], completed_label:str, completed_results: list[str], filled_label:str, filled_results: list[str]):
+def get_daily(data, results: list[str], completed_label:str, completed_results: list[str], executed_label:str, executed_results: list[str]):
     # 辞書を初期化：{日付: {結果タイプ: カウント}}
     result_count = defaultdict(lambda: defaultdict(int))
     
@@ -22,7 +22,7 @@ def get_daily(data, results: list[str], completed_label:str, completed_results: 
         for keyword in results:
             result_count[date][keyword] = result_count[date].get(keyword, 0)
         result_count[date][completed_label] = result_count[date].get(completed_label, 0)
-        result_count[date][filled_label] = result_count[date].get(filled_label, 0)
+        result_count[date][executed_label] = result_count[date].get(executed_label, 0)
 
         # 結果の集計処理
         # 1. 個別の結果タイプをカウント
@@ -32,8 +32,8 @@ def get_daily(data, results: list[str], completed_label:str, completed_results: 
         if result in completed_results:
             result_count[date][completed_label] += 1
         # 3. 消化としてカウントすべき結果の場合、Filledとしてもカウント
-        if result in filled_results:
-            result_count[date][filled_label] += 1
+        if result in executed_results:
+            result_count[date][executed_label] += 1
 
     # 集計結果を日付ありデータと日付なしデータに分離
     out_data = {}      # 日付ありデータ
@@ -93,13 +93,13 @@ def sum_completed_results(data: dict, completed_results: list) -> int:
 
 # 実施状況を判別
 def make_run_status(count_stats: dict, settings: dict) -> str:
-    if count_stats["filled"] == 0:
+    if count_stats["executed"] == 0:
         # 未着手
         return settings["app"]["state"]["not_started"]["name"]
     elif count_stats["completed"] == count_stats["available"] and count_stats["incompleted"] == 0:
         # 完了
         return settings["app"]["state"]["completed"]["name"]
-    elif count_stats["filled"] > 0:
+    elif count_stats["executed"] > 0:
         # 進行中
         return settings["app"]["state"]["in_progress"]["name"]
     else:
@@ -220,8 +220,8 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
             results=settings["test_status"]["results"], 
             completed_label=settings["test_status"]["labels"]["completed"], 
             completed_results=settings["test_status"]["completed_results"],
-            filled_label=settings["test_status"]["labels"]["filled"],
-            filled_results=settings["test_status"]["filled_results"]
+            executed_label=settings["test_status"]["labels"]["executed"],
+            executed_results=settings["test_status"]["executed_results"]
         )
 
     # 環境数
@@ -250,15 +250,15 @@ def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
         results=settings["test_status"]["results"],
         completed_label=settings["test_status"]["labels"]["completed"],
         completed_results=settings["test_status"]["completed_results"],
-        filled_label=settings["test_status"]["labels"]["filled"],
-        filled_results=settings["test_status"]["filled_results"]
+        executed_label=settings["test_status"]["labels"]["executed"],
+        executed_results=settings["test_status"]["executed_results"]
     )
 
     # 全セット集計(担当者別)
     data_by_name = get_daily_by_name(all_data)
     
     # 全セット集計(全日付＋日付なし)
-    data_total = get_total_all_date(data_daily_total, data_no_date, excludes=[settings["test_status"]["labels"]["completed"], settings["test_status"]["labels"]["filled"]])
+    data_total = get_total_all_date(data_daily_total, data_no_date, excludes=[settings["test_status"]["labels"]["completed"], settings["test_status"]["labels"]["executed"]])
 
     # 総テストケース数
     case_count_all = sum(item['env_count'] * item['all'] for item in counts_by_sheet)
@@ -267,18 +267,18 @@ def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
     # 有効テストケース数
     available_count = case_count_all - excluded_count
     # 消化テストケース数
-    filled_count = sum(data_total.values())
+    executed_count = sum(data_total.values())
     # 完了テストケース数
     completed_count = sum_completed_results(data_total, settings["test_status"]["completed_results"])
     # 未実施テストケース数(マイナスは0)
-    incompleted_count = max(0, available_count - filled_count)
+    incompleted_count = max(0, available_count - executed_count)
 
     # 集計データ
     count_stats = {
         "all": case_count_all,
         "excluded": excluded_count,
         "available": available_count,
-        "filled": filled_count,
+        "executed": executed_count,
         "completed": completed_count,
         "incompleted": incompleted_count
     }
@@ -319,7 +319,7 @@ def _aggregate_final_results(all_data, data_by_env, counts_by_sheet, settings):
     # データチェック
     if case_count_all == 0:
         out_data["warning"] = {"type": "no_data", "message": "項目数を取得できませんでした。"}
-    elif filled_count > available_count:
+    elif executed_count > available_count:
         out_data["warning"] = {"type": "inconsistent_count", "message": "テストケースの完了数が項目数を上回っています。"}
 
     return out_data
