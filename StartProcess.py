@@ -219,7 +219,8 @@ def start():
                     # xlsxファイルのみフィルタ
                     files = filter_xlsx_files(files)
                     # 全ファイルの集計処理
-                    aggregate_data.extend([file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))])
+                    if files:
+                        aggregate_data.extend([file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))])
 
         except Exception as e:
             Dialog.show_messagebox(root=None, type="error", title="ファイル読込エラー", message=f"{str(e)}")
