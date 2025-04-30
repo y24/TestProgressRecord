@@ -18,12 +18,10 @@ def load_api_key():
         cred = win32cred.CredRead(TARGET_NAME, win32cred.CRED_TYPE_GENERIC)
         return cred['CredentialBlob'].decode('utf-16')
     except Exception as e:
-        print("読み込み失敗:", e)
         return None
 
 def delete_api_key():
     try:
         win32cred.CredDelete(TARGET_NAME, win32cred.CRED_TYPE_GENERIC, 0)
-        print("APIキーを削除しました。")
     except Exception as e:
-        print("削除失敗:", e)
+        pass
