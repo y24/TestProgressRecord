@@ -68,6 +68,14 @@ def is_empty(obj):
     return False
 
 
+def is_empty_recursive(obj):
+    if not isinstance(obj, dict):
+        return False  # そもそも辞書でない場合は空ではないと判定
+
+    # 値がすべて空の辞書（再帰的にチェック）なら空とみなす
+    return all(is_empty_recursive(v) if isinstance(v, dict) else False for v in obj.values())
+
+
 def get_relative_path(full_path: str, base_dir: str) -> str:
     """
     指定した基準ディレクトリ以降のパスを取得する
