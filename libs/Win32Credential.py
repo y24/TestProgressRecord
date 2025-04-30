@@ -1,18 +1,17 @@
 import win32cred
 import win32con
 
-TARGET_NAME = 'MyApp_APIKey'
+TARGET_NAME = 'TestTraQ_DevOps_APIKey'
 
 def save_api_key(api_key: str):
     credential = {
         'Type': win32cred.CRED_TYPE_GENERIC,
         'TargetName': TARGET_NAME,
         'CredentialBlob': api_key.encode('utf-16'),
-        'Persist': win32cred.CRED_PERSIST_ENTERPRISE,  # 管理者権限不要
+        'Persist': win32cred.CRED_PERSIST_ENTERPRISE,
         'UserName': 'APIUser'
     }
     win32cred.CredWrite(credential, 0)
-    print("APIキーを保存しました。")
 
 def load_api_key():
     try:
