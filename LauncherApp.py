@@ -1,0 +1,86 @@
+import tkinter as tk
+from tkinter import ttk
+import os
+import subprocess
+
+class LauncherApp:
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("TestTraQ - Launcher")
+        self.root.geometry("400x300")
+        self.root.resizable(False, False)
+        
+        # メインフレーム
+        main_frame = ttk.Frame(self.root, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # プロジェクトリスト
+        ttk.Label(main_frame, text="プロジェクトを選択").pack(anchor=tk.W)
+        self.project_list = tk.Listbox(main_frame, selectmode=tk.SINGLE)
+        self.project_list.pack(fill=tk.BOTH, expand=True, pady=5)
+        self.project_list.bind('<<ListboxSelect>>', self.on_selection_changed)
+        self.project_list.bind('<Double-Button-1>', self.on_double_click)
+        
+        # ボタンフレーム
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=5)
+        
+        # 新規プロジェクトボタン
+        self.new_project_btn = ttk.Button(
+            button_frame,
+            text="新規プロジェクト",
+            command=self.open_new_project
+        )
+        self.new_project_btn.pack(side=tk.LEFT, padx=0)
+        
+        # プロジェクトを開くボタン
+        self.open_project_btn = ttk.Button(
+            button_frame,
+            text="選択したプロジェクトを開く",
+            command=self.open_selected_project,
+            state=tk.DISABLED
+        )
+        self.open_project_btn.pack(side=tk.LEFT, padx=5)
+        
+        # プロジェクトリストの更新
+        self.update_project_list()
+    
+    def update_project_list(self):
+        """projectsフォルダ内のJSONファイルをリストに表示"""
+        self.project_list.delete(0, tk.END)
+        projects_dir = "projects"
+        if os.path.exists(projects_dir):
+            for file in os.listdir(projects_dir):
+                if file.endswith('.json'):
+                    self.project_list.insert(tk.END, file)
+    
+    def on_selection_changed(self, event):
+        """プロジェクト選択時の処理"""
+        self.open_project_btn.config(
+            state=tk.NORMAL if self.project_list.curselection() else tk.DISABLED
+        )
+    
+    def on_double_click(self, event):
+        """ダブルクリック時の処理"""
+        self.open_selected_project()
+    
+    def open_new_project(self):
+        """新規プロジェクトを開く"""
+        subprocess.Popen(["python", "MainApp.py"])
+        self.root.quit()  # ランチャーを終了
+    
+    def open_selected_project(self):
+        """選択したプロジェクトを開く"""
+        selection = self.project_list.curselection()
+        if selection:
+            project_file = os.path.join("projects", self.project_list.get(selection[0]))
+            subprocess.Popen(["python", "StartProcess.py", project_file])
+            self.root.quit()  # ランチャーを終了
+    
+    def run(self):
+        """アプリケーションを実行"""
+        self.root.mainloop()
+
+if __name__ == "__main__":
+    app = LauncherApp()
+    app.run() 

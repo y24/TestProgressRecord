@@ -1,2 +1,2 @@
 cd /d %~dp0
-python StartProcess.py %*
+python LauncherApp.py
