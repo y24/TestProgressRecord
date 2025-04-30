@@ -17,7 +17,6 @@ class LauncherApp:
         # ウィンドウ位置の復元
         self.window_size = "400x300"
         geometry = f"{self.window_size}{self.settings['app']['window_position']}"
-        print(geometry)
         self.root.geometry(geometry)
         
         # メインフレーム
