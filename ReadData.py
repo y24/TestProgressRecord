@@ -228,10 +228,29 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
     # 環境数
     env_count = len(sets)
 
-    # テストケース数を計算
+    # 期待結果列の番号
     tobe_rownunms = Utility.find_colnum_by_keywords(lst=header, keywords=settings["read_definition"]["tobe_row"]["keys"])
+
+    if not tobe_rownunms:
+        return {
+            "error": {
+                "type": "no_tobe_row",
+                "message": "期待結果列が見つかりませんでした。"
+            }
+        }
+
+    # 期待結果データ
     tobe_data = Excel.get_column_values(sheet=sheet, col_nums=tobe_rownunms,header_row=header_rownum, ignore_header=True)
+    # テストケース数を計算
     case_count = sum(1 for item in tobe_data if any(x is not None for x in item))
+
+    if not case_count:
+        return {
+            "error": {
+                "type": "no_testcases",
+                "message": "テストケース数を取得できませんでした。"
+            }
+        }
 
     # 結果を返却
     return {
