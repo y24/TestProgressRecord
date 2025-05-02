@@ -991,7 +991,22 @@ def save_window_position():
 
 def on_closing():
     # ウインドウ終了時
+    if change_flg:
+        # プロジェクトデータが変更されている場合、確認ダイアログを表示
+        response = Dialog.ask_yes_no_cancel(
+            root=root,
+            title="確認",
+            message="プロジェクトデータが変更されています。保存して終了しますか？"
+        )
+        
+        if response == None:
+            return  # アプリに戻る
+        elif response == True:
+            save_project()  # 保存して終了
+    
+    # ウインドウの位置情報とサイズを保存
     save_window_position()
+    # 終了
     root.quit()
 
 def close_all_dialogs():
