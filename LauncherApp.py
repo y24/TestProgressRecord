@@ -2,10 +2,13 @@ import tkinter as tk
 from tkinter import ttk
 import os
 import subprocess
+import sys
+import argparse
+import json
 from libs import AppConfig
 
 class LauncherApp:
-    def __init__(self):
+    def __init__(self, args=None):
         self.root = tk.Tk()
         self.root.title("TestTraQ - Launcher")
         self.root.geometry("400x300")
@@ -57,6 +60,45 @@ class LauncherApp:
         # ウィンドウ終了時のイベントを設定
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
+        # 引数でファイルが指定された場合の処理
+        if args and (args.data_files or args.project):
+            self.process_command_line_args(args)
+            return  # ランチャーウインドウを表示せずに終了
+
+    def process_command_line_args(self, args):
+        """コマンドライン引数の処理"""
+        # プロジェクトファイルのパスが指定されている場合
+        if args.project:
+            project_file = args.project
+            if os.path.exists(project_file):
+                self.open_project_with_args(project_file, args.data_files)
+                return
+        
+        # データファイルが指定されている場合
+        for file in args.data_files:
+            if file.endswith('.json'):
+                self.open_project_with_args(file, args.data_files)
+                return
+        
+        # プロジェクトファイルが指定されていない場合は新規プロジェクトとして開く
+        self.open_new_project_with_files(args.data_files)
+
+    def open_project_with_args(self, project_file, data_files):
+        """引数で指定されたプロジェクトファイルを開く"""
+        cmd = ["python", "StartProcess.py", "--project", project_file]
+        if data_files:
+            cmd.extend(data_files)
+        subprocess.Popen(cmd)
+        self.root.quit()
+
+    def open_new_project_with_files(self, data_files):
+        """新規プロジェクトとしてファイルを開く"""
+        cmd = ["python", "StartProcess.py"]
+        if data_files:
+            cmd.extend(data_files)
+        subprocess.Popen(cmd)
+        self.root.quit()
+
     def save_window_position(self):
         # ウインドウの位置情報を保存
         geometry = self.root.geometry()
@@ -106,6 +148,26 @@ class LauncherApp:
         """アプリケーションを実行"""
         self.root.mainloop()
 
+def main():
+    # コマンドライン引数の設定
+    parser = argparse.ArgumentParser(description="TestTraQ Launcher")
+    parser.add_argument("--project", help="プロジェクトファイルのパス")
+    parser.add_argument("data_files", nargs="*", help="処理するファイルのパス")
+    args = parser.parse_args()
+
+    # 引数がある場合は直接StartProcess.pyを実行
+    if args.data_files or args.project:
+        cmd = ["python", "StartProcess.py"]
+        if args.project:
+            cmd.extend(["--project", args.project])
+        if args.data_files:
+            cmd.extend(args.data_files)
+        subprocess.Popen(cmd)
+        return
+
+    # 引数がない場合はランチャーを表示
+    app = LauncherApp(args)
+    app.run()
+
 if __name__ == "__main__":
-    app = LauncherApp()
-    app.run() 
+    main() 

@@ -1,2 +1,2 @@
 cd /d %~dp0
-python LauncherApp.py
+python LauncherApp.py %*
