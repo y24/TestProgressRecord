@@ -1,4 +1,4 @@
-import sys, os, re, json
+import os, re, json
 from tqdm import tqdm
 from datetime import datetime
 

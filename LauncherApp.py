@@ -2,9 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import os
 import subprocess
-import sys
 import argparse
-import json
 from libs import AppConfig
 
 class LauncherApp:
