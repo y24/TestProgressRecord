@@ -69,29 +69,37 @@ class LauncherApp:
         if args.project:
             project_file = args.project
             if os.path.exists(project_file):
-                self.open_project_with_args(project_file, args.data_files)
+                self.open_project_with_args(project_file, args.data_files, args.on_reload, args.on_change)
                 return
         
         # データファイルが指定されている場合
         for file in args.data_files:
             if file.endswith('.json'):
-                self.open_project_with_args(file, args.data_files)
+                self.open_project_with_args(file, args.data_files, args.on_reload, args.on_change)
                 return
         
         # プロジェクトファイルが指定されていない場合は新規プロジェクトとして開く
-        self.open_new_project_with_files(args.data_files)
+        self.open_new_project_with_files(args.data_files, args.on_reload, args.on_change)
 
-    def open_project_with_args(self, project_file, data_files):
+    def open_project_with_args(self, project_file, data_files, on_reload=False, on_change=False):
         """引数で指定されたプロジェクトファイルを開く"""
         cmd = ["python", "StartProcess.py", "--project", project_file]
+        if on_reload:
+            cmd.append("--on_reload")
+        if on_change:
+            cmd.append("--on_change")
         if data_files:
             cmd.extend(data_files)
         subprocess.Popen(cmd)
         self.root.quit()
 
-    def open_new_project_with_files(self, data_files):
+    def open_new_project_with_files(self, data_files, on_reload=False, on_change=False):
         """新規プロジェクトとしてファイルを開く"""
         cmd = ["python", "StartProcess.py"]
+        if on_reload:
+            cmd.append("--on_reload")
+        if on_change:
+            cmd.append("--on_change")
         if data_files:
             cmd.extend(data_files)
         subprocess.Popen(cmd)
@@ -150,6 +158,8 @@ def main():
     # コマンドライン引数の設定
     parser = argparse.ArgumentParser(description="TestTraQ Launcher")
     parser.add_argument("--project", help="プロジェクトファイルのパス")
+    parser.add_argument("--on_reload", action="store_true", help="データ再集計時のフラグ")
+    parser.add_argument("--on_change", action="store_true", help="プロジェクトファイル編集時のフラグ")
     parser.add_argument("data_files", nargs="*", help="処理するファイルのパス")
     args = parser.parse_args()
 

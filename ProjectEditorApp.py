@@ -133,15 +133,14 @@ class ProjectEditorApp:
 
         # ファイルタイプ選択
         file_type_var = tk.StringVar()  # 初期値は空でOK
-        rb_local = ttk.Radiobutton(frame, text="ローカル", variable=file_type_var, value="local")
-        rb_local.grid(row=0, column=3, padx=(5,2), pady=0)
-        rb_sharepoint = ttk.Radiobutton(frame, text="SharePoint", variable=file_type_var, value="sharepoint")
-        rb_sharepoint.grid(row=0, column=4, padx=(2,5), pady=0)
+        file_type_combo = ttk.Combobox(frame, textvariable=file_type_var, width=10, state="readonly")
+        file_type_combo["values"] = ("local", "sharepoint")
+        file_type_combo.grid(row=0, column=3, padx=(5,2), pady=0)
 
         # ファイルパス/URL
-        ttk.Label(frame, text="パスまたはURL:").grid(row=0, column=5, padx=2, pady=2)
+        ttk.Label(frame, text="パスまたはURL:").grid(row=0, column=4, padx=2, pady=2)
         path_entry = ttk.Entry(frame, width=80)
-        path_entry.grid(row=0, column=6, padx=2, pady=2)
+        path_entry.grid(row=0, column=5, padx=2, pady=2)
         if file_data:
             path_entry.insert(0, file_data.get("path", ""))
 
@@ -163,7 +162,7 @@ class ProjectEditorApp:
 
         # ファイル選択ボタン
         file_button = ttk.Button(frame, text="...", width=3, command=select_file)
-        file_button.grid(row=0, column=7, padx=2, pady=2)
+        file_button.grid(row=0, column=6, padx=2, pady=2)
 
         # ファイルタイプの初期値をセット
         if file_data and "type" in file_data:

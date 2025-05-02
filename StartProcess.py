@@ -146,13 +146,15 @@ def filter_xlsx_files(inputs):
     """
     return [file_path for file_path in inputs if Utility.get_ext_from_path(file_path) == "xlsx"]
 
-def process_files(inputs, project_path=""):
+def process_files(inputs, project_path="", on_reload=False, on_change=False):
     """
     ファイル処理のメイン関数
     
     Args:
         inputs (list): 入力ファイルのパスリスト
         project_path (str): プロジェクトファイルのパス（オプション）
+        on_reload (bool): データ再集計時のフラグ
+        on_change (bool): プロジェクトファイル編集時のフラグ
     """
     # 設定ファイルの読み込み
     settings = AppConfig.load_settings()
@@ -223,7 +225,7 @@ def process_files(inputs, project_path=""):
         aggregate_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))]
 
     # アプリケーションの起動
-    MainApp.run(pjdata=project_data, pjpath=project_path, indata=aggregate_data, args=inputs)
+    MainApp.run(pjdata=project_data, pjpath=project_path, indata=aggregate_data, args=inputs, on_reload=on_reload, on_change=on_change)
 
     # 一時ディレクトリの掃除
     try:
@@ -237,7 +239,9 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="TestTraQ - ファイル処理")
     parser.add_argument("--project", help="プロジェクトファイルのパス")
+    parser.add_argument("--on_reload", action="store_true", help="データ再集計時のフラグ")
+    parser.add_argument("--on_change", action="store_true", help="プロジェクトファイル編集時のフラグ")
     parser.add_argument("data_files", nargs="*", help="処理するファイルのパス")
     args = parser.parse_args()
 
-    process_files(args.data_files, args.project)
+    process_files(args.data_files, args.project, args.on_reload, args.on_change)
