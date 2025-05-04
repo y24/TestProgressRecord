@@ -30,6 +30,9 @@ class LauncherApp:
         self.project_list.pack(fill=tk.BOTH, expand=True, pady=5)
         self.project_list.bind('<<ListboxSelect>>', self.on_selection_changed)
         self.project_list.bind('<Double-Button-1>', self.on_double_click)
+        self.root.bind('<Return>', self.on_enter_pressed)  # Enterキー押下時、選択しているプロジェクトを開く
+        self.root.bind('<Up>', self.on_up_pressed)  # 上矢印キー押下時、選択を上に移動
+        self.root.bind('<Down>', self.on_down_pressed)  # 下矢印キー押下時、選択を下に移動
         
         # ボタンフレーム
         button_frame = ttk.Frame(main_frame)
@@ -147,6 +150,11 @@ class LauncherApp:
         """ダブルクリック時の処理"""
         self.open_selected_project()
     
+    def on_enter_pressed(self, event):
+        """Enterキー押下時の処理"""
+        if self.project_list.curselection():
+            self.open_selected_project()
+    
     def open_new_project(self):
         """新規プロジェクトを開く"""
         subprocess.Popen(["python", "MainApp.py"])
@@ -164,6 +172,37 @@ class LauncherApp:
             subprocess.Popen(["python", "StartProcess.py", project_file])
             self.root.quit()
     
+    def on_up_pressed(self, event):
+        """上矢印キーが押されたときの処理"""
+        current = self.project_list.curselection()
+        if current:
+            if current[0] > 0:
+                self.project_list.selection_clear(current[0])
+                self.project_list.selection_set(current[0] - 1)
+                self.project_list.see(current[0] - 1)
+        else:
+            # 何も選択されていない場合は最後の項目を選択
+            last_index = self.project_list.size() - 1
+            if last_index >= 0:
+                self.project_list.selection_set(last_index)
+                self.project_list.see(last_index)
+        self.on_selection_changed(None)
+
+    def on_down_pressed(self, event):
+        """下矢印キーが押されたときの処理"""
+        current = self.project_list.curselection()
+        if current:
+            if current[0] < self.project_list.size() - 1:
+                self.project_list.selection_clear(current[0])
+                self.project_list.selection_set(current[0] + 1)
+                self.project_list.see(current[0] + 1)
+        else:
+            # 何も選択されていない場合は最初の項目を選択
+            if self.project_list.size() > 0:
+                self.project_list.selection_set(0)
+                self.project_list.see(0)
+        self.on_selection_changed(None)
+
     def run(self):
         """アプリケーションを実行"""
         self.root.mainloop()
