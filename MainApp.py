@@ -408,7 +408,7 @@ def update_filelist_table(table_frame):
     pady = 3
 
     # ヘッダ
-    headers = ["No.", "ファイル名", "項目数", "State", "更新日", "消化率", "完了率", "テスト結果"]
+    headers = ["No.", "ファイル名", "項目数", "更新日", "消化率", "完了率", "テスト結果"]
     for col, text in enumerate(headers):
         ttk.Label(table_frame, text=text, foreground="#444444", background="#e0e0e0", relief="solid").grid(
             row=0, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
@@ -418,7 +418,7 @@ def update_filelist_table(table_frame):
     table_frame.grid_columnconfigure(1, weight=3)
 
     # クリップボード出力用のヘッダ
-    export_headers = ["No.", "ファイル名", "項目数", "State", "更新日", "完了数", "消化率", "完了率"]
+    export_headers = ["No.", "ファイル名", "項目数", "更新日", "完了数", "消化率", "完了率"]
     export_data = [export_headers + settings["test_status"]["results"] + [settings["test_status"]["labels"]["not_run"]]]
 
     # 各ファイルのデータ表示
@@ -447,13 +447,6 @@ def update_filelist_table(table_frame):
         case_count_label = ttk.Label(table_frame, text=display_data["available"])
         case_count_label.grid(row=index, column=col_idx, padx=padx, pady=pady)
         export_row.append(display_data["available"])
-        col_idx += 1
-
-        # State
-        state_label = ttk.Label(table_frame, text=display_data["state"], anchor="center")
-        state_label.grid(row=index, column=col_idx, padx=padx, pady=pady, sticky=tk.W + tk.E)
-        # set_state_color(state_label, display_data["state"])
-        export_row.append(display_data["state"])
         col_idx += 1
 
         # 最終更新日
@@ -499,7 +492,6 @@ def update_filelist_table(table_frame):
         if display_data["on_error"] or display_data["on_warning"]:
             color = "red" if display_data["on_error"] else "darkorange2"
             filename_label.config(foreground=color)
-            state_label.config(foreground=color)
             comp_rate_label.config(foreground=color)
 
         # エラー時以外は進捗グラフを表示
