@@ -724,7 +724,7 @@ def copy_to_clipboard(data, filename_only=False):
     root.update()
 
 def edit_settings():
-    response = Dialog.ask_question(root=root, title="環境設定", message=f"環境設定ファイル(UserConfig.json)を開きますか？\n※編集した設定を反映させるにはアプリを再起動するか、Data > 再集計 を実行してください。")
+    response = Dialog.ask_question(root=root, title="環境設定", message=f"環境設定ファイル (UserConfig.json) を開きますか？\n※設定を反映するにはアプリを再起動するか、Data > 再集計 を実行してください。")
     if response == "yes":
         run_file(file_path="UserConfig.json", exit=False)
 
@@ -819,14 +819,14 @@ def save_project():
         # エラーメッセージを表示
         Dialog.show_messagebox(root, type="error", title="保存エラー", message=f"データの保存に失敗しました。\n{str(e)}")
 
-def create_menubar(parent):
+def create_menubar(parent, has_data=False):
     menubar = tk.Menu(parent)
     parent.config(menu=menubar)
     # File
     file_menu = tk.Menu(menubar, tearoff=0)
     file_menu.add_command(label="開く", command=open_project, accelerator="Ctrl+O")
     file_menu.add_command(label="保存", command=save_project, accelerator="Ctrl+S")
-    file_menu.add_command(label="読込ファイルの再選択", command=load_files, accelerator="Ctrl+L")
+    file_menu.add_command(label="ファイル読込", command=load_files, accelerator="Ctrl+L")
     file_menu.add_separator()
     file_menu.add_command(label="プロジェクト設定", command=edit_project, accelerator="Ctrl+E")
     file_menu.add_command(label="環境設定", command=edit_settings)
@@ -845,6 +845,10 @@ def create_menubar(parent):
     parent.bind('<Control-r>', lambda e: reload_files())
     parent.bind('<Control-e>', lambda e: edit_project())
     parent.bind('<Control-q>', lambda e: parent.quit())
+
+    # ファイルデータがない場合はメニュー無効化
+    if not has_data:
+        data_menu.entryconfig("再集計", state=tk.DISABLED)
 
 def create_input_area(parent, settings):
     input_frame = ttk.LabelFrame(parent, text="集計データ出力")
@@ -1021,7 +1025,7 @@ def new_process(inputs, on_reload=False, on_change=False, project_path=None):
     close_all_dialogs()
     # コマンドライン引数の設定
     python = sys.executable
-    command = [python, sys.argv[0]] + inputs
+    command = [python, "StartProcess.py"] + inputs
     if on_reload: command += ["--on_reload"]
     if on_change: command += ["--on_change"]
     if project_path: command += ["--project", project_path]
@@ -1066,23 +1070,35 @@ def reload_files():
             # 取得元の設定がある場合、通常通りプロジェクトファイルを読み込む
             new_process(inputs=list(input_args), project_path=project_path, on_reload=True, on_change=False)
 
-def create_global_tab(parent):
-    # 全体タブ
+def create_global_tab(parent, has_data=False):
     nb = ttk.Notebook(parent)
+    # 集計結果タブ
     tab1 = tk.Frame(nb)
-    tab2 = tk.Frame(nb)
     nb.add(tab1, text=' 集計結果 ')
-    nb.add(tab2, text=' ファイル別 ')
+    # ファイル別タブ
+    tab2 = tk.Frame(nb)
+    if has_data: nb.add(tab2, text=' ファイル別 ')
     nb.pack(fill=tk.BOTH, expand=True)
     return tab1, tab2
 
-def create_summary_tab(parent):
+def create_initial_screen(parent):
+    # 初期画面
+    initial_frame = ttk.Frame(parent)
+    initial_frame.pack(fill=tk.BOTH, expand=True)
+    # 初期画面のテキスト
+    initial_text = ttk.Label(initial_frame, text="集計対象のファイルを読み込んでください。", anchor="center")
+    initial_text.pack(pady=(30, 0))
+    # ファイル読込ボタン
+    load_files_button = ttk.Button(initial_frame, text="ファイル読込", command=load_files)
+    load_files_button.pack(pady=15)
+
+def create_summary_tab(parent, has_data=False):
     # 全体集計にはエラーとワーニングのあるデータを含めない
     filtered_data = Utility.filter_objects(input_data, exclude_keys=["error", "warning"])
 
-    # 集計結果タブ
+    # 総合集計の表示エリア
     total_frame = ttk.Frame(parent)
-    total_frame.pack(fill=tk.X, padx=5, pady=5)
+    total_frame.pack(fill=tk.X, padx=5, pady=8)
 
     # プロジェクト名称
     global project_name_label
@@ -1092,33 +1108,39 @@ def create_summary_tab(parent):
     project_name_label.config(cursor="hand2", font=("Meiryo UI", 9, "underline"))
     project_name_label.bind("<Button-1>", lambda e: edit_project())
 
-    # グラフ表示(全体)
+    # グラフ表示(総合)
     total_fig, total_ax = plt.subplots(figsize=(8, 0.25))
     total_canvas = FigureCanvasTkAgg(total_fig, master=total_frame)
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
     total_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
 
-    # グラフを更新
+    # グラフ(総合)を更新
     incompleted = Utility.sum_values(filtered_data, "stats")["incompleted"] if len(filtered_data) > 0 else 0
     update_bar_chart(data=Utility.sum_values(filtered_data, "total"), incompleted_count=incompleted, ax=total_ax, canvas=total_canvas, show_label=True)
 
-    # グラフのツールチップ(全体)
+    # グラフ(総合)のツールチップを設定
     filtered_total_data = Utility.sum_values(filtered_data, "total")
     graph_tooltip = f'{make_results_text(filtered_total_data, incompleted)}'
     ToolTip(total_canvas.get_tk_widget(), msg=graph_tooltip, delay=0.3, follow=False)
 
-    # テストケース数/完了率/消化率(全体)
+    # テストケース数/完了率/消化率(総合)
     total_count_label = ttk.Label(total_frame, anchor="w")
     total_count_label.pack(fill=tk.X, padx=20)
-
-    # テストケース数、完了率を更新
     update_info_label(data=Utility.sum_values(filtered_data, "stats"), count_label=total_count_label, detail=True)
 
-    # ファイル別データ表示部
-    create_summary_filelist_area(parent=parent)
+    # 区切り線
+    separator = ttk.Separator(parent, orient="horizontal")
+    separator.pack(fill=tk.X, padx=0, pady=5)
 
-    # ファイル書き込みエリア
-    create_input_area(parent=parent, settings=settings)
+    if has_data:
+        # ファイル別集計データ表示部を作成
+        create_summary_filelist_area(parent=parent)
+
+        # ファイル書き込みエリアを作成
+        create_input_area(parent=parent, settings=settings)
+    else:
+        # 初期画面を作成
+        create_initial_screen(parent=parent)
 
 def create_byfile_tab(parent):
     by_file_frame = ttk.Frame(parent)
@@ -1204,25 +1226,28 @@ def _update_file_timestamps(input_data):
         updated_data.append(data)
     return updated_data
 
-def run(pjdata, pjpath, indata, args, on_reload=False, on_change=False):
+def run(pjdata=None, pjpath=None, indata=None, args=None, on_reload=False, on_change=False):
     global root, input_data, settings, input_args, project_data, project_path, change_flg
 
     # データの初期化
-    project_data = pjdata
+    project_data = pjdata or {}
     project_path = pjpath
-    input_data = indata
+    input_data = indata or []
+
+    # 空プロジェクトかどうかのフラグ
+    has_data = len(input_data)
 
     # 編集中フラグの初期化
     change_flg = on_change
     # プロジェクトファイル未保存かつファイルがある場合は編集中フラグON
-    if not pjpath and len(input_data): change_flg = True
+    if not pjpath and has_data: change_flg = True
 
     # プロジェクトファイルを開いた場合、各ファイルの更新日時を一時的に最新化（編集中フラグは変更しない）
     if pjpath:
         input_data = _update_file_timestamps(input_data)
 
     # 起動時に指定したファイルパス（再読込用）
-    input_args = args
+    input_args = args or []
 
     # 設定のロード
     settings = AppConfig.load_settings()
@@ -1236,14 +1261,14 @@ def run(pjdata, pjpath, indata, args, on_reload=False, on_change=False):
     root.geometry(geometry)
 
     # メニューバー生成
-    create_menubar(parent=root)
+    create_menubar(parent=root, has_data=has_data)
 
     # グローバルタブ生成
-    tab1, tab2 = create_global_tab(parent=root)
+    tab1, tab2 = create_global_tab(parent=root, has_data=has_data)
     # タブ1：全体集計タブ
-    create_summary_tab(tab1)
+    create_summary_tab(tab1, has_data=has_data)
     # タブ2：ファイル別集計タブ
-    create_byfile_tab(tab2)
+    if has_data: create_byfile_tab(tab2)
 
     # データ抽出に失敗したファイルのリスト
     errors = [r for r in input_data if "error" in r]
@@ -1254,7 +1279,7 @@ def run(pjdata, pjpath, indata, args, on_reload=False, on_change=False):
         Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"以下のファイルはデータが抽出できませんでした。\n\nFile(s):\n{ers}")
 
     # データがある場合の処理
-    if len(input_data):
+    if has_data:
         # プロジェクトファイルを読込時、ファイルが更新されている場合は再集計を促す
         if pjpath and not on_reload and _needs_reload(input_data):
             reload_files()
@@ -1268,3 +1293,6 @@ def run(pjdata, pjpath, indata, args, on_reload=False, on_change=False):
     root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()
     root.destroy()
+
+if __name__ == "__main__":
+    run()
