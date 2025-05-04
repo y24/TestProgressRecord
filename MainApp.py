@@ -620,16 +620,9 @@ def change_sort_order(table_frame, order, sort_menu_button, on_change=False):
 def create_summary_filelist_area(parent):
     global export_data
 
-    # ファイル別テーブル
-    table_frame = ttk.Frame(parent)
-    table_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-
-    # ファイル別テーブルの更新
-    export_data = update_filelist_table(table_frame)
-
     # メニュー
     menu_frame = ttk.Frame(parent)
-    menu_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+    menu_frame.pack(fill=tk.BOTH, padx=5, pady=2)
 
     # 並び替えメニュー
     sort_menu_button = ttk.Menubutton(menu_frame, text="ソート", direction="below")
@@ -637,7 +630,7 @@ def create_summary_filelist_area(parent):
     for key, order_info in settings["app"]["sort"]["orders"].items():
         sort_menu.add_command(label=order_info["label"], command=lambda key=key: change_sort_order(table_frame, key, sort_menu_button, on_change=True))
     sort_menu_button.config(menu=sort_menu)
-    sort_menu_button.pack(anchor=tk.SW, side=tk.LEFT, padx=2, pady=5)
+    sort_menu_button.pack(anchor=tk.SW, side=tk.LEFT, padx=(0, 4))
 
     # エクスポートメニュー
     exp_menu_button = ttk.Menubutton(menu_frame, text="エクスポート", direction="below")
@@ -646,7 +639,14 @@ def create_summary_filelist_area(parent):
     expmenu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(export_data))
     expmenu.add_command(label="ファイル名一覧をコピー", command=lambda: copy_to_clipboard(export_data, filename_only=True))
     exp_menu_button.config(menu=expmenu)
-    exp_menu_button.pack(anchor=tk.SW, side=tk.LEFT, padx=2, pady=5)
+    exp_menu_button.pack(anchor=tk.SW, side=tk.LEFT, padx=(0, 4))
+
+    # ファイル別テーブル
+    table_frame = ttk.Frame(parent)
+    table_frame.pack(fill=tk.BOTH, expand=True, padx=10)
+
+    # ファイル別テーブルの更新
+    export_data = update_filelist_table(table_frame)
 
     # 初期ソート順の反映
     change_sort_order(table_frame, settings["app"]["sort"]["default"], sort_menu_button, on_change=False)
