@@ -126,6 +126,16 @@ class LauncherApp:
             for file in os.listdir(projects_dir):
                 if file.endswith('.json'):
                     self.project_list.insert(tk.END, file)
+            
+            # 最後に開いたプロジェクトを選択
+            last_project = self.settings["app"]["last_opened_project"]
+            if last_project:
+                try:
+                    index = self.project_list.get(0, tk.END).index(last_project)
+                    self.project_list.selection_set(index)
+                    self.open_project_btn.config(state=tk.NORMAL)
+                except ValueError:
+                    pass  # 最後に開いたプロジェクトが存在しない場合は何もしない
     
     def on_selection_changed(self, event):
         """プロジェクト選択時の処理"""
@@ -147,6 +157,10 @@ class LauncherApp:
         selection = self.project_list.curselection()
         if selection:
             project_file = os.path.join("projects", self.project_list.get(selection[0]))
+            # 最後に開いたプロジェクトを保存
+            self.settings["app"]["last_opened_project"] = self.project_list.get(selection[0])
+            AppConfig.save_settings(settings=self.settings)
+            # StartProcess.pyを起動
             subprocess.Popen(["python", "StartProcess.py", project_file])
             self.root.quit()
     

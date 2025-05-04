@@ -22,6 +22,7 @@
     "app": {
         "window_size": "800x580",
         "window_position": "+200+200",
+        "last_opened_project": "",
         "structures": {"daily": "日付別", "by_env": "環境別", "by_name": "担当者別"},
         "state": {
             "completed": {"name": "完了", "foreground": "darkgreen", "background": "darkseagreen1"},
