@@ -506,7 +506,7 @@ def update_filelist_table(table_frame):
             update_bar_chart(data=display_data["total_data"], incompleted_count=display_data["incompleted"], ax=ax, canvas=canvas, show_label=False)
 
             # グラフのツールチップ
-            graph_tooltop = f"項目数: {display_data['available']} (Total: {display_data['all']} / 対象外: {display_data['excluded']})\nState: {display_data['state']}\n{make_results_text(display_data['total_data'], display_data['incompleted'])}"
+            graph_tooltop = make_graph_tooltip(display_data)
             ToolTip(canvas.get_tk_widget(), msg=graph_tooltop, delay=0.3, follow=False)
 
             # エクスポート用データ
@@ -525,6 +525,18 @@ def update_filelist_table(table_frame):
         ToolTip(filename_label, msg="\n".join(tooltip_text), delay=0.3, follow=False)
 
     return export_data
+
+def make_graph_tooltip(display_data: dict) -> str:
+    """グラフのツールチップ用のラベルを生成する
+
+    Args:
+        display_data: 表示データ
+
+    Returns:
+        str: ツールチップ用のラベル
+    """
+    return f"項目数: {display_data['available']} (Total: {display_data['all']} / 対象外: {display_data['excluded']})\nState: {display_data['state']}\n{make_results_text(display_data['total_data'], display_data['incompleted'])}"
+
 
 def sort_input_data(order: str, type: str = "asc") -> None:
     """入力データを指定された順序でソートする
