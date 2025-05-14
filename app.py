@@ -68,7 +68,6 @@ def create_progress_chart(data, settings):
 
     fig.update_layout(
         barmode='stack',
-        title="テスト進捗状況",
         showlegend=True,
         height=100,
         margin=dict(l=0, r=0, t=30, b=0),
@@ -233,11 +232,32 @@ def main():
                 # 集計情報の表示
                 col1, col2, col3 = st.columns(3)
                 with col1:
-                    st.metric("項目数", f"{total_stats['available']} (Total: {total_stats['all']} / 対象外: {total_stats['excluded']})")
+                    main_text = f"{total_stats['available']}"
+                    sub_text = f"(Total: {total_stats['all']} / 対象外: {total_stats['excluded']})"
+                    st.markdown(
+                        f"<div>項目数</div>"
+                        f"<div style='font-size:2.5em; line-height:1.1;'>{main_text} "
+                        f"<span style='font-size:0.5em; color:#aaa;'>{sub_text}</span></div>",
+                        unsafe_allow_html=True
+                    )
                 with col2:
-                    st.metric("完了率", f"{total_stats['completed']}/{total_stats['available']} ({total_stats['completed']/total_stats['available']*100:.1f}%)")
+                    main_text = f"{total_stats['completed']}/{total_stats['available']}"
+                    sub_text = f"({total_stats['completed']/total_stats['available']*100:.1f}%)"
+                    st.markdown(
+                        f"<div>完了率</div>"
+                        f"<div style='font-size:2.5em; line-height:1.1;'>{main_text} "
+                        f"<span style='font-size:0.5em; color:#aaa;'>{sub_text}</span></div>",
+                        unsafe_allow_html=True
+                    )
                 with col3:
-                    st.metric("消化率", f"{total_stats['executed']}/{total_stats['available']} ({total_stats['executed']/total_stats['available']*100:.1f}%)")
+                    main_text = f"{total_stats['executed']}/{total_stats['available']}"
+                    sub_text = f"({total_stats['executed']/total_stats['available']*100:.1f}%)"
+                    st.markdown(
+                        f"<div>消化率</div>"
+                        f"<div style='font-size:2.5em; line-height:1.1;'>{main_text} "
+                        f"<span style='font-size:0.5em; color:#aaa;'>{sub_text}</span></div>",
+                        unsafe_allow_html=True
+                    )
                 
                 # ファイル一覧の表示
                 st.subheader("ファイル一覧")
@@ -324,7 +344,14 @@ def main():
                     # 集計情報の表示
                     col1, col2, col3 = st.columns(3)
                     with col1:
-                        st.metric("項目数", f"{file_data['stats']['available']} (Total: {file_data['stats']['all']} / 対象外: {file_data['stats']['excluded']})")
+                        main_text = f"{file_data['stats']['available']}"
+                        sub_text = f"(Total: {file_data['stats']['all']} / 対象外: {file_data['stats']['excluded']})"
+                        st.markdown(
+                            f"<div style='font-weight:bold;'>項目数</div>"
+                            f"<div style='font-size:2.5em; font-weight:bold; line-height:1.1;'>{main_text} "
+                            f"<span style='font-size:0.5em; color:#aaa;'>{sub_text}</span></div>",
+                            unsafe_allow_html=True
+                        )
                     with col2:
                         st.metric("完了率", f"{file_data['stats']['completed']}/{file_data['stats']['available']} ({file_data['stats']['completed']/file_data['stats']['available']*100:.1f}%)")
                     with col3:
