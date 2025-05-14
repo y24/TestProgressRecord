@@ -300,10 +300,11 @@ def main():
                         file_data.append({
                             "ファイル名": data.get("file", ""),
                             "項目数": "-",
-                            "更新日": data.get("last_updated", ""),
+                            "進捗": "-",
                             "消化率": "-",
                             "完了率": "-",
-                            "状態": status
+                            "状態": status,
+                            "更新日": data.get("last_updated", "")
                         })
                     elif "warning" in data:
                         status = "警告"
@@ -311,10 +312,11 @@ def main():
                         file_data.append({
                             "ファイル名": data.get("file", ""),
                             "項目数": "-",
-                            "更新日": data.get("last_updated", ""),
+                            "進捗": make_progress_svg(data, settings),
                             "消化率": "-",
                             "完了率": "-",
-                            "状態": status
+                            "状態": status,
+                            "更新日": data.get("last_updated", "")
                         })
                     elif "stats" in data:
                         status = "正常"
@@ -325,20 +327,21 @@ def main():
                         file_data.append({
                             "ファイル名": data.get("file", ""),
                             "項目数": available,
-                            "更新日": data.get("last_updated", ""),
+                            "進捗": make_progress_svg(data, settings),
                             "消化率": f"{executed}/{available} ({(executed/available*100):.1f}%)" if available else "-",
                             "完了率": f"{completed}/{available} ({(completed/available*100):.1f}%)" if available else "-",
-                            "状態": status
+                            "状態": status,
+                            "更新日": data.get("last_updated", "")
                         })
-                        file_data[-1]["進捗"] = make_progress_svg(data, settings)
                     else:
                         file_data.append({
                             "ファイル名": data.get("file", ""),
                             "項目数": "-",
-                            "更新日": data.get("last_updated", ""),
+                            "進捗": "-",
                             "消化率": "-",
                             "完了率": "-",
-                            "状態": "不明"
+                            "状態": "不明",
+                            "更新日": data.get("last_updated", "")
                         })
                 
                 df = pd.DataFrame(file_data)
@@ -378,15 +381,29 @@ def main():
                         main_text = f"{file_data['stats']['available']}"
                         sub_text = f"(Total: {file_data['stats']['all']} / 対象外: {file_data['stats']['excluded']})"
                         st.markdown(
-                            f"<div style='font-weight:bold;'>項目数</div>"
-                            f"<div style='font-size:2.5em; font-weight:bold; line-height:1.1;'>{main_text} "
+                            f"<div>項目数</div>"
+                            f"<div style='font-size:2.5em; line-height:1.1;'>{main_text} "
                             f"<span style='font-size:0.5em; color:#aaa;'>{sub_text}</span></div>",
                             unsafe_allow_html=True
                         )
                     with col2:
-                        st.metric("完了率", f"{file_data['stats']['completed']}/{file_data['stats']['available']} ({file_data['stats']['completed']/file_data['stats']['available']*100:.1f}%)")
+                        main_text = f"{file_data['stats']['completed']}/{file_data['stats']['available']}"
+                        sub_text = f"({file_data['stats']['completed']/file_data['stats']['available']*100:.1f}%)"
+                        st.markdown(
+                            f"<div>完了率</div>"
+                            f"<div style='font-size:2.5em; line-height:1.1;'>{main_text} "
+                            f"<span style='font-size:0.5em; color:#aaa;'>{sub_text}</span></div>",
+                            unsafe_allow_html=True
+                        )
                     with col3:
-                        st.metric("消化率", f"{file_data['stats']['executed']}/{file_data['stats']['available']} ({file_data['stats']['executed']/file_data['stats']['available']*100:.1f}%)")
+                        main_text = f"{file_data['stats']['executed']}/{file_data['stats']['available']}"
+                        sub_text = f"({file_data['stats']['executed']/file_data['stats']['available']*100:.1f}%)"
+                        st.markdown(
+                            f"<div>消化率</div>"
+                            f"<div style='font-size:2.5em; line-height:1.1;'>{main_text} "
+                            f"<span style='font-size:0.5em; color:#aaa;'>{sub_text}</span></div>",
+                            unsafe_allow_html=True
+                        )
                     # サブタブの作成
                     subtab1, subtab2, subtab3 = st.tabs(["日付別", "環境別", "担当者別"])
                     with subtab1:
