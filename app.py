@@ -32,47 +32,47 @@ def load_project_data(project_path):
 
 # 進捗状況のグラフを作成
 def create_progress_chart(data, settings):
-    # 結果の集計
     results = data.get("total", {})
     incompleted = data.get("stats", {}).get("incompleted", 0)
-    
-    # データの準備
-    labels = []
-    values = []
-    colors = []
-    
-    # 結果の追加
+
+    # 結果ごとに値と色を準備
+    bar_data = []
     for result in settings["test_status"]["results"]:
-        if result in results and results[result] > 0:
-            labels.append(result)
-            values.append(results[result])
-            colors.append(settings["app"]["bar"]["colors"].get(result, "gainsboro"))
-    
-    # 未着手数の追加
+        value = results.get(result, 0)
+        if value > 0:
+            bar_data.append({
+                "name": result,
+                "value": value,
+                "color": settings["app"]["bar"]["colors"].get(result, "gainsboro")
+            })
+    # 未着手
     if incompleted > 0:
-        labels.append(settings["test_status"]["labels"]["not_run"])
-        values.append(incompleted)
-        colors.append(settings["app"]["bar"]["colors"].get(settings["test_status"]["labels"]["not_run"], "gainsboro"))
-    
-    # グラフの作成
-    fig = go.Figure(data=[
-        go.Bar(
-            x=values,
+        bar_data.append({
+            "name": settings["test_status"]["labels"]["not_run"],
+            "value": incompleted,
+            "color": settings["app"]["bar"]["colors"].get(settings["test_status"]["labels"]["not_run"], "gainsboro")
+        })
+
+    # 積み上げバー作成
+    fig = go.Figure()
+    for bar in bar_data:
+        fig.add_trace(go.Bar(
+            x=[bar["value"]],
             y=["進捗状況"],
             orientation='h',
-            marker_color=colors,
-            text=values,
-            textposition='auto',
-        )
-    ])
-    
+            name=bar["name"],
+            marker_color=bar["color"],
+            text=[bar["value"]],
+            textposition='inside',
+        ))
+
     fig.update_layout(
+        barmode='stack',
         title="テスト進捗状況",
-        showlegend=False,
+        showlegend=True,
         height=100,
         margin=dict(l=0, r=0, t=30, b=0),
     )
-    
     return fig
 
 # 日付別データのテーブルを作成
@@ -141,6 +141,27 @@ def create_person_table(data, settings):
         df = df.sort_values(["日付", "担当者"], ascending=[False, True])
     
     return df
+
+def make_progress_svg(data, settings, width=120, height=16):
+    results = data.get("total", {})
+    incompleted = data.get("stats", {}).get("incompleted", 0)
+    bar_data = []
+    total = sum(results.get(r, 0) for r in settings["test_status"]["results"]) + incompleted
+    if total == 0:
+        return ""
+    for result in settings["test_status"]["results"]:
+        value = results.get(result, 0)
+        if value > 0:
+            bar_data.append((settings["app"]["bar"]["colors"].get(result, "#ccc"), value))
+    if incompleted > 0:
+        bar_data.append((settings["app"]["bar"]["colors"].get(settings["test_status"]["labels"]["not_run"], "#ccc"), incompleted))
+    # SVG生成
+    svg = f'<svg width="{width}" height="{height}">' \
+        + ''.join([
+            f'<rect x="{sum(width * v / total for _, v in bar_data[:i])}" y="0" width="{width * value / total}" height="{height}" fill="{color}" />'
+            for i, (color, value) in enumerate(bar_data)
+        ]) + '</svg>'
+    return svg
 
 # メインアプリケーション
 def main():
@@ -258,6 +279,7 @@ def main():
                             "完了率": f"{completed}/{available} ({(completed/available*100):.1f}%)" if available else "-",
                             "状態": status
                         })
+                        file_data[-1]["進捗"] = make_progress_svg(data, settings)
                     else:
                         file_data.append({
                             "ファイル名": data.get("file", ""),
@@ -272,11 +294,18 @@ def main():
                 for col in ["項目数", "消化率", "完了率"]:
                     if col in df.columns:
                         df[col] = df[col].astype(str)
-                st.dataframe(
-                    df,
-                    hide_index=True,
-                    use_container_width=True
-                )
+                # HTMLテーブルでSVGを表示
+                def df_to_html(df):
+                    html = '<table style="width:100%; border-collapse:collapse;">'
+                    html += '<tr>' + ''.join(f'<th style="padding:2px 4px;">{c}</th>' for c in df.columns) + '</tr>'
+                    for _, row in df.iterrows():
+                        html += '<tr>' + ''.join(
+                            f'<td style="padding:2px 4px; vertical-align:middle;">{row[c] if c != "進捗" else row[c]}</td>'
+                            for c in df.columns
+                        ) + '</tr>'
+                    html += '</table>'
+                    return html
+                st.markdown(df_to_html(df), unsafe_allow_html=True)
     
     with tab2:
         # ファイル別タブ
