@@ -11,6 +11,9 @@ import japanize_matplotlib
 import matplotlib.pyplot as plt
 import io
 import base64
+import subprocess
+import sys
+import time
 
 # 設定の読み込み
 def load_settings():
@@ -175,18 +178,47 @@ def main():
     
     # サイドバー
     st.sidebar.title("TestTraQ")
-    
+    reload_clicked = st.sidebar.button("🔄 集計データ再読み込み")
     # プロジェクトファイルの選択
     project_files = list(Path("projects").glob("*.json"))
     if not project_files:
         st.error("プロジェクトファイルが見つかりません。")
         return
-    
+
     selected_project = st.sidebar.selectbox(
         "プロジェクトを選択",
         options=project_files,
         format_func=lambda x: x.stem
     )
+
+    # 再集計状態管理
+    if 'reload_state' not in st.session_state:
+        st.session_state['reload_state'] = 'idle'
+
+    if reload_clicked:
+        if selected_project:
+            project_path = str(selected_project)
+            python_exe = sys.executable
+            flag_path = f"{project_path}.reloading"
+            with open(flag_path, "w") as f:
+                f.write("reloading")
+            cmd = [python_exe, "StartProcess.py", project_path, "--project", project_path, "--on_reload"]
+            subprocess.Popen(cmd)
+            st.session_state['reload_state'] = 'waiting'
+            st.rerun()
+        else:
+            st.warning("プロジェクトファイルを選択してください。")
+
+    if st.session_state.get('reload_state') == 'waiting':
+        flag_path = f"{str(selected_project)}.reloading"
+        if not os.path.exists(flag_path):
+            st.session_state['reload_state'] = 'idle'
+            st.success("再集計が完了しました。")
+            st.rerun()
+        else:
+            st.info("再集計中です。しばらくお待ちください。")
+            time.sleep(2)
+            st.rerun()
     
     # プロジェクトデータの読み込み
     project_data = load_project_data(selected_project)
