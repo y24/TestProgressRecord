@@ -260,7 +260,6 @@ def main():
                     )
                 
                 # ファイル一覧の表示
-                st.subheader("ファイル一覧")
                 file_data = []
                 for data in project_data["aggregate_data"]:
                     if "error" in data:
