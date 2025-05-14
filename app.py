@@ -1,0 +1,317 @@
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import json
+import os
+from datetime import datetime
+import numpy as np
+from pathlib import Path
+import japanize_matplotlib
+import matplotlib.pyplot as plt
+import io
+import base64
+
+# 設定の読み込み
+def load_settings():
+    try:
+        with open("UserConfig.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        with open("DefaultConfig.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+
+# プロジェクトデータの読み込み
+def load_project_data(project_path):
+    try:
+        with open(project_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        st.error(f"プロジェクトファイルの読み込みに失敗しました: {str(e)}")
+        return None
+
+# 進捗状況のグラフを作成
+def create_progress_chart(data, settings):
+    # 結果の集計
+    results = data.get("total", {})
+    incompleted = data.get("stats", {}).get("incompleted", 0)
+    
+    # データの準備
+    labels = []
+    values = []
+    colors = []
+    
+    # 結果の追加
+    for result in settings["test_status"]["results"]:
+        if result in results and results[result] > 0:
+            labels.append(result)
+            values.append(results[result])
+            colors.append(settings["app"]["bar"]["colors"].get(result, "gainsboro"))
+    
+    # 未着手数の追加
+    if incompleted > 0:
+        labels.append(settings["test_status"]["labels"]["not_run"])
+        values.append(incompleted)
+        colors.append(settings["app"]["bar"]["colors"].get(settings["test_status"]["labels"]["not_run"], "gainsboro"))
+    
+    # グラフの作成
+    fig = go.Figure(data=[
+        go.Bar(
+            x=values,
+            y=["進捗状況"],
+            orientation='h',
+            marker_color=colors,
+            text=values,
+            textposition='auto',
+        )
+    ])
+    
+    fig.update_layout(
+        title="テスト進捗状況",
+        showlegend=False,
+        height=100,
+        margin=dict(l=0, r=0, t=30, b=0),
+    )
+    
+    return fig
+
+# 日付別データのテーブルを作成
+def create_daily_table(data, settings):
+    if not data.get("daily"):
+        return pd.DataFrame()
+    
+    # データの準備
+    daily_data = []
+    for date, values in data["daily"].items():
+        row = {"日付": date}
+        row.update(values)
+        daily_data.append(row)
+    
+    # DataFrameの作成
+    df = pd.DataFrame(daily_data)
+    
+    # 日付でソート
+    if not df.empty:
+        df = df.sort_values("日付", ascending=False)
+    
+    return df
+
+# 環境別データのテーブルを作成
+def create_env_table(data, settings):
+    if not data.get("by_env"):
+        return pd.DataFrame()
+    
+    # データの準備
+    env_data = []
+    for env, dates in data["by_env"].items():
+        for date, values in dates.items():
+            row = {"環境名": env, "日付": date}
+            row.update(values)
+            env_data.append(row)
+    
+    # DataFrameの作成
+    df = pd.DataFrame(env_data)
+    
+    # 日付でソート
+    if not df.empty:
+        df = df.sort_values(["環境名", "日付"], ascending=[True, False])
+    
+    return df
+
+# 担当者別データのテーブルを作成
+def create_person_table(data, settings):
+    if not data.get("by_name"):
+        return pd.DataFrame()
+    
+    # データの準備
+    person_data = []
+    for date, names in data["by_name"].items():
+        for name, count in names.items():
+            person_data.append({
+                "日付": date,
+                "担当者": name,
+                "消化数": count
+            })
+    
+    # DataFrameの作成
+    df = pd.DataFrame(person_data)
+    
+    # 日付でソート
+    if not df.empty:
+        df = df.sort_values(["日付", "担当者"], ascending=[False, True])
+    
+    return df
+
+# メインアプリケーション
+def main():
+    st.set_page_config(
+        page_title="TestTraQ",
+        page_icon="📊",
+        layout="wide"
+    )
+    
+    # 設定の読み込み
+    settings = load_settings()
+    
+    # サイドバー
+    st.sidebar.title("TestTraQ")
+    
+    # プロジェクトファイルの選択
+    project_files = list(Path("projects").glob("*.json"))
+    if not project_files:
+        st.error("プロジェクトファイルが見つかりません。")
+        return
+    
+    selected_project = st.sidebar.selectbox(
+        "プロジェクトを選択",
+        options=project_files,
+        format_func=lambda x: x.stem
+    )
+    
+    # プロジェクトデータの読み込み
+    project_data = load_project_data(selected_project)
+    if not project_data:
+        return
+    
+    # プロジェクト名の表示
+    st.title(project_data["project"]["project_name"])
+    
+    # タブの作成
+    tab1, tab2 = st.tabs(["全体集計", "ファイル別"])
+    
+    with tab1:
+        # 全体集計タブ
+        if "aggregate_data" in project_data:
+            # エラーとワーニングのあるデータを除外
+            filtered_data = [d for d in project_data["aggregate_data"] 
+                           if "error" not in d and "warning" not in d]
+            
+            if filtered_data:
+                # 総合集計の表示
+                total_stats = {
+                    "all": sum(d["stats"]["all"] for d in filtered_data),
+                    "excluded": sum(d["stats"]["excluded"] for d in filtered_data),
+                    "available": sum(d["stats"]["available"] for d in filtered_data),
+                    "executed": sum(d["stats"]["executed"] for d in filtered_data),
+                    "completed": sum(d["stats"]["completed"] for d in filtered_data),
+                    "incompleted": sum(d["stats"]["incompleted"] for d in filtered_data)
+                }
+                
+                # 進捗状況の表示
+                total_results = {}
+                for data in filtered_data:
+                    for key, value in data["total"].items():
+                        total_results[key] = total_results.get(key, 0) + value
+                
+                st.plotly_chart(create_progress_chart(
+                    {"total": total_results,
+                     "stats": total_stats},
+                    settings
+                ), use_container_width=True, key="summary_progress_chart")
+                
+                # 集計情報の表示
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("項目数", f"{total_stats['available']} (Total: {total_stats['all']} / 対象外: {total_stats['excluded']})")
+                with col2:
+                    st.metric("完了率", f"{total_stats['completed']}/{total_stats['available']} ({total_stats['completed']/total_stats['available']*100:.1f}%)")
+                with col3:
+                    st.metric("消化率", f"{total_stats['executed']}/{total_stats['available']} ({total_stats['executed']/total_stats['available']*100:.1f}%)")
+                
+                # ファイル一覧の表示
+                st.subheader("ファイル一覧")
+                file_data = []
+                for data in project_data["aggregate_data"]:
+                    if "error" in data:
+                        status = "エラー"
+                        status_color = "red"
+                        file_data.append({
+                            "ファイル名": data.get("file", ""),
+                            "項目数": "-",
+                            "更新日": data.get("last_updated", ""),
+                            "消化率": "-",
+                            "完了率": "-",
+                            "状態": status
+                        })
+                    elif "warning" in data:
+                        status = "警告"
+                        status_color = "orange"
+                        file_data.append({
+                            "ファイル名": data.get("file", ""),
+                            "項目数": "-",
+                            "更新日": data.get("last_updated", ""),
+                            "消化率": "-",
+                            "完了率": "-",
+                            "状態": status
+                        })
+                    elif "stats" in data:
+                        status = "正常"
+                        status_color = "green"
+                        available = data["stats"].get("available", 0)
+                        executed = data["stats"].get("executed", 0)
+                        completed = data["stats"].get("completed", 0)
+                        file_data.append({
+                            "ファイル名": data.get("file", ""),
+                            "項目数": available,
+                            "更新日": data.get("last_updated", ""),
+                            "消化率": f"{executed}/{available} ({(executed/available*100):.1f}%)" if available else "-",
+                            "完了率": f"{completed}/{available} ({(completed/available*100):.1f}%)" if available else "-",
+                            "状態": status
+                        })
+                    else:
+                        file_data.append({
+                            "ファイル名": data.get("file", ""),
+                            "項目数": "-",
+                            "更新日": data.get("last_updated", ""),
+                            "消化率": "-",
+                            "完了率": "-",
+                            "状態": "不明"
+                        })
+                
+                df = pd.DataFrame(file_data)
+                for col in ["項目数", "消化率", "完了率"]:
+                    if col in df.columns:
+                        df[col] = df[col].astype(str)
+                st.dataframe(
+                    df,
+                    hide_index=True,
+                    use_container_width=True
+                )
+    
+    with tab2:
+        # ファイル別タブ
+        if "aggregate_data" in project_data:
+            # ファイル選択
+            file_options = [d["selector_label"] for d in project_data["aggregate_data"]]
+            selected_file = st.selectbox("ファイルを選択", options=file_options)
+            
+            # 選択されたファイルのデータを取得
+            matching_data = [d for d in project_data["aggregate_data"] if d["selector_label"] == selected_file]
+            if matching_data:
+                file_data = matching_data[0]
+                if "error" not in file_data:
+                    # 進捗状況の表示
+                    st.plotly_chart(create_progress_chart(file_data, settings), use_container_width=True, key=f"file_progress_chart_{selected_file}")
+                    # 集計情報の表示
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("項目数", f"{file_data['stats']['available']} (Total: {file_data['stats']['all']} / 対象外: {file_data['stats']['excluded']})")
+                    with col2:
+                        st.metric("完了率", f"{file_data['stats']['completed']}/{file_data['stats']['available']} ({file_data['stats']['completed']/file_data['stats']['available']*100:.1f}%)")
+                    with col3:
+                        st.metric("消化率", f"{file_data['stats']['executed']}/{file_data['stats']['available']} ({file_data['stats']['executed']/file_data['stats']['available']*100:.1f}%)")
+                    # サブタブの作成
+                    subtab1, subtab2, subtab3 = st.tabs(["日付別", "環境別", "担当者別"])
+                    with subtab1:
+                        st.dataframe(create_daily_table(file_data, settings), hide_index=True, use_container_width=True)
+                    with subtab2:
+                        st.dataframe(create_env_table(file_data, settings), hide_index=True, use_container_width=True)
+                    with subtab3:
+                        st.dataframe(create_person_table(file_data, settings), hide_index=True, use_container_width=True)
+                else:
+                    st.error(f"エラー: {file_data['error']['message']}")
+            else:
+                st.error(f"選択されたファイル '{selected_file}' のデータが見つかりません。")
+
+if __name__ == "__main__":
+    main() 
