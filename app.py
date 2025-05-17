@@ -13,6 +13,7 @@ import base64
 import subprocess
 import sys
 import time
+import re
 
 # 設定の読み込み
 def load_settings():
@@ -200,6 +201,115 @@ def save_default_project(project_name):
     with open("default_project_config.json", "w", encoding="utf-8") as f:
         json.dump(config, f, ensure_ascii=False, indent=4)
 
+# プロジェクトファイル作成用のポップアップ
+def create_project_popup():
+    # セッション状態の初期化
+    if 'file_count' not in st.session_state:
+        st.session_state.file_count = 1
+    if 'current_tab' not in st.session_state:
+        st.session_state.current_tab = 0
+    if 'tabs' not in st.session_state:
+        st.session_state.tabs = [0]  # タブのインデックスリスト
+    
+    with st.form("project_form"):
+        st.subheader("プロジェクト設定")
+        
+        # プロジェクト名称
+        project_name = st.text_input("プロジェクト名称 (*)", key="project_name")
+        
+        # ファイル情報
+        st.subheader("取得元ファイルパス/URL")
+        
+        # タブの表示
+        if st.session_state.tabs:
+            tab_labels = [f"ファイル {i+1}" for i in range(len(st.session_state.tabs))]
+            tabs = st.tabs(tab_labels)
+            
+            # 現在のタブを追跡
+            current_tab_id = tabs[st.session_state.current_tab].id
+            for i, tab in enumerate(tabs):
+                if tab.id == current_tab_id:
+                    st.session_state.current_tab = i
+                    break
+            
+            file_info = []
+            for i, (tab, tab_id) in enumerate(zip(tabs, st.session_state.tabs)):
+                with tab:                    
+                    identifier = st.text_input("名称", key=f"identifier_{tab_id}")
+                    file_type = st.selectbox(
+                        "タイプ *", 
+                        ["local", "sharepoint"], 
+                        key=f"type_{tab_id}"
+                    )
+                    path = st.text_input("パスまたはURL *", key=f"path_{tab_id}")
+                    
+                    # 必須項目が入力されている場合のみファイル情報を追加
+                    if file_type and path.strip():
+                        file_info.append({
+                            "type": file_type,
+                            "identifier": identifier.strip(),
+                            "path": path.strip()
+                        })
+
+                    # 削除ボタン（タブが2つ以上ある場合は表示）
+                    if len(st.session_state.tabs) > 1:
+                        if st.form_submit_button(f"🗑 ファイル{i+1} を削除"):
+                            del st.session_state.tabs[i]
+                            # 削除後のタブ数に応じて現在のタブインデックスを調整
+                            st.session_state.current_tab = min(i, len(st.session_state.tabs) - 1)
+                            st.rerun()
+
+        # ファイル追加ボタン
+        if st.form_submit_button("＋ ファイルを追加", help="ファイルを追加"):
+            new_tab = max(st.session_state.tabs) + 1 if st.session_state.tabs else 0
+            st.session_state.tabs.append(new_tab)
+            st.session_state.current_tab = len(st.session_state.tabs) - 1
+            st.rerun()
+
+        # 区切り線
+        st.markdown("---")
+
+        # 保存ボタン
+        submitted = st.form_submit_button("保存")
+        
+        if submitted:
+            if not project_name:
+                st.error("プロジェクト名称を入力してください")
+                return None
+                
+            if not file_info:
+                st.error("少なくとも1つのファイル情報を入力してください")
+                return None
+                
+            # プロジェクトデータの作成
+            project_data = {
+                "project": {
+                    "project_name": project_name,
+                    "files": file_info
+                }
+            }
+            
+            # projectsディレクトリの作成
+            projects_dir = Path("projects")
+            projects_dir.mkdir(exist_ok=True)
+            
+            # ファイル名のサニタイズ
+            safe_project_name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '_', project_name)
+            json_path = projects_dir / f"{safe_project_name}.json"
+            
+            # JSONファイルの保存
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(project_data, f, ensure_ascii=False, indent=2)
+                
+            st.success(f"プロジェクトファイルを保存しました。\n{json_path.name}")
+            # セッション状態をクリア
+            st.session_state.file_count = 1
+            st.session_state.current_tab = 0
+            st.session_state.tabs = [0]
+            return str(json_path)
+            
+        return None
+
 # メインアプリケーション
 def main():
     st.set_page_config(
@@ -214,7 +324,18 @@ def main():
     # サイドバー
     st.sidebar.title("TestTraQ")
     reload_clicked = st.sidebar.button("🔄 集計データ再読み込み")
+    create_project_clicked = st.sidebar.button("📝 新規プロジェクト作成")
     
+    if create_project_clicked:
+        st.session_state.show_project_popup = True
+        
+    if st.session_state.get("show_project_popup", False):
+        project_path = create_project_popup()
+        if project_path:
+            st.session_state.show_project_popup = False
+            st.rerun()
+        return  # プロジェクト作成中は以降の処理をスキップ
+
     # プロジェクトファイルの選択
     project_files = list(Path("projects").glob("*.json"))
     if not project_files:
