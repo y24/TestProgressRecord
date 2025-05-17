@@ -185,6 +185,21 @@ def create_error_table(project_data):
     
     return pd.DataFrame(error_data)
 
+# デフォルトプロジェクトの設定を読み込む
+def load_default_project():
+    try:
+        with open("default_project_config.json", "r", encoding="utf-8") as f:
+            config = json.load(f)
+            return config.get("default_project")
+    except FileNotFoundError:
+        return None
+
+# デフォルトプロジェクトを設定
+def save_default_project(project_name):
+    config = {"default_project": project_name}
+    with open("default_project_config.json", "w", encoding="utf-8") as f:
+        json.dump(config, f, ensure_ascii=False, indent=4)
+
 # メインアプリケーション
 def main():
     st.set_page_config(
@@ -213,10 +228,15 @@ def main():
     # プロジェクトファイルのオプションを準備
     project_options = {p.stem: p for p in project_files}
     
-    # 前回選択したプロジェクトが存在する場合は、それをデフォルト値として設定
+    # デフォルトプロジェクトの読み込み
+    default_project = load_default_project()
+    
+    # 前回選択したプロジェクトまたはデフォルトプロジェクトが存在する場合は、それをデフォルト値として設定
     default_index = 0
     if last_project in project_options:
         default_index = list(project_options.keys()).index(last_project)
+    elif default_project in project_options:
+        default_index = list(project_options.keys()).index(default_project)
 
     selected_project_name = st.sidebar.selectbox(
         "プロジェクトを選択",
@@ -264,13 +284,26 @@ def main():
     if not project_data:
         return
     
-    # プロジェクト名の表示
-    st.title(project_data["project"]["project_name"])
+    # プロジェクト名とお気に入りボタンの表示
+    col1, col2 = st.columns([10, 1])
+    with col1:
+        st.title(project_data["project"]["project_name"])
+    with col2:
+        is_default = selected_project_name == default_project
+        star_icon = "⭐" if is_default else "☆"
+        if st.button(star_icon, key="favorite_button"):
+            if is_default:
+                # デフォルト設定を解除
+                save_default_project(None)
+            else:
+                # デフォルトプロジェクトとして設定
+                save_default_project(selected_project_name)
+            st.rerun()
 
     st.header("集計結果")
     
     # タブの作成
-    tab1, tab2, tab3 = st.tabs(["全体集計", "ファイル別", "エラー情報"])
+    tab1, tab2, tab3 = st.tabs(["全体集計", "ファイル別集計", "エラー情報"])
     
     with tab1:
         # 全体集計タブ
@@ -289,18 +322,6 @@ def main():
                     "completed": sum(d["stats"]["completed"] for d in filtered_data),
                     "incompleted": sum(d["stats"]["incompleted"] for d in filtered_data)
                 }
-                
-                # 進捗状況の表示
-                total_results = {}
-                for data in filtered_data:
-                    for key, value in data["total"].items():
-                        total_results[key] = total_results.get(key, 0) + value
-                
-                st.plotly_chart(create_progress_chart(
-                    {"total": total_results,
-                     "stats": total_stats},
-                    settings
-                ), use_container_width=True, key="summary_progress_chart")
                 
                 # 集計情報の表示
                 col1, col2, col3 = st.columns(3)
@@ -331,10 +352,21 @@ def main():
                         f"<span style='font-size:0.5em; color:#aaa;'>{sub_text}</span></div>",
                         unsafe_allow_html=True
                     )
+
+                # 全体集計グラフの表示
+                total_results = {}
+                for data in filtered_data:
+                    for key, value in data["total"].items():
+                        total_results[key] = total_results.get(key, 0) + value
                 
-                # ファイル一覧
+                st.plotly_chart(create_progress_chart(
+                    {"total": total_results,
+                     "stats": total_stats},
+                    settings
+                ), use_container_width=True, key="summary_progress_chart")
+
+                # 区切り線
                 st.markdown("---")
-                st.subheader('ファイル一覧')
 
                 # ファイル一覧の表示
                 file_data = []
@@ -418,8 +450,6 @@ def main():
             if matching_data:
                 file_data = matching_data[0]
                 if "error" not in file_data:
-                    # 進捗状況の表示
-                    st.plotly_chart(create_progress_chart(file_data, settings), use_container_width=True, key=f"file_progress_chart_{selected_file}")
                     # 集計情報の表示
                     col1, col2, col3 = st.columns(3)
                     with col1:
@@ -449,6 +479,12 @@ def main():
                             f"<span style='font-size:0.5em; color:#aaa;'>{sub_text}</span></div>",
                             unsafe_allow_html=True
                         )
+
+                    # 進捗状況の表示
+                    st.plotly_chart(create_progress_chart(file_data, settings), use_container_width=True, key=f"file_progress_chart_{selected_file}")
+                    # 区切り線
+                    st.markdown("---")
+
                     # サブタブの作成
                     subtab1, subtab2, subtab3 = st.tabs(["日付別", "環境別", "担当者別"])
                     with subtab1:
