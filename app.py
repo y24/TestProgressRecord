@@ -313,19 +313,19 @@ def main():
                 file_data = []
                 for data in project_data["aggregate_data"]:
                     if "error" in data:
-                        status = "エラー"
+                        status = "⚠️エラー"
                         status_color = "red"
                         file_data.append({
                             "ファイル名": data.get("file", ""),
                             "項目数": "-",
-                            "進捗": "⚠️",
+                            "進捗": "-",
                             "消化率": "-",
                             "完了率": "-",
                             "状態": status,
                             "更新日": data.get("last_updated", "")
                         })
                     elif "warning" in data:
-                        status = "警告"
+                        status = "ワーニング"
                         status_color = "orange"
                         file_data.append({
                             "ファイル名": data.get("file", ""),
@@ -337,7 +337,7 @@ def main():
                             "更新日": data.get("last_updated", "")
                         })
                     elif "stats" in data:
-                        status = "正常"
+                        status = ""
                         status_color = "green"
                         available = data["stats"].get("available", 0)
                         executed = data["stats"].get("executed", 0)
