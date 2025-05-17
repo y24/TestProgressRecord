@@ -231,18 +231,30 @@ def main():
     # デフォルトプロジェクトの読み込み
     default_project = load_default_project()
     
+    # プロジェクト名のリストを作成（デフォルトプロジェクトには☆を付ける）
+    project_names = []
+    project_name_to_stem = {}  # 表示名からstemへのマッピング
+    for stem in project_options.keys():
+        display_name = f"⭐ {stem}" if stem == default_project else stem
+        project_names.append(display_name)
+        project_name_to_stem[display_name] = stem
+
     # 前回選択したプロジェクトまたはデフォルトプロジェクトが存在する場合は、それをデフォルト値として設定
     default_index = 0
     if last_project in project_options:
-        default_index = list(project_options.keys()).index(last_project)
+        display_name = f"⭐ {last_project}" if last_project == default_project else last_project
+        default_index = project_names.index(display_name)
     elif default_project in project_options:
-        default_index = list(project_options.keys()).index(default_project)
+        default_index = project_names.index(f"⭐ {default_project}")
 
-    selected_project_name = st.sidebar.selectbox(
+    selected_display_name = st.sidebar.selectbox(
         "プロジェクトを選択",
-        options=list(project_options.keys()),
+        options=project_names,
         index=default_index
     )
+    
+    # 表示名からプロジェクト名（stem）を取得
+    selected_project_name = project_name_to_stem[selected_display_name]
     
     # 選択されたプロジェクト名をURLクエリパラメータに保存
     st.query_params["project"] = selected_project_name
