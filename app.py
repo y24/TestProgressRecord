@@ -178,17 +178,36 @@ def main():
     # サイドバー
     st.sidebar.title("TestTraQ")
     reload_clicked = st.sidebar.button("🔄 集計データ再読み込み")
+    
     # プロジェクトファイルの選択
     project_files = list(Path("projects").glob("*.json"))
     if not project_files:
         st.error("プロジェクトファイルが見つかりません。")
         return
 
-    selected_project = st.sidebar.selectbox(
+    # URLクエリパラメータから前回選択したプロジェクトを取得
+    params = st.query_params
+    last_project = params.get("project")
+    
+    # プロジェクトファイルのオプションを準備
+    project_options = {p.stem: p for p in project_files}
+    
+    # 前回選択したプロジェクトが存在する場合は、それをデフォルト値として設定
+    default_index = 0
+    if last_project in project_options:
+        default_index = list(project_options.keys()).index(last_project)
+
+    selected_project_name = st.sidebar.selectbox(
         "プロジェクトを選択",
-        options=project_files,
-        format_func=lambda x: x.stem
+        options=list(project_options.keys()),
+        index=default_index
     )
+    
+    # 選択されたプロジェクト名をURLクエリパラメータに保存
+    st.query_params["project"] = selected_project_name
+    
+    # 選択されたプロジェクトのPathオブジェクトを取得
+    selected_project = project_options[selected_project_name]
 
     # 再集計状態管理
     if 'reload_state' not in st.session_state:
