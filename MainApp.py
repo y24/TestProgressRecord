@@ -6,7 +6,6 @@ import csv, os, sys, pprint
 from datetime import datetime
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import japanize_matplotlib
 import numpy as np
 import json
 
