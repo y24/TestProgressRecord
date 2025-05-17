@@ -7,7 +7,6 @@ import os
 from datetime import datetime
 import numpy as np
 from pathlib import Path
-import japanize_matplotlib
 import matplotlib.pyplot as plt
 import io
 import base64
