@@ -164,6 +164,27 @@ def make_progress_svg(data, settings, width=120, height=16):
         ]) + '</svg>'
     return svg
 
+# エラー情報のテーブルを作成
+def create_error_table(project_data):
+    error_data = []
+    for data in project_data.get("aggregate_data", []):
+        if "error" in data:
+            error_data.append({
+                "ファイル名": data.get("file", ""),
+                "種別": "エラー",
+                "エラー種別": data["error"].get("type", "不明"),
+                "メッセージ": data["error"].get("message", "")
+            })
+        elif "warning" in data:
+            error_data.append({
+                "ファイル名": data.get("file", ""),
+                "種別": "ワーニング",
+                "エラー種別": data["warning"].get("type", "不明"),
+                "メッセージ": data["warning"].get("message", "")
+            })
+    
+    return pd.DataFrame(error_data)
+
 # メインアプリケーション
 def main():
     st.set_page_config(
@@ -245,9 +266,11 @@ def main():
     
     # プロジェクト名の表示
     st.title(project_data["project"]["project_name"])
+
+    st.header("集計結果")
     
     # タブの作成
-    tab1, tab2 = st.tabs(["全体集計", "ファイル別"])
+    tab1, tab2, tab3 = st.tabs(["全体集計", "ファイル別", "エラー情報"])
     
     with tab1:
         # 全体集計タブ
@@ -309,6 +332,10 @@ def main():
                         unsafe_allow_html=True
                     )
                 
+                # ファイル一覧
+                st.markdown("---")
+                st.subheader('ファイル一覧')
+
                 # ファイル一覧の表示
                 file_data = []
                 for data in project_data["aggregate_data"]:
@@ -434,6 +461,14 @@ def main():
                     st.error(f"エラー: {file_data['error']['message']}")
             else:
                 st.error(f"選択されたファイル '{selected_file}' のデータが見つかりません。")
+
+    with tab3:
+        # エラー情報タブ
+        error_df = create_error_table(project_data)
+        if not error_df.empty:
+            st.dataframe(error_df, hide_index=True, use_container_width=True)
+        else:
+            st.info("エラー・ワーニングはありません。")
 
 if __name__ == "__main__":
     main() 
