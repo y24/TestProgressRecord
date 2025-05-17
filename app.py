@@ -210,6 +210,8 @@ def create_project_popup():
         st.session_state.current_tab = 0
     if 'tabs' not in st.session_state:
         st.session_state.tabs = [0]  # タブのインデックスリスト
+    if 'show_project_popup' not in st.session_state:
+        st.session_state.show_project_popup = True
     
     with st.form("project_form"):
         st.subheader("プロジェクト設定")
@@ -251,16 +253,16 @@ def create_project_popup():
                             "path": path.strip()
                         })
 
-                    # 削除ボタン（タブが2つ以上ある場合は表示）
-                    if len(st.session_state.tabs) > 1:
-                        if st.form_submit_button(f"🗑 ファイル{i+1} を削除"):
-                            del st.session_state.tabs[i]
-                            # 削除後のタブ数に応じて現在のタブインデックスを調整
-                            st.session_state.current_tab = min(i, len(st.session_state.tabs) - 1)
-                            st.rerun()
+                    # 削除ボタン（タブが1つの場合は非活性）
+                    disabled = len(st.session_state.tabs) <= 1
+                    if st.form_submit_button(f"🗑 ファイル{i+1} を削除", disabled=disabled):
+                        del st.session_state.tabs[i]
+                        # 削除後のタブ数に応じて現在のタブインデックスを調整
+                        st.session_state.current_tab = min(i, len(st.session_state.tabs) - 1)
+                        st.rerun()
 
         # ファイル追加ボタン
-        if st.form_submit_button("＋ ファイルを追加", help="ファイルを追加"):
+        if st.form_submit_button("＋ 追加", help="ファイルを追加"):
             new_tab = max(st.session_state.tabs) + 1 if st.session_state.tabs else 0
             st.session_state.tabs.append(new_tab)
             st.session_state.current_tab = len(st.session_state.tabs) - 1
@@ -269,8 +271,14 @@ def create_project_popup():
         # 区切り線
         st.markdown("---")
 
-        # 保存ボタン
-        submitted = st.form_submit_button("保存")
+        # ボタンを横に並べる
+        col1, col2, col3 = st.columns([1, 2, 7])
+        with col1:
+            submitted = st.form_submit_button("保存", type="primary")
+        with col2:
+            if st.form_submit_button("キャンセル"):
+                st.session_state.show_project_popup = False
+                st.rerun()
         
         if submitted:
             if not project_name:
@@ -306,6 +314,7 @@ def create_project_popup():
             st.session_state.file_count = 1
             st.session_state.current_tab = 0
             st.session_state.tabs = [0]
+            st.session_state.show_project_popup = False
             return str(json_path)
             
         return None
