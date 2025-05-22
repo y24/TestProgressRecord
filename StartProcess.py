@@ -224,8 +224,8 @@ def process_files(inputs, project_path="", on_reload=False, on_change=False):
         # 全ファイルの集計処理
         aggregate_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))]
 
-    # アプリケーションの起動（Streamlit用にMainApp.runは呼ばない）
-    # MainApp.run(pjdata=project_data, pjpath=project_path, indata=aggregate_data, args=inputs, on_reload=on_reload, on_change=on_change)
+    # アプリケーションの起動
+    MainApp.run(pjdata=project_data, pjpath=project_path, indata=aggregate_data, args=inputs, on_reload=on_reload, on_change=on_change)
 
     # プロジェクトファイル保存（再集計後に即時保存）
     if project_path:
