@@ -924,7 +924,17 @@ def save_project():
         # エラーメッセージを表示
         Dialog.show_messagebox(root, type="error", title="保存エラー", message=f"データの保存に失敗しました。\n{str(e)}")
 
+def toggle_byfile_graph():
+    """ファイル毎のグラフ表示を切り替える"""
+    global show_byfile_graph
+    settings["app"]["show_byfile_graph"] = show_byfile_graph.get()
+    AppConfig.save_settings(settings)
+
 def create_menubar(parent, has_data=False):
+    global show_byfile_graph
+    # BooleanVarを作成し、設定値を反映
+    show_byfile_graph = tk.BooleanVar(value=settings["app"]["show_byfile_graph"])
+
     menubar = tk.Menu(parent)
     parent.config(menu=menubar)
     # File
@@ -942,6 +952,10 @@ def create_menubar(parent, has_data=False):
     data_menu = tk.Menu(menubar, tearoff=0)
     data_menu.add_command(label="再集計", command=reload_files, accelerator="Ctrl+R")
     menubar.add_cascade(label="Data", menu=data_menu)
+    # View
+    view_menu = tk.Menu(menubar, tearoff=0)
+    view_menu.add_checkbutton(label="ファイル別グラフ", variable=show_byfile_graph, command=toggle_byfile_graph, accelerator="Ctrl+G")
+    menubar.add_cascade(label="View", menu=view_menu)
 
     # キーバインドの追加
     parent.bind('<Control-s>', lambda e: save_project())
