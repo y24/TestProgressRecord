@@ -1290,6 +1290,37 @@ def update_window_title(root):
     # ウィンドウタイトルを更新
     root.title(f"TestTraQ - {title}")
 
+def _show_startup_messages(has_data, pjpath, on_reload, input_data):
+    """起動時のメッセージを表示する
+
+    Args:
+        has_data: データの有無
+        pjpath: プロジェクトファイルパス
+        on_reload: 再読込フラグ
+        input_data: 入力データ
+    """
+    global root
+
+    # データ抽出に失敗したファイルのリスト
+    errors = [r for r in input_data if "error" in r]
+    ers = "\n".join(["  "+ err["file"] for err in errors])
+
+    # エラーあり、かつ初回集計時にメッセージ（リロードして2回目以降はメッセージなし）
+    if len(errors) and not on_reload:
+        Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"以下のファイルはデータが抽出できませんでした。\n\nFile(s):\n{ers}")
+
+    # データがある場合の処理
+    if has_data:
+        # プロジェクトファイルを読込時、ファイルが更新されている場合は再集計を促す
+        if pjpath and not on_reload and _needs_reload(input_data):
+            reload_files()
+        # 再集計後の起動時にはプロジェクトを保存
+        if pjpath and on_reload:
+            save_project()
+    else:
+        # 1件もデータがない場合はメッセージ
+        Dialog.show_messagebox(root, type="warning", title="抽出エラー", message=f"データがありません。File > プロジェクト情報設定 からデータ取得元を設定してください。")
+
 def _needs_reload(input_data):
     """再集計が必要かどうかを判定する
 
@@ -1357,6 +1388,7 @@ def run(pjdata=None, pjpath=None, indata=None, args=None, on_reload=False, on_ch
     # 設定のロード
     settings = AppConfig.load_settings()
 
+    # 起動
     # 親ウインドウ生成
     root = tk.Tk()
     # ウィンドウタイトルを更新
@@ -1368,6 +1400,9 @@ def run(pjdata=None, pjpath=None, indata=None, args=None, on_reload=False, on_ch
     # メニューバー生成
     create_menubar(parent=root, has_data=has_data)
 
+    # 起動時メッセージ
+    _show_startup_messages(has_data, project_path, on_reload, input_data)
+
     # グローバルタブ生成
     tab1, tab2 = create_global_tab(parent=root, has_data=has_data)
     # タブ1：全体集計タブ
@@ -1375,28 +1410,11 @@ def run(pjdata=None, pjpath=None, indata=None, args=None, on_reload=False, on_ch
     # タブ2：ファイル別集計タブ
     if has_data: create_byfile_tab(tab2)
 
-    # データ抽出に失敗したファイルのリスト
-    errors = [r for r in input_data if "error" in r]
-    ers = "\n".join(["  "+ err["file"] for err in errors])
-
-    # エラーあり、かつ初回集計時にメッセージ（リロードして2回目以降はメッセージなし）
-    if len(errors) and not on_reload:
-        Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"以下のファイルはデータが抽出できませんでした。\n\nFile(s):\n{ers}")
-
-    # データがある場合の処理
-    if has_data:
-        # プロジェクトファイルを読込時、ファイルが更新されている場合は再集計を促す
-        if pjpath and not on_reload and _needs_reload(input_data):
-            reload_files()
-        # 再集計後の起動時にはプロジェクトを保存
-        if pjpath and on_reload:
-            save_project()
-    else:
-        # 1件もデータがない場合はメッセージ
-        Dialog.show_messagebox(root, type="warning", title="抽出エラー", message=f"データがありません。File > プロジェクト情報設定 からデータ取得元を設定してください。")
-
+    # ウインドウ終了時の処理
     root.protocol("WM_DELETE_WINDOW", on_closing)
+    # メインループ
     root.mainloop()
+    # ウインドウ破棄
     root.destroy()
 
 if __name__ == "__main__":
