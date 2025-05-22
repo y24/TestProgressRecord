@@ -407,7 +407,10 @@ def update_filelist_table(table_frame):
     pady = 3
 
     # ヘッダ
-    headers = ["", "No.", "ファイル名", "項目数", "更新日", "消化率", "完了率", "テスト結果"]
+    headers = ["", "No.", "ファイル名", "項目数", "更新日", "消化率", "完了率"]
+    # 表示設定ONの場合はグラフ表示
+    if show_byfile_graph.get():
+        headers.append("テスト結果")
     for col, text in enumerate(headers):
         ttk.Label(table_frame, text=text, foreground="#444444", background="#e0e0e0", relief="solid").grid(
             row=0, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
@@ -595,8 +598,8 @@ def update_filelist_table(table_frame):
             filename_label.config(foreground=color)
             comp_rate_label.config(foreground=color)
 
-        # エラー時以外は進捗グラフを表示
-        if not display_data["on_error"]:
+        # グラフ表示ON、かつエラーではない場合は進捗グラフを表示
+        if show_byfile_graph.get() and not display_data["on_error"]:
             # 進捗グラフ
             fig, ax = plt.subplots(figsize=(2, 0.1))
             canvas = FigureCanvasTkAgg(fig, master=table_frame)
