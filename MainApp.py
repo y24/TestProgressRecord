@@ -13,6 +13,7 @@ import WriteData
 from libs import Utility
 from libs import AppConfig
 from libs import Dialog
+from libs import Project
 
 project_data = None
 project_path = None
@@ -898,24 +899,9 @@ def save_project():
         edit_project(after_save_callback=after_create)
         return
 
-    file_path = project_path
     try:
-        # 既存のJSONファイルがある場合は読み込む
-        existing_data = {}
-        if os.path.exists(file_path):
-            with open(file_path, "r", encoding="utf-8") as f:
-                existing_data = json.load(f)
-        
-        # projectキーにproject_dataを保存
-        existing_data["project"] = project_data
-        # aggregate_dataキーに現在のinput_dataを保存
-        existing_data["aggregate_data"] = input_data
-        # 最終読込日時を保存（最も遅い日時を使用）
-        existing_data["last_loaded"] = Utility.get_latest_time(input_data)
-        
         # JSONファイルに保存
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(existing_data, f, ensure_ascii=False, indent=2)
+        Project.save_to_json(project_path, input_data, project_data)
 
         # 編集中フラグOFF
         change_flg = False
@@ -925,7 +911,7 @@ def save_project():
        
     except Exception as e:
         # エラーメッセージを表示
-        Dialog.show_messagebox(root, type="error", title="保存エラー", message=f"データの保存に失敗しました。\n{str(e)}")
+        Dialog.show_messagebox(root, type="error", title="保存エラー", message=str(e))
 
 def toggle_byfile_graph():
     """ファイル毎のグラフ表示を切り替える"""
