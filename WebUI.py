@@ -15,7 +15,7 @@ import sys
 import time
 import re
 
-from libs import AppConfig
+from libs import AppConfig, Labels
 
 # 設定の読み込み
 def load_settings():
@@ -63,7 +63,7 @@ def create_progress_chart(data, settings):
     for bar in bar_data:
         fig.add_trace(go.Bar(
             x=[bar["value"]],
-            y=["進捗状況"],
+            y=[""],
             orientation='h',
             name=bar["name"],
             marker_color=bar["color"],
@@ -73,7 +73,7 @@ def create_progress_chart(data, settings):
 
     fig.update_layout(
         barmode='stack',
-        showlegend=True,
+        showlegend=False,
         height=100,
         margin=dict(l=0, r=0, t=30, b=0),
     )
@@ -401,10 +401,10 @@ def main():
                         status_color = "orange"
                         file_data.append({
                             "ファイル名": data.get("file", ""),
-                            "項目数": "-",
+                            "項目数": available,
                             "進捗": make_progress_svg(data, settings),
-                            "消化率": "-",
-                            "完了率": "-",
+                            "消化率": Labels.make_rate_text(executed, available),
+                            "完了率": Labels.make_rate_text(completed, available),
                             "状態": status,
                             "更新日": data.get("last_updated", "")
                         })
@@ -418,8 +418,8 @@ def main():
                             "ファイル名": data.get("file", ""),
                             "項目数": available,
                             "進捗": make_progress_svg(data, settings),
-                            "消化率": f"{executed}/{available} ({(executed/available*100):.1f}%)" if available else "-",
-                            "完了率": f"{completed}/{available} ({(completed/available*100):.1f}%)" if available else "-",
+                            "消化率": Labels.make_rate_text(executed, available),
+                            "完了率": Labels.make_rate_text(completed, available),
                             "状態": status,
                             "更新日": data.get("last_updated", "")
                         })
