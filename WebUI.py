@@ -276,7 +276,7 @@ def main():
             flag_path = f"{project_path}.reloading"
             with open(flag_path, "w") as f:
                 f.write("reloading")
-            cmd = [python_exe, "StartProcess.py", project_path, "--project", project_path, "--on_reload"]
+            cmd = [python_exe, "StartProcess.py", project_path, "--project", project_path, "--on_reload", "--webui"]
             subprocess.Popen(cmd)
             st.session_state['reload_state'] = 'waiting'
             st.rerun()
@@ -302,7 +302,7 @@ def main():
     # プロジェクト名とお気に入りボタンの表示
     col1, col2 = st.columns([10, 1])
     with col1:
-        st.title(project_data["project"]["project_name"])
+        st.header(project_data["project"]["project_name"])
     with col2:
         is_default = selected_project_name == default_project
         star_icon = "⭐" if is_default else "☆"
@@ -314,8 +314,6 @@ def main():
                 # デフォルトプロジェクトとして設定
                 save_default_project(selected_project_name)
             st.rerun()
-
-    st.header("集計結果")
     
     # タブの作成
     tab1, tab2, tab3 = st.tabs(["全体集計", "ファイル別集計", "エラー情報"])

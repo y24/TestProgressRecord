@@ -146,7 +146,7 @@ def filter_xlsx_files(inputs):
     """
     return [file_path for file_path in inputs if Utility.get_ext_from_path(file_path) == "xlsx"]
 
-def process_files(inputs, project_path="", on_reload=False):
+def process_files(inputs, project_path="", on_reload=False, web_ui=False):
     """
     ファイル処理のメイン関数
     
@@ -154,6 +154,7 @@ def process_files(inputs, project_path="", on_reload=False):
         inputs (list): 入力ファイルのパスリスト
         project_path (str): プロジェクトファイルのパス（オプション）
         on_reload (bool): データ再集計時のフラグ
+        web_ui (bool): WebUI起動時のフラグ
     """
     # 設定ファイルの読み込み
     settings = AppConfig.load_settings()
@@ -223,7 +224,8 @@ def process_files(inputs, project_path="", on_reload=False):
             aggregate_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))]
 
     # アプリケーションの起動
-    MainApp.run(pjdata=project_data, pjpath=project_path, indata=aggregate_data, args=inputs, on_reload=on_reload)
+    if not web_ui:
+        MainApp.run(pjdata=project_data, pjpath=project_path, indata=aggregate_data, args=inputs, on_reload=on_reload)
 
     # プロジェクトファイル保存（再集計後に即時保存）
     if project_path:
@@ -248,7 +250,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="TestTraQ - ファイル処理")
     parser.add_argument("--project", help="プロジェクトファイルのパス")
     parser.add_argument("--on_reload", action="store_true", help="データ再集計時のフラグ")
+    parser.add_argument("--webui", action="store_true", help="WebUI起動時のフラグ")
     parser.add_argument("data_files", nargs="*", help="処理するファイルのパス")
     args = parser.parse_args()
 
-    process_files(inputs=args.data_files, project_path=args.project, on_reload=args.on_reload)
+    process_files(inputs=args.data_files, project_path=args.project, on_reload=args.on_reload, web_ui=args.webui)
