@@ -348,14 +348,6 @@ def create_file_row(frame, row, index, file_data, display_data):
     case_count_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
     col += 1
 
-    # 最終更新日
-    last_update_label = ttk.Label(
-        frame,
-        text=Utility.simplify_date(display_data["last_update"])
-    )
-    last_update_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
-    col += 1
-
     # 消化率・完了率ラベル
     if display_data["on_error"]:
         executed_rate_display = "-"
@@ -426,7 +418,7 @@ def create_export_data(input_data: list, settings: dict) -> list:
         list: エクスポート用の2次元配列データ
     """
     # クリップボード出力用のヘッダ
-    export_headers = ["No.", "ファイル名", "項目数", "更新日", "完了数", "消化率", "完了率"]
+    export_headers = ["No.", "ファイル名", "項目数", "完了数", "消化率", "完了率"]
     export_data = [export_headers + settings["test_status"]["results"] + [settings["test_status"]["labels"]["not_run"]]]
 
     # 各ファイルのデータを追加
@@ -436,7 +428,6 @@ def create_export_data(input_data: list, settings: dict) -> list:
             index,  # No.
             file_data['file'],  # ファイル名
             display_data["available"],  # 項目数
-            display_data["last_update"] or "",  # 更新日
             display_data["completed"],  # 完了数
             display_data["executed_rate_text"],  # 消化率
             display_data["comp_rate_text"]  # 完了率
@@ -476,7 +467,7 @@ def update_filelist_table(table_frame):
             show_env: 環境別データを表示するかどうか
         """
         # ヘッダ
-        headers = ["No.", "ファイル名", "項目数", "更新日", "消化率", "完了率"]
+        headers = ["No.", "ファイル名", "項目数", "消化率", "完了率"]
         # 表示設定ONの場合はグラフ表示
         if show_byfile_graph.get():
             headers.append("テスト結果")
@@ -562,18 +553,19 @@ def update_filelist_table(table_frame):
         ).grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=padx)
         col += 1
 
-        # 更新日
-        ttk.Label(
-            frame,
-            text=Utility.simplify_date(last_update) if last_update else "-"
-        ).grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=padx)
-        col += 1
-
         # 消化率
         executed_rate = Utility.meke_rate_text(executed_count, total_count)
         ttk.Label(
             frame,
             text=executed_rate
+        ).grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=padx)
+        col += 1
+
+        # 完了率
+        comp_rate = Utility.meke_rate_text(completed_count, total_count)
+        ttk.Label(
+            frame,
+            text=comp_rate
         ).grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=padx)
 
     # テーブルを作成
