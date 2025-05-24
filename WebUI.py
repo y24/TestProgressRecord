@@ -397,7 +397,7 @@ def main():
                             "更新日": data.get("last_updated", "")
                         })
                     elif "warning" in data:
-                        status = "⚠️ワーニング"
+                        status = "⚠️警告"
                         status_color = "orange"
                         file_data.append({
                             "ファイル名": data.get("file", ""),
@@ -409,7 +409,7 @@ def main():
                             "更新日": data.get("last_updated", "")
                         })
                     elif "stats" in data:
-                        status = ""
+                        status = "✅正常"
                         status_color = "green"
                         available = data["stats"].get("available", 0)
                         executed = data["stats"].get("executed", 0)
