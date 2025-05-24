@@ -673,13 +673,7 @@ def edit_project(after_save_callback=None):
     def on_project_updated(new_project_data):
         global project_data, project_path, change_flg
         try:
-            # ファイル設定が変更されている場合、確認ダイアログを表示
-            old_files = project_data.get("files", [])
-            new_files = new_project_data.get("files", [])
-            if old_files != new_files:
-                reload_files(pre_message="ファイル設定が変更されました。", show_time=False)
-
-            project_path = new_project_data.pop("project_path", None)  # パスを取り出して削除
+            project_path = new_project_data.get("project_path", None)  # パスを取り出して削除
             project_data = new_project_data  # グローバル変数を更新
 
             # ラベルを更新
@@ -691,6 +685,8 @@ def edit_project(after_save_callback=None):
 
             # 編集中フラグOFF（編集画面を閉じるときに保存している）
             change_flg = False
+
+            update_window_title(root)
 
         except Exception as e:
             Dialog.show_messagebox(
@@ -980,6 +976,7 @@ def new_process(inputs, on_reload=False, project_path=None):
     if on_reload: command += ["--on_reload"]
     if project_path: command += ["--project", project_path]
     # 新しいプロセスを起動
+    print(f"command: {command}")
     subprocess.Popen(command)
     sys.exit()
 
