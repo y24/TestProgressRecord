@@ -285,7 +285,7 @@ class ProjectEditorApp:
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(existing_data, f, ensure_ascii=False, indent=2)
             
-        messagebox.showinfo("成功", f"プロジェクトファイルを保存しました。\n{json_path.name}")
+        messagebox.showinfo("成功", f"プロジェクトファイルを保存しました。")
         self.file_saved = True
 
         if self.callback:
