@@ -402,7 +402,7 @@ def create_file_row(frame, row, index, file_data, display_data):
 
     # エラー・ワーニング時はツールチップにメッセージを追加
     if display_data["on_error"] or display_data["on_warning"]:
-        tooltip_text.append(f'{display_data["error_message"]}[{display_data["error_type"]}]')
+        tooltip_text.append(f'{display_data["error_message"]}')
 
     # ファイル名のツールチップ
     tooltip_text.append("<ダブルクリックで開きます>")

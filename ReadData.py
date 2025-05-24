@@ -178,7 +178,7 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
         return {
             "error": {
                 "type": "header_not_found",
-                "message": "ヘッダー行が見つかりませんでした。"
+                "message": "ヘッダー行が見つかりません。"
             }
         }
 
@@ -200,7 +200,7 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
         return {
             "error": {
                 "type": "inconsistent_result_set",
-                "message": "結果列のセットが正しく取得できませんでした。"
+                "message": f"結果,担当者,日付のセットが正しく取得できません。\n結果: {len(result_rows)} 担当者: {len(person_rows)} 日付: {len(date_rows)}"
             }
         }
 
@@ -209,7 +209,7 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
         return {
             "error": {
                 "type": "inconsistent_plan_set",
-                "message": "結果列と計画列のセット数が一致しませんでした。"
+                "message": f"結果列に対して計画列の数が一致しません。\n結果: {len(result_rows)} 計画: {len(plan_rows)}"
             }
         }
 
@@ -272,7 +272,7 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
         return {
             "error": {
                 "type": "no_tobe_row",
-                "message": "期待結果列が見つかりませんでした。"
+                "message": f"期待結果列が見つかりませんでした。\n定義: {settings['read_definition']['tobe_row']['keys']}"
             }
         }
 
@@ -285,7 +285,7 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
         return {
             "error": {
                 "type": "no_testcases",
-                "message": "テストケース数を取得できませんでした。"
+                "message": f"テストケース数を取得できませんでした。\n列番号: {tobe_rownunms}"
             }
         }
 
