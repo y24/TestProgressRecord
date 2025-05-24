@@ -20,6 +20,10 @@ from libs import Clipboard
 from libs import CsvFile
 from libs import FileOperation
 
+# 定数定義
+PADDING_X = 1  # 横方向の余白
+PADDING_Y = 3  # 縦方向の余白
+
 project_data = None
 project_path = None
 show_byfile_graph = None
@@ -318,67 +322,98 @@ def set_state_color(label, state_name):
     state_info = settings["app"]["state"][state_key]
     label.config(foreground=state_info["foreground"], background=state_info["background"])
 
-def _extract_file_data(file_data: dict) -> dict:
-    """ファイルデータから表示用の情報を抽出する"""
-    base_info = {
-        "on_warning": False,
-        "on_error": False,
-        "error_type": "",
-        "error_message": "",
-    }
-
-    # ワーニングの確認
-    if "warning" in file_data:
-        base_info.update({
-            "on_warning": True,
-            "error_type": file_data["warning"]["type"],
-            "error_message": file_data["warning"]["message"]
-        })
-
-    # エラー時はダミーデータを返却
-    if "error" in file_data:
-        return {
-            **base_info,
-            "on_error": True,
-            "total_data": {
-                "error": 0,
-                "all": 0,        # エラー時のall追加
-                "excluded": 0    # エラー時のexcluded追加
-            },
-            "state": "???",
-            "completed": "",
-            "executed": "",
-            "available": "",
-            "incompleted": 0,
-            "comp_rate_text": "",
-            "executed_rate_text": "",
-            "start_date": "",
-            "last_update": "",
-            "error_type": file_data["error"]["type"],
-            "error_message": file_data["error"]["message"]
-        }
-
-    # 正常時のデータ抽出
-    stats = file_data["stats"]
-    run_data = file_data["run"]
+def create_file_row(frame, row, index, file_data, display_data):
+    """ファイルデータ行を作成する"""
+    col = 0
     
-    return {
-        **base_info,
-        "total_data": {
-            **file_data["total"]
-        },
-        "state": run_data["status"],
-        "all": stats["all"],
-        "excluded": stats["excluded"],
-        "completed": stats["completed"],
-        "executed": stats["executed"],
-        "available": stats["available"],
-        "incompleted": stats["incompleted"],
-        "comp_rate_text": Utility.meke_rate_text(stats["completed"], stats["available"]),
-        "executed_rate_text": Utility.meke_rate_text(stats["executed"], stats["available"]),
-        "start_date": run_data["start_date"],
-        "last_update": run_data["last_update"]
-    }
+    # インデックス
+    ttk.Label(frame, text=index).grid(
+        row=row, column=col, sticky=tk.W+tk.E, padx=PADDING_X, pady=PADDING_Y
+    )
+    col += 1
+
+    # ファイル名
+    filename = file_data['file']
+    filename_label = ttk.Label(frame, text=filename)
+    filename_label.grid(row=row, column=col, sticky=tk.W, padx=PADDING_X, pady=PADDING_Y)
+    tooltip_text = [filename]
+    col += 1
+
+    # ファイル名ダブルクリック時
+    filepath = file_data['filepath']
+    filename_label.bind("<Double-Button-1>", create_click_handler(filepath))
+
+    #項目数
+    case_count_label = ttk.Label(frame, text=display_data["available"])
+    case_count_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=PADDING_X, pady=PADDING_Y)
+    col += 1
+
+    # 最終更新日
+    last_update_label = ttk.Label(
+        frame,
+        text=Utility.simplify_date(display_data["last_update"])
+    )
+    last_update_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=PADDING_X, pady=PADDING_Y)
+    col += 1
+
+    # 消化率・完了率ラベル
+    if display_data["on_error"]:
+        executed_rate_display = "-"
+        executed_rate_tooltip = "消化率: -"
+        comp_rate_display = "-"
+        comp_rate_tooltip = "完了率: -"
+    else:
+        executed_rate_display = display_data["executed_rate_text"]
+        executed_rate_tooltip = f'消化率: {display_data["executed_rate_text"]} ({display_data["executed"]}/{display_data["available"]})'
+        comp_rate_display = display_data["comp_rate_text"]
+        comp_rate_tooltip = f'完了率: {display_data["comp_rate_text"]} ({display_data["completed"]}/{display_data["available"]})'
+
+    # 消化率
+    executed_rate_label = ttk.Label(frame, text=executed_rate_display)
+    executed_rate_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=PADDING_X, pady=PADDING_Y)
+    ToolTip(executed_rate_label, msg=executed_rate_tooltip, delay=0.3, follow=False)
+    col += 1
+
+    # 完了率
+    comp_rate_label = ttk.Label(frame, text=comp_rate_display)
+    comp_rate_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=PADDING_X, pady=PADDING_Y)
+    ToolTip(comp_rate_label, msg=comp_rate_tooltip, delay=0.3, follow=False)
+    col += 1
+
+    # エラー時赤色・ワーニング時オレンジ色
+    if display_data["on_error"] or display_data["on_warning"]:
+        color = "red" if display_data["on_error"] else "darkorange2"
+        filename_label.config(foreground=color)
+        comp_rate_label.config(foreground=color)
+
+    # グラフ表示ON、かつエラーではない場合は進捗グラフを表示
+    if show_byfile_graph.get() and not display_data["on_error"]:
+        # 進捗グラフ
+        fig, ax = plt.subplots(figsize=(2, 0.1))
+        canvas = FigureCanvasTkAgg(fig, master=frame)
+        plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+        canvas.get_tk_widget().grid(row=row, column=col, sticky=tk.W+tk.E, padx=PADDING_X, pady=PADDING_Y)
+
+        # グラフを更新
+        update_bar_chart(
+            data=display_data["total_data"],
+            incompleted_count=display_data["incompleted"],
+            ax=ax,
+            canvas=canvas,
+            show_label=False
+        )
+
+        # グラフのツールチップ
+        graph_tooltop = Labels.make_graph_tooltip(display_data)
+        ToolTip(canvas.get_tk_widget(), msg=graph_tooltop, delay=0.3, follow=False)
+
+    # エラー・ワーニング時はツールチップにメッセージを追加
+    if display_data["on_error"] or display_data["on_warning"]:
+        tooltip_text.append(f'{display_data["error_message"]}[{display_data["error_type"]}]')
+
+    # ファイル名のツールチップ
+    tooltip_text.append("<ダブルクリックで開きます>")
+    ToolTip(filename_label, msg="\n".join(tooltip_text), delay=0.3, follow=False)
 
 def create_export_data(input_data: list, settings: dict) -> list:
     """エクスポート用のデータを生成する
@@ -396,7 +431,7 @@ def create_export_data(input_data: list, settings: dict) -> list:
 
     # 各ファイルのデータを追加
     for index, file_data in enumerate(input_data, 1):
-        display_data = _extract_file_data(file_data)
+        display_data = DataConversion._extract_file_data(file_data)
         export_row = [
             index,  # No.
             file_data['file'],  # ファイル名
@@ -448,7 +483,7 @@ def update_filelist_table(table_frame):
 
         # テーブル全体を格納するフレーム
         table_content_frame = ttk.Frame(content_frame)
-        table_content_frame.pack(fill=tk.BOTH, expand=True, padx=padx, pady=pady)
+        table_content_frame.pack(fill=tk.BOTH, expand=True, padx=padx, pady=padx)
 
         # 列の設定
         for i in range(len(headers)):
@@ -462,12 +497,12 @@ def update_filelist_table(table_frame):
                 foreground="#444444",
                 background="#e0e0e0",
                 relief="solid"
-            ).grid(row=0, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
+            ).grid(row=0, column=col, sticky=tk.W+tk.E, padx=padx, pady=padx)
 
         # 各ファイルのデータ表示
         row = 1
         for index, file_data in enumerate(input_data, 1):
-            display_data = _extract_file_data(file_data)
+            display_data = DataConversion._extract_file_data(file_data)
             
             # ファイルデータ行
             create_file_row(table_content_frame, row, index, file_data, display_data)
@@ -501,99 +536,6 @@ def update_filelist_table(table_frame):
                     )
                     row += 1
 
-    def create_file_row(frame, row, index, file_data, display_data):
-        """ファイルデータ行を作成する"""
-        col = 0
-        
-        # インデックス
-        ttk.Label(frame, text=index).grid(
-            row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
-        )
-        col += 1
-
-        # ファイル名
-        filename = file_data['file']
-        filename_label = ttk.Label(frame, text=filename)
-        filename_label.grid(row=row, column=col, sticky=tk.W, padx=padx, pady=pady)
-        tooltip_text = [filename]
-        col += 1
-
-        # ファイル名ダブルクリック時
-        filepath = file_data['filepath']
-        filename_label.bind("<Double-Button-1>", create_click_handler(filepath))
-
-        #項目数
-        case_count_label = ttk.Label(frame, text=display_data["available"])
-        case_count_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
-        col += 1
-
-        # 最終更新日
-        last_update_label = ttk.Label(
-            frame,
-            text=Utility.simplify_date(display_data["last_update"])
-        )
-        last_update_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
-        col += 1
-
-        # 消化率・完了率ラベル
-        if display_data["on_error"]:
-            executed_rate_display = "-"
-            executed_rate_tooltip = "消化率: -"
-            comp_rate_display = "-"
-            comp_rate_tooltip = "完了率: -"
-        else:
-            executed_rate_display = display_data["executed_rate_text"]
-            executed_rate_tooltip = f'消化率: {display_data["executed_rate_text"]} ({display_data["executed"]}/{display_data["available"]})'
-            comp_rate_display = display_data["comp_rate_text"]
-            comp_rate_tooltip = f'完了率: {display_data["comp_rate_text"]} ({display_data["completed"]}/{display_data["available"]})'
-
-        # 消化率
-        executed_rate_label = ttk.Label(frame, text=executed_rate_display)
-        executed_rate_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
-        ToolTip(executed_rate_label, msg=executed_rate_tooltip, delay=0.3, follow=False)
-        col += 1
-
-        # 完了率
-        comp_rate_label = ttk.Label(frame, text=comp_rate_display)
-        comp_rate_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
-        ToolTip(comp_rate_label, msg=comp_rate_tooltip, delay=0.3, follow=False)
-        col += 1
-
-        # エラー時赤色・ワーニング時オレンジ色
-        if display_data["on_error"] or display_data["on_warning"]:
-            color = "red" if display_data["on_error"] else "darkorange2"
-            filename_label.config(foreground=color)
-            comp_rate_label.config(foreground=color)
-
-        # グラフ表示ON、かつエラーではない場合は進捗グラフを表示
-        if show_byfile_graph.get() and not display_data["on_error"]:
-            # 進捗グラフ
-            fig, ax = plt.subplots(figsize=(2, 0.1))
-            canvas = FigureCanvasTkAgg(fig, master=frame)
-            plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-            canvas.get_tk_widget().grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
-
-            # グラフを更新
-            update_bar_chart(
-                data=display_data["total_data"],
-                incompleted_count=display_data["incompleted"],
-                ax=ax,
-                canvas=canvas,
-                show_label=False
-            )
-
-            # グラフのツールチップ
-            graph_tooltop = Labels.make_graph_tooltip(display_data)
-            ToolTip(canvas.get_tk_widget(), msg=graph_tooltop, delay=0.3, follow=False)
-
-        # エラー・ワーニング時はツールチップにメッセージを追加
-        if display_data["on_error"] or display_data["on_warning"]:
-            tooltip_text.append(f'{display_data["error_message"]}[{display_data["error_type"]}]')
-
-        # ファイル名のツールチップ
-        tooltip_text.append("<ダブルクリックで開きます>")
-        ToolTip(filename_label, msg="\n".join(tooltip_text), delay=0.3, follow=False)
-
     def create_env_row(frame, row, env_name, total_count, last_update,
                       executed_count, completed_count):
         """環境別データ行を作成する"""
@@ -601,7 +543,7 @@ def update_filelist_table(table_frame):
 
         # インデックス（空）
         ttk.Label(frame, text="").grid(
-            row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
+            row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=padx
         )
         col += 1
 
@@ -610,21 +552,21 @@ def update_filelist_table(table_frame):
             frame,
             text=env_name,
             foreground="#666666"
-        ).grid(row=row, column=col, sticky=tk.W, padx=(20, padx), pady=pady)
+        ).grid(row=row, column=col, sticky=tk.W, padx=(20, padx), pady=padx)
         col += 1
 
         # 項目数
         ttk.Label(
             frame,
             text=total_count
-        ).grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
+        ).grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=padx)
         col += 1
 
         # 更新日
         ttk.Label(
             frame,
             text=Utility.simplify_date(last_update) if last_update else "-"
-        ).grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
+        ).grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=padx)
         col += 1
 
         # 消化率
@@ -632,7 +574,7 @@ def update_filelist_table(table_frame):
         ttk.Label(
             frame,
             text=executed_rate
-        ).grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
+        ).grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=padx)
 
     # テーブルを作成
     create_table(show_env=show_env_data.get())
@@ -1374,9 +1316,9 @@ def change_sort_order(table_frame, order, sort_menu_button, on_change=False):
 
 def _get_filelist_data(filename_only: bool = False):
     if filename_only:
-        return [[row[1]] for row in create_export_data(input_data, settings)[1:]]
+        return [[row[1]] for row in DataConversion.create_export_data(input_data, settings)[1:]]
     else:
-        return create_export_data(input_data, settings)
+        return DataConversion.create_export_data(input_data, settings)
 
 if __name__ == "__main__":
     run()
