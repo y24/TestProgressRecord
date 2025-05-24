@@ -215,9 +215,6 @@ def main():
     # サイドバー
     st.sidebar.title("TestTraQ")
 
-    # 再集計ボタン
-    reload_clicked = st.sidebar.button("🔄 再集計")
-
     # プロジェクトファイルの選択
     project_files = list(Path("projects").glob("*.json"))
     if not project_files:
@@ -269,20 +266,6 @@ def main():
     if 'reload_state' not in st.session_state:
         st.session_state['reload_state'] = 'idle'
 
-    if reload_clicked:
-        if selected_project:
-            project_path = str(selected_project)
-            python_exe = sys.executable
-            flag_path = f"{project_path}.reloading"
-            with open(flag_path, "w") as f:
-                f.write("reloading")
-            cmd = [python_exe, "StartProcess.py", project_path, "--project", project_path, "--on_reload", "--webui"]
-            subprocess.Popen(cmd)
-            st.session_state['reload_state'] = 'waiting'
-            st.rerun()
-        else:
-            st.warning("プロジェクトファイルを選択してください。")
-
     if st.session_state.get('reload_state') == 'waiting':
         flag_path = f"{str(selected_project)}.reloading"
         if not os.path.exists(flag_path):
@@ -300,7 +283,7 @@ def main():
         return
     
     # プロジェクト名とお気に入りボタンの表示
-    col1, col2 = st.columns([10, 1])
+    col1, col2, col3 = st.columns([14, 1, 1])
     with col1:
         st.header(project_data["project"]["project_name"])
     with col2:
@@ -314,6 +297,18 @@ def main():
                 # デフォルトプロジェクトとして設定
                 save_default_project(selected_project_name)
             st.rerun()
+    with col3:
+        if st.button("🔄", key="reload_button"):
+            if selected_project:
+                project_path = str(selected_project)
+                python_exe = sys.executable
+                flag_path = f"{project_path}.reloading"
+                with open(flag_path, "w") as f:
+                    f.write("reloading")
+                cmd = [python_exe, "StartProcess.py", project_path, "--project", project_path, "--on_reload", "--webui"]
+                subprocess.Popen(cmd)
+                st.session_state['reload_state'] = 'waiting'
+                st.rerun()
     
     # タブの作成
     tab1, tab2, tab3 = st.tabs(["全体集計", "ファイル別集計", "エラー情報"])
