@@ -668,6 +668,8 @@ def update_filelist_table(table_frame):
 def toggle_env_data():
     """環境別データの表示/非表示を切り替える"""
     global show_env_data
+
+    # 設定ファイルを保存
     settings["app"]["show_env_data"] = show_env_data.get()
     AppConfig.save_settings(settings)
     
@@ -831,6 +833,12 @@ def toggle_byfile_graph():
     settings["app"]["show_byfile_graph"] = show_byfile_graph.get()
     AppConfig.save_settings(settings)
 
+    # ファイル別グラフの表示/非表示を切り替え
+    for widget in content_frame.winfo_children():
+        widget.destroy()
+    # テーブルを再描画
+    _create_table(show_env=show_env_data.get())
+
 def _get_write_data():
     return DataConversion.convert_to_2d_array(data=input_data, settings=settings)
 
@@ -856,8 +864,8 @@ def create_menubar(parent, has_data=False):
     menubar.add_cascade(label="Data", menu=data_menu)
     # View
     view_menu = tk.Menu(menubar, tearoff=0)
-    view_menu.add_checkbutton(label="ファイル別のグラフを表示", variable=show_byfile_graph, command=toggle_byfile_graph, accelerator="Ctrl+G")
-    view_menu.add_checkbutton(label="環境別の集計データを表示", variable=show_env_data, command=toggle_env_data, accelerator="Ctrl+D")
+    view_menu.add_checkbutton(label="ファイル別のグラフを表示", variable=show_byfile_graph, command=toggle_byfile_graph)
+    view_menu.add_checkbutton(label="環境別の集計データを表示", variable=show_env_data, command=toggle_env_data)
     menubar.add_cascade(label="View", menu=view_menu)
 
     # キーバインドの追加
@@ -867,8 +875,6 @@ def create_menubar(parent, has_data=False):
     parent.bind('<Control-r>', lambda e: reload_files())
     parent.bind('<Control-e>', lambda e: edit_project())
     parent.bind('<Control-q>', lambda e: parent.quit())
-    parent.bind('<Control-g>', lambda e: toggle_byfile_graph())
-    parent.bind('<Control-d>', lambda e: toggle_env_data())
 
     # ファイルデータがない場合はメニュー無効化
     if not has_data:
