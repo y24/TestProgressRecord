@@ -9,11 +9,12 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 import json
 
-import WriteData
+from libs import WriteData
 from libs import Utility
 from libs import AppConfig
 from libs import Dialog
 from libs import Project
+from libs import DataConversion
 
 project_data = None
 project_path = None
@@ -932,7 +933,7 @@ def toggle_byfile_graph():
     AppConfig.save_settings(settings)
 
 def _get_write_data():
-    return WriteData.convert_to_2d_array(data=input_data, settings=settings)
+    return DataConversion.convert_to_2d_array(data=input_data, settings=settings)
 
 def create_menubar(parent, has_data=False):
     global show_byfile_graph

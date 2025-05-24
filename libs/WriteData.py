@@ -2,7 +2,8 @@ from libs import OpenpyxlWrapper as Excel
 from openpyxl.worksheet.table import Table, TableStyleInfo
 from unicodedata import east_asian_width
 from datetime import datetime
-from libs import AppConfig, Utility
+from libs import AppConfig
+from libs import DataConversion
 
 # 列幅調整用の情報
 width_dict = {
@@ -14,39 +15,6 @@ width_dict = {
   'N': 1    # Neutral
 }
 Font_depend = 1.2
-base_header = ["ファイル名", "フォルダ", "環境名", "日付"]
-
-def convert_to_2d_array(data, settings):
-    # ヘッダーの作成
-    completed_label = settings["test_status"]["labels"]["completed"]
-    executed_label = settings["test_status"]["labels"]["executed"]
-    results = settings["test_status"]["results"]
-    out_results = results + [executed_label, completed_label]
-    header = base_header + out_results
-
-    # 出力用の2次元配列の作成
-    out_arr = [header]
-
-    # データの書き込み
-    for entry in data:
-        file_name = entry.get("file", "")
-        by_env_data = entry.get("by_env", {})
-        daily_data = entry.get("daily", {})
-        if not Utility.is_empty_recursive(by_env_data):
-            # 環境別データがある場合
-            for env, env_data in by_env_data.items():
-                for date, values in env_data.items():
-                    out_arr.append([file_name, entry["relative_path"], env, date] + [values.get(v, 0) for v in out_results])
-        elif not Utility.is_empty_recursive(daily_data):
-            # 環境別データがないが日付別データがある場合は、環境名は空で出力
-            for date, values in entry.get("daily", {}).items():
-                out_arr.append([file_name, entry["relative_path"], "", date] + [values.get(v, 0) for v in out_results])
-        else:
-            # 環境別データも日付別データもない場合は、環境名と日付を空で合計データを出力
-            total_data = entry.get("total", {})
-            stats_data = entry.get("stats", {})
-            out_arr.append([file_name, entry["relative_path"], "", ""] + [total_data.get(v, 0) for v in results] + [stats_data.get("executed", 0), stats_data.get("completed", 0)])
-    return out_arr
 
 def create_datatable(ws, sheet_name:str, data, date_labels=["日付"]):
     # ヘッダーを取得
@@ -108,7 +76,7 @@ def execute(data, file_path, sheet_name):
     settings = AppConfig.load_settings()
 
     # データを書込用に変換
-    converted_data = convert_to_2d_array(data=data, settings=settings)
+    converted_data = DataConversion.convert_to_2d_array(data=data, settings=settings)
 
     # ブック読み込み
     wb = Excel.load(file_path=file_path)
@@ -121,7 +89,7 @@ def execute(data, file_path, sheet_name):
         # データを書き込んでテーブルを作成
         create_datatable(ws, sheet_name, converted_data)
         # 列幅の調整
-        adjust_colwidth_by_headername(sheet=ws, target_headers=base_header, header_row=1)
+        adjust_colwidth_by_headername(sheet=ws, target_headers=DataConversion.base_header, header_row=1)
     else:
         raise ValueError("書き込み可能なデータが1件もありません。")
 
