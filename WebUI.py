@@ -299,7 +299,7 @@ def main():
         return
     
     # プロジェクト名とお気に入りボタンの表示
-    col1, col2, col3 = st.columns([14, 1, 1])
+    col1, col2, col3, col4 = st.columns([12, 1, 1, 2])
     with col1:
         st.header(project_data["project"]["project_name"])
     with col2:
@@ -325,6 +325,10 @@ def main():
                 subprocess.Popen(cmd)
                 st.session_state['reload_state'] = 'waiting'
                 st.rerun()
+    with col4:
+        if "last_loaded" in project_data["project"]:
+            last_loaded = datetime.fromisoformat(project_data["project"]["last_loaded"])
+            st.caption(f"最終更新: {last_loaded.strftime('%Y/%m/%d %H:%M')}")
     
     # タブの作成
     tab1, tab2, tab3 = st.tabs(["全体集計", "ファイル別集計", "エラー情報"])
