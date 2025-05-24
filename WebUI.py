@@ -15,6 +15,8 @@ import sys
 import time
 import re
 
+from libs import AppConfig
+
 # 設定の読み込み
 def load_settings():
     try:
@@ -188,18 +190,16 @@ def create_error_table(project_data):
 
 # デフォルトプロジェクトの設定を読み込む
 def load_default_project():
-    try:
-        with open("default_project_config.json", "r", encoding="utf-8") as f:
-            config = json.load(f)
-            return config.get("default_project")
-    except FileNotFoundError:
-        return None
+    settings = AppConfig.load_settings()
+    return settings.get("webui", {}).get("default_project")
 
 # デフォルトプロジェクトを設定
 def save_default_project(project_name):
-    config = {"default_project": project_name}
-    with open("default_project_config.json", "w", encoding="utf-8") as f:
-        json.dump(config, f, ensure_ascii=False, indent=4)
+    settings = AppConfig.load_settings()
+    if "webui" not in settings:
+        settings["webui"] = {}
+    settings["webui"]["default_project"] = project_name
+    AppConfig.save_settings(settings)
 
 # メインアプリケーション
 def main():

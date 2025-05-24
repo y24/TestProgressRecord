@@ -54,5 +54,8 @@
             },
             "default": "file_name"
         }
+    },
+    "webui": {
+        "default_project": ""
     }
 }
