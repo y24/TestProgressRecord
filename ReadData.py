@@ -11,20 +11,33 @@ logger = Logger.get_logger(__name__, console=True, file=False, trace_line=False)
 def get_daily(data, results: list[str], completed_label:str, completed_results: list[str], executed_label:str, executed_results: list[str], plan_label:str, plan_data: list[str] = None):
     # 辞書を初期化：{日付: {結果タイプ: カウント}}
     result_count = defaultdict(lambda: defaultdict(int))
+
+    def initialize_result_counts(results, date, result_count, completed_label, executed_label, plan_label):
+        # 各結果タイプのカウントを0で初期化
+        for key in results:
+            result_count[date][key] = result_count[date].get(key, 0)
+        result_count[date][completed_label] = result_count[date].get(completed_label, 0)  
+        result_count[date][executed_label] = result_count[date].get(executed_label, 0)
+        result_count[date][plan_label] = result_count[date].get(plan_label, 0)
+        return result_count
     
     for index, row in enumerate(data):
-        result, name, date = row
+        # 計画データの日付別集計
         plan = plan_data[index] if plan_data else None
+        if plan != [None]:
+            plan_date = plan[0]
+            # 各実績値は0で初期化
+            result_count = initialize_result_counts(results, plan_date, result_count, completed_label, executed_label, plan_label)
+            # 計画数をカウント
+            result_count[plan_date][plan_label] += 1
+
+        # 実績データの日付別集計
+        result, name, date = row
         
         # 日付が未設定の場合は特別な識別子「no_date」として扱う
         if not date: date = "no_date"
-
-        # 各結果タイプのカウントを0で初期化し、結果が存在しない場合は0として表示されるようにする
-        for keyword in results:
-            result_count[date][keyword] = result_count[date].get(keyword, 0)
-        result_count[date][completed_label] = result_count[date].get(completed_label, 0)
-        result_count[date][executed_label] = result_count[date].get(executed_label, 0)
-        result_count[date][plan_label] = result_count[date].get(plan_label, 0)
+        # 各結果タイプのカウントを0で初期化
+        result_count = initialize_result_counts(results, date, result_count, completed_label, executed_label, plan_label)
 
         # 結果の集計処理
         # 1. 個別の結果タイプをカウント
@@ -36,9 +49,6 @@ def get_daily(data, results: list[str], completed_label:str, completed_results: 
         # 3. 消化としてカウントすべき結果の場合、"消化数"としてもカウント
         if result in executed_results:
             result_count[date][executed_label] += 1
-        # 4. 計画数としてカウントすべき結果の場合、"計画数"としてもカウント
-        if plan:
-            result_count[date][plan_label] += 1
 
     # 集計結果を日付ありデータと日付なしデータに分離
     out_data = {}      # 日付ありデータ
