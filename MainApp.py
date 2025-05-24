@@ -15,6 +15,7 @@ from libs import AppConfig
 from libs import Dialog
 from libs import Project
 from libs import DataConversion
+from libs import Labels
 
 project_data = None
 project_path = None
@@ -300,7 +301,7 @@ def update_byfile_tab(selected_file, count_label, last_load_time_label, ax, canv
         canvas.get_tk_widget()._tooltip = ToolTip(canvas.get_tk_widget(), msg="", delay=0.3, follow=False)
     
     # 既存のツールチップのメッセージを更新
-    graph_tooltip = f'{make_results_text(total_data, incompleted)}'
+    graph_tooltip = f'{Labels.make_results_text(total_data, incompleted)}'
     canvas.get_tk_widget()._tooltip.msg = graph_tooltip
 
     # TreeViewの更新
@@ -321,18 +322,6 @@ def update_byfile_tab(selected_file, count_label, last_load_time_label, ax, canv
 
 def create_click_handler(filepath):
     return lambda event: run_file(file_path=filepath)
-
-def make_results_text(results, incompleted):
-    # 各結果テキストの生成
-    items = [f'{key}:{value}' for key, value in results.items() if value > 0]
-    # 未着手数を付加
-    not_run_text = f'{settings["test_status"]["labels"]["not_run"]}:{incompleted}'
-    if incompleted: items.append(not_run_text)
-    # 結果テキストの結合
-    if len(items):
-        return ', '.join(items)
-    else:
-        return "有効なデータがありません。エラーのないファイルのみが集計されます。"
 
 def set_state_color(label, state_name):
     # キー名を取得
@@ -608,7 +597,7 @@ def update_filelist_table(table_frame):
             )
 
             # グラフのツールチップ
-            graph_tooltop = make_graph_tooltip(display_data)
+            graph_tooltop = Labels.make_graph_tooltip(display_data)
             ToolTip(canvas.get_tk_widget(), msg=graph_tooltop, delay=0.3, follow=False)
 
         # エラー・ワーニング時はツールチップにメッセージを追加
@@ -1147,7 +1136,7 @@ def create_summary_tab(parent, has_data=False):
 
     # グラフ(総合)のツールチップを設定
     filtered_total_data = Utility.sum_values(filtered_data, "total")
-    graph_tooltip = f'{make_results_text(filtered_total_data, incompleted)}'
+    graph_tooltip = f'{Labels.make_results_text(filtered_total_data, incompleted)}'
     ToolTip(total_canvas.get_tk_widget(), msg=graph_tooltip, delay=0.3, follow=False)
 
     # テストケース数/完了率/消化率(総合)
@@ -1343,17 +1332,6 @@ def run(pjdata=None, pjpath=None, indata=None, args=None, on_reload=False, on_ch
     root.mainloop()
     # ウインドウ破棄
     root.destroy()
-
-def make_graph_tooltip(display_data: dict) -> str:
-    """グラフのツールチップ用のラベルを生成する
-
-    Args:
-        display_data: 表示データ
-
-    Returns:
-        str: ツールチップ用のラベル
-    """
-    return f"項目数: {display_data['available']} (Total: {display_data['all']} / 対象外: {display_data['excluded']})\nState: {display_data['state']}\n{make_results_text(display_data['total_data'], display_data['incompleted'])}"
 
 def sort_input_data(order: str, type: str = "asc") -> None:
     """入力データを指定された順序でソートする
