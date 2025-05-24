@@ -186,7 +186,7 @@ def make_progress_svg(data, settings, width=120, height=16):
 # エラー情報のテーブルを作成
 def create_error_table(project_data):
     error_data = []
-    for data in project_data.get("aggregate_data", []):
+    for data in project_data.get("gathered_data", []):
         if "error" in data:
             error_data.append({
                 "ファイル名": data.get("file", ""),
@@ -335,9 +335,9 @@ def main():
     
     with tab1:
         # 全体集計タブ
-        if "aggregate_data" in project_data:
+        if "gathered_data" in project_data:
             # エラーとワーニングのあるデータを除外
-            filtered_data = [d for d in project_data["aggregate_data"] 
+            filtered_data = [d for d in project_data["gathered_data"] 
                            if "error" not in d and "warning" not in d]
             
             if filtered_data:
@@ -398,7 +398,7 @@ def main():
 
                 # ファイル一覧の表示
                 file_data = []
-                for data in project_data["aggregate_data"]:
+                for data in project_data["gathered_data"]:
                     if "error" in data:
                         status = "❌エラー"
                         status_color = "red"
@@ -468,13 +468,13 @@ def main():
     
     with tab2:
         # ファイル別タブ
-        if "aggregate_data" in project_data:
+        if "gathered_data" in project_data:
             # ファイル選択
-            file_options = [d["selector_label"] for d in project_data["aggregate_data"]]
+            file_options = [d["selector_label"] for d in project_data["gathered_data"]]
             selected_file = st.selectbox("ファイルを選択", options=file_options)
             
             # 選択されたファイルのデータを取得
-            matching_data = [d for d in project_data["aggregate_data"] if d["selector_label"] == selected_file]
+            matching_data = [d for d in project_data["gathered_data"] if d["selector_label"] == selected_file]
             if matching_data:
                 file_data = matching_data[0]
                 if "error" not in file_data:

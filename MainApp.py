@@ -706,7 +706,7 @@ def edit_project(after_save_callback=None):
         parent=root,
         callback=on_project_updated,
         project_path=project_path,
-        aggregate_data=input_data
+        gathered_data=input_data
     )
 
 def save_project():
@@ -1006,8 +1006,8 @@ def reload_files(pre_message:str="", show_time:bool=True):
                     project_json = json.load(f)
                 
                 # 古い集計データを削除
-                if "aggregate_data" in project_json:
-                    del project_json["aggregate_data"]
+                if "gathered_data" in project_json:
+                    del project_json["gathered_data"]
                 
                 # プロジェクトファイル保存
                 with open(project_path, "w", encoding="utf-8") as f:

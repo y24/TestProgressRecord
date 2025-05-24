@@ -2,7 +2,7 @@ import json
 import os
 from libs import Utility
 
-def save_to_json(file_path: str, input_data: list, project_data: dict = None) -> None:
+def save_to_json(file_path: str, aggregated_data: list, input_data: list, project_data: dict = None) -> None:
     """プロジェクトデータをJSONファイルに保存する
 
     Args:
@@ -32,8 +32,8 @@ def save_to_json(file_path: str, input_data: list, project_data: dict = None) ->
         existing_data["project"] = project_data
         # 最終読込日時を保存（最も遅い日時を使用）
         existing_data["project"]["last_loaded"] = Utility.get_latest_time(input_data)
-        # aggregate_dataキーに現在のinput_dataを保存
-        existing_data["aggregate_data"] = input_data
+        # gathered_dataキーに現在のinput_dataを保存
+        existing_data["gathered_data"] = input_data
 
         # JSONファイルに保存
         with open(file_path, "w", encoding="utf-8") as f:

@@ -10,7 +10,7 @@ import re
 class ProjectEditorApp:
     def __init__(self, parent=None, callback: Callable[[Dict[str, Any]], None] = None, 
                  initial_files: List[Dict[str, Any]] = None, project_path: str = None,
-                 aggregate_data: List[Dict[str, Any]] = None):
+                 gathered_data: List[Dict[str, Any]] = None):
         self.parent = parent
         self.callback = callback
         window_title = "プロジェクト設定"
@@ -34,7 +34,7 @@ class ProjectEditorApp:
         
         self.file_saved = False
         self.project_path = project_path
-        self.aggregate_data = aggregate_data
+        self.gathered_data = gathered_data
         
         self.project_data = {
             "project": {
@@ -52,9 +52,9 @@ class ProjectEditorApp:
         if project_path:
             # プロジェクトファイルを開いている場合はロード
             self.load_project_from_path(project_path)
-        elif aggregate_data:
+        elif gathered_data:
             # ファイル指定で開いている(名称未設定)場合は集計データからファイル情報を追加
-            for data in aggregate_data:
+            for data in gathered_data:
                 if "filepath" in data:
                     self.add_file_info(file_data={
                         "type": "local",
@@ -278,8 +278,8 @@ class ProjectEditorApp:
         existing_data["project"] = json_project_data
         
         # 親ウインドウの集計データが渡されている場合は一緒に保存
-        if self.aggregate_data is not None:
-            existing_data["aggregate_data"] = self.aggregate_data
+        if self.gathered_data is not None:
+            existing_data["gathered_data"] = self.gathered_data
         
         # JSONファイルの保存
         with open(json_path, "w", encoding="utf-8") as f:

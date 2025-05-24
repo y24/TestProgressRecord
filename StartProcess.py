@@ -4,7 +4,7 @@ from datetime import datetime
 
 import ReadData
 import MainApp
-from libs import Utility, Dialog, Zip, AppConfig, TempDir, FileDownload, Project
+from libs import Utility, Dialog, Zip, AppConfig, TempDir, FileDownload, Project, DataConversion
 
 def get_xlsx_paths(inputs):
     """
@@ -76,7 +76,7 @@ def file_processor(file, settings, id):
     # ファイル情報を付与
     result["file"] = _remove_duplicate_number(filename)
     result["filepath"] = file["fullpath"]
-    result["identifier"] = file["identifier"]
+    result["identifier"] = file["identifier"] if file.get("identifier") else ""
     result["selector_label"] = make_selector_label(result, id)
     # 最終読込日時を記録
     result["last_loaded"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -160,7 +160,7 @@ def process_files(inputs, project_path="", on_reload=False, web_ui=False):
 
     # プロジェクトデータを初期化
     project_data = {}
-    aggregate_data = []  # 集計データも初期化
+    gathered_data = []  # 集計データも初期化
 
     # プロジェクトファイルのパスが指定されている場合はそのファイルを読み込む
     if project_path:
@@ -202,7 +202,7 @@ def process_files(inputs, project_path="", on_reload=False, web_ui=False):
                 
                 # localファイルの処理
                 if local_files:
-                    aggregate_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(local_files))]
+                    gathered_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(local_files))]
                 
                 # sharepointファイルの処理
                 if sharepoint_files:
@@ -211,25 +211,29 @@ def process_files(inputs, project_path="", on_reload=False, web_ui=False):
                     files = filter_xlsx_files(files)
                     # 全ファイルの集計処理
                     if files:
-                        aggregate_data.extend([file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))])
+                        gathered_data.extend([file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))])
 
             except Exception as e:
                 Dialog.show_messagebox(root=None, type="error", title="ファイル読込エラー", message=f"{str(e)}")
                 # プロジェクトファイルの読込に失敗した場合はデータ0件とする
-                aggregate_data = []
+                gathered_data = []
         else:
             # xlsx/zipファイルを指定した場合
             files, temp_dirs = get_xlsx_paths(inputs)
             # 全ファイルの集計処理
-            aggregate_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))]
+            gathered_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))]
 
-    # アプリケーションの起動
-    if not web_ui:
-        MainApp.run(pjdata=project_data, pjpath=project_path, indata=aggregate_data, args=inputs, on_reload=on_reload)
+    # 全ファイルの合計
+    aggregated_data = DataConversion.aggregate_all_daily(gathered_data)
+    print(aggregated_data)
 
     # プロジェクトファイル保存（再集計後に即時保存）
     if project_path:
-        Project.save_to_json(file_path=project_path, input_data=aggregate_data, project_data=project_data)
+        Project.save_to_json(file_path=project_path, aggregated_data=aggregated_data, input_data=gathered_data, project_data=project_data)
+
+    # アプリケーションの起動
+    if not web_ui:
+        MainApp.run(pjdata=project_data, pjpath=project_path, indata=gathered_data, args=inputs, on_reload=on_reload)
 
     # 再集計フラグファイルの削除（完了通知用）
     if project_path:

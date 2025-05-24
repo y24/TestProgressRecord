@@ -1,4 +1,5 @@
 from libs import Utility, Labels
+from collections import defaultdict
 
 def convert_to_2d_array(data, settings):
     # ヘッダーの作成
@@ -142,3 +143,15 @@ def _extract_file_data(file_data: dict) -> dict:
         "start_date": run_data["start_date"],
         "last_update": run_data["last_update"]
     }
+
+def aggregate_all_daily(data):
+    result = defaultdict(lambda: defaultdict(int))
+
+    for record in data:
+        daily = record.get("daily", {})
+        for date, values in daily.items():
+            for k, v in values.items():
+                result[date][k] += v
+
+    # 必要に応じて dict へ変換
+    return {date: dict(stats) for date, stats in result.items()}
