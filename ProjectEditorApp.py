@@ -83,22 +83,6 @@ class ProjectEditorApp:
         
         # ファイル情報追加ボタン
         ttk.Button(self.files_frame, text="Add", command=self.add_file_info).pack(padx=5, pady=5, anchor="w")
-        
-        # 集計データ書込先
-        self.output_frame = ttk.LabelFrame(self.root, text="集計データ出力")
-        self.output_frame.grid(row=2, column=0, columnspan=3, padx=5, pady=3, sticky="ew")
-        
-        # 書込先
-        ttk.Label(self.output_frame, text="書込先:").grid(row=0, column=0, sticky=tk.W, padx=2, pady=3)
-        self.write_path_entry = ttk.Entry(self.output_frame, width=80)
-        self.write_path_entry.grid(row=0, column=1)
-        ttk.Button(self.output_frame, text="...", width=3, command=self.select_excel_file).grid(row=0, column=2, padx=3, pady=3)
-
-        # データシート名
-        ttk.Label(self.output_frame, text="データシート名:").grid(row=0, column=3, padx=(4,2))
-        self.data_sheet_entry = ttk.Entry(self.output_frame, width=20)
-        self.data_sheet_entry.insert(0, "DATA")
-        self.data_sheet_entry.grid(row=0, column=4, padx=2)
 
         # ボタンフレーム
         button_frame = ttk.Frame(self.root)
@@ -183,15 +167,6 @@ class ProjectEditorApp:
             "identifier": identifier_entry,
             "path": path_entry
         }
-        
-    def select_excel_file(self):
-        file_path = filedialog.askopenfilename(
-            title="Excelファイルを選択",
-            filetypes=[("Excel files", "*.xlsx")]
-        )
-        if file_path:
-            self.write_path_entry.delete(0, tk.END)
-            self.write_path_entry.insert(0, file_path)
             
     def load_project_from_path(self, file_path: str):
         """指定されたパスのJSONファイルを読み込む"""
@@ -203,14 +178,6 @@ class ProjectEditorApp:
             # プロジェクト名を設定
             self.project_name_entry.delete(0, tk.END)
             self.project_name_entry.insert(0, project_data.get("project_name", ""))
-            
-            # Excelファイルパスを設定
-            self.write_path_entry.delete(0, tk.END)
-            self.write_path_entry.insert(0, project_data.get("write_path", ""))
-            
-            # データシート名を設定
-            self.data_sheet_entry.delete(0, tk.END)
-            self.data_sheet_entry.insert(0, project_data.get("data_sheet_name", ""))
             
             # 既存のファイル行をクリア
             for widget in self.files_frame.winfo_children():
@@ -278,10 +245,6 @@ class ProjectEditorApp:
             # 最後の1つを残して削除
             for frame in frames_to_remove[:-1]:
                 frame.destroy()
-            
-        # 書込先Excelファイルパスの取得
-        write_path = self.write_path_entry.get().strip()
-        data_sheet = self.data_sheet_entry.get().strip()
 
         # 保存先のパスを決定
         if self.project_path:
@@ -358,9 +321,7 @@ class ProjectEditorApp:
                 # プロジェクトデータを収集
                 project_data = {
                     "project_name": self.project_name_entry.get().strip(),
-                    "files": self.get_file_info(),
-                    "write_path": self.write_path_entry.get().strip(),
-                    "data_sheet_name": self.data_sheet_entry.get().strip()
+                    "files": self.get_file_info()
                 }
                 
                 # データのバリデーション
