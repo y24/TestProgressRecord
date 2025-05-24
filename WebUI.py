@@ -64,7 +64,7 @@ def create_progress_chart(data, settings):
         showlegend=False,
         dragmode=False,
         height=100,
-        margin=dict(l=0, r=0, t=30, b=0),
+        margin=dict(l=0, r=0, t=25, b=0),
         xaxis=dict(
             showticklabels=False,  # 目盛ラベルを非表示
             showgrid=False,        # グリッド線を非表示
@@ -294,8 +294,6 @@ def create_pb_chart(project_data, settings):
     
     fig.update_layout(
         title="テスト進捗 / 不具合検出状況",
-        xaxis_title="",
-        yaxis_title="",
         xaxis=dict(
             type="category",
             tickmode='array',
@@ -450,11 +448,6 @@ def main():
     if "last_loaded" in project_data["project"]:
         last_loaded = datetime.fromisoformat(project_data["project"]["last_loaded"])
         st.caption(f"最終更新: {last_loaded.strftime('%Y/%m/%d %H:%M')}")
-
-    # PB図の表示
-    pb_fig = create_pb_chart(project_data, settings)
-    if pb_fig:
-        st.plotly_chart(pb_fig, use_container_width=True, config={"displayModeBar": False, "scrollZoom": False})
     
     # タブの作成
     tab1, tab2, tab3 = st.tabs(["全体集計", "ファイル別集計", "エラー情報"])
@@ -462,6 +455,12 @@ def main():
     with tab1:
         # 全体集計タブ
         if "gathered_data" in project_data:
+
+            # PB図の表示
+            pb_fig = create_pb_chart(project_data, settings)
+            if pb_fig:
+                st.plotly_chart(pb_fig, use_container_width=True, config={"displayModeBar": False, "scrollZoom": False})
+
             # エラーとワーニングのあるデータを除外
             filtered_data = [d for d in project_data["gathered_data"] 
                            if "error" not in d and "warning" not in d]
