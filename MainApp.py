@@ -636,7 +636,7 @@ def select_write_file(entry):
         entry.insert(0, filepath)  # 新しいファイルパスをセット
 
 def edit_settings():
-    response = Dialog.ask_question(root=root, title="環境設定", message=f"環境設定ファイル (UserConfig.json) を開きますか？\n※設定を反映するにはアプリを再起動するか、Data > 再集計 を実行してください。")
+    response = Dialog.ask_question(root=root, title="環境設定", message=f"環境設定ファイルを開きますか？\n設定を反映するにはアプリを再起動するか、データの再集計を実行してください。")
     if response == "yes":
         FileOperation.run(file_path="UserConfig.json", exit=False)
 
