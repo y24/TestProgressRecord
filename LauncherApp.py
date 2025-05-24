@@ -157,7 +157,7 @@ class LauncherApp:
     
     def open_new_project(self):
         """新規プロジェクトを開く"""
-        subprocess.Popen(["python", "MainApp.py"])
+        subprocess.Popen(["python", "StartProcess.py"])
         self.root.quit()
     
     def open_selected_project(self):

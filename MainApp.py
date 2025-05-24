@@ -784,7 +784,7 @@ def create_menubar(parent, has_data=False):
 
     # ファイルデータがない場合はメニュー無効化
     if not has_data:
-        data_menu.entryconfig("再集計", state=tk.DISABLED)
+        data_menu.entryconfig("再集計を実行", state=tk.DISABLED)
 
 def create_input_area(parent, settings):
     input_frame = ttk.LabelFrame(parent, text="集計データ出力")
@@ -1136,7 +1136,6 @@ def _show_startup_messages(has_data, pjpath, on_reload, input_data):
     if len(errors) and not on_reload:
         Dialog.show_messagebox(root, type="error", title="抽出エラー", message=f"以下のファイルはデータが抽出できませんでした。\n\nFile(s):\n{ers}")
 
-    # データがある場合の処理
     if has_data:
         # プロジェクトファイルを読込時、ファイルが更新されている場合は再集計を促す
         if pjpath and not on_reload and _needs_reload(input_data):
@@ -1144,9 +1143,6 @@ def _show_startup_messages(has_data, pjpath, on_reload, input_data):
         # 再集計後の起動時にはプロジェクトを保存
         if pjpath and on_reload:
             save_project()
-    else:
-        # 1件もデータがない場合はメッセージ
-        Dialog.show_messagebox(root, type="warning", title="抽出エラー", message=f"データがありません。File > プロジェクト情報設定 からデータ取得元を設定してください。")
 
 def _needs_reload(input_data):
     """再集計が必要かどうかを判定する
