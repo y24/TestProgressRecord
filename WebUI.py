@@ -204,7 +204,7 @@ def save_default_project(project_name):
     AppConfig.save_settings(settings)
 
 # PB図を作成
-def create_pb_chart(project_data, settings):
+def create_pb_chart(project_data, settings, axis_type="時間軸で表示"):
     if not project_data.get("gathered_data"):
         return None
     
@@ -297,7 +297,7 @@ def create_pb_chart(project_data, settings):
     fig.update_layout(
         title="テスト進捗 / 不具合検出状況",
         xaxis=dict(
-            type="category",
+            type="date" if axis_type == "時間軸で表示" else "category",
             tickmode='array',
             tickvals=tickvals,
             ticktext=ticktexts,
@@ -341,8 +341,6 @@ def main():
     settings = AppConfig.load_settings()
     
     # サイドバー
-    st.sidebar.title("TestTraQ")
-
     # プロジェクトファイルの選択
     project_files = list(Path("projects").glob("*.json"))
     if not project_files:
@@ -396,6 +394,16 @@ def main():
     
     # 選択されたプロジェクトのPathオブジェクトを取得
     selected_project = project_options[selected_project_name]
+
+    st.sidebar.markdown("---")
+
+    # グラフ表示設定
+    st.sidebar.markdown("### 表示設定")
+    axis_type = st.sidebar.radio(
+        "進捗グラフ",
+        ["時間軸で表示", "等間隔で表示"],
+        captions=["実際の日付間隔で表示する", "データのない日付を詰めて表示する"]
+    )
 
     # 再集計状態管理
     if 'reload_state' not in st.session_state:
@@ -468,7 +476,7 @@ def main():
         if "gathered_data" in project_data:
 
             # PB図の表示
-            pb_fig = create_pb_chart(project_data, settings)
+            pb_fig = create_pb_chart(project_data, settings, axis_type)
             if pb_fig:
                 st.plotly_chart(pb_fig, use_container_width=True, config={"displayModeBar": False, "scrollZoom": False})
 
