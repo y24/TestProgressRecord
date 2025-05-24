@@ -16,6 +16,9 @@ from libs import Dialog
 from libs import Project
 from libs import DataConversion
 from libs import Labels
+from libs import Clipboard
+from libs import CsvFile
+from libs import FileOperation
 
 project_data = None
 project_path = None
@@ -220,12 +223,12 @@ def create_treeview(parent, data, structure, file_name):
     menubutton = ttk.Menubutton(parent, text="エクスポート", direction="below")
     menu = tk.Menu(menubutton, tearoff=0)
     menu.add_command(label="CSVで保存", 
-                    command=lambda: save_to_csv(
+                    command=lambda: CsvFile.save_2d_array(
                         treeview_to_array(tree), 
                         f'{os.path.splitext(file_name)[0]}_{settings["app"]["structures"][structure]}'
                     ))
     menu.add_command(label="クリップボードにコピー", 
-                    command=lambda: copy_to_clipboard(treeview_to_array(tree)))
+                    command=lambda: Clipboard.copy_2d_array(treeview_to_array(tree), root))
     menubutton.config(menu=menu)
     menubutton.pack(side=tk.LEFT, padx=2, pady=5)
 
@@ -252,20 +255,8 @@ def treeview_to_array(treeview):
 
 # 2次元配列をCSVファイルに保存
 def save_to_csv(data, filename):
-    # 保存先の選択
-    file_path = filedialog.asksaveasfilename(initialfile=filename, defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
-    if not file_path:
-        return
-    
-    # 保存
-    with open(file_path, mode='w', newline='', encoding='utf-8') as file:
-        writer = csv.writer(file)
-        writer.writerows(data)
-
-    # 保存完了
-    response = Dialog.ask_question(title="保存完了", message=f"CSVデータを保存しました。\n{file_path}\n\nファイルを開きますか？")
-    if response == "yes":
-        run_file(file_path=file_path)
+    """CSVファイルに保存する"""
+    CsvFile.save_2d_array(data, filename)
 
 def update_byfile_tab(selected_file, count_label, last_load_time_label, ax, canvas, notebook):
     # タブ切り替え
@@ -685,9 +676,9 @@ def create_summary_filelist_area(parent):
     # エクスポートメニュー
     exp_menu_button = ttk.Menubutton(menu_frame, text="エクスポート", direction="below")
     expmenu = tk.Menu(exp_menu_button, tearoff=0)
-    expmenu.add_command(label="CSVで保存", command=lambda: save_to_csv(_get_filelist_data(), f'進捗集計_{Utility.get_today_str()}'))
-    expmenu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(_get_filelist_data()))
-    expmenu.add_command(label="ファイル名一覧をコピー", command=lambda: copy_to_clipboard(_get_filelist_data(filename_only=True)))
+    expmenu.add_command(label="CSVで保存", command=lambda: save_to_csv(_get_filelist_data(), f'{Utility.get_today_str()}'))
+    expmenu.add_command(label="クリップボードにコピー", command=lambda: Clipboard.copy_2d_array(_get_filelist_data(), root))
+    expmenu.add_command(label="ファイル名一覧をコピー", command=lambda: Clipboard.copy_2d_array(_get_filelist_data(filename_only=True), root))
     exp_menu_button.config(menu=expmenu)
     exp_menu_button.pack(anchor=tk.SW, side=tk.LEFT, padx=(0, 4))
 
@@ -708,33 +699,8 @@ def select_write_file(entry):
         entry.insert(0, filepath)  # 新しいファイルパスをセット
 
 def run_file(file_path, exit:bool=False):
-    if os.path.isfile(file_path):
-        try:
-            os.startfile(file_path)  # Windows
-        except AttributeError:
-            subprocess.run(["xdg-open", file_path])  # Linux/Mac
-        # ファイルを開いたあと終了する
-        except Exception as e:
-            Dialog.show_messagebox(root=root, type="error", title="Error", message=f"ファイルを開けませんでした。\n{e}")
-        if exit:
-            sys.exit()
-    else:
-        Dialog.show_messagebox(root=root, type="error", title="Error", message="指定されたファイルが見つかりません")
-
-def copy_to_clipboard(data):
-    """クリップボードにデータをコピーする
-
-    Args:
-        data: コピーするデータ
-        filename_only: Trueの場合、ファイル名のみをコピー
-    """
-    # タブ区切りのテキストに変換
-    text = "\n".join(["\t".join(map(str, row)) for row in data])
-    
-    # クリップボードにコピー
-    root.clipboard_clear()
-    root.clipboard_append(text)
-    root.update()
+    """ファイルを実行/開く"""
+    FileOperation.run_file(file_path, exit)
 
 def edit_settings():
     response = Dialog.ask_question(root=root, title="環境設定", message=f"環境設定ファイル (UserConfig.json) を開きますか？\n※設定を反映するにはアプリを再起動するか、Data > 再集計 を実行してください。")
@@ -876,7 +842,7 @@ def create_input_area(parent, settings):
 
     submit_frame = ttk.Frame(input_frame)
     submit_frame.grid(row=2, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W)
-    ttk.Button(submit_frame, text="クリップボードにコピー", command=lambda: copy_to_clipboard(_get_write_data()), width=22).pack(side=tk.LEFT, padx=2, pady=(0,2))
+    ttk.Button(submit_frame, text="クリップボードにコピー", command=lambda: Clipboard.copy_2d_array(_get_write_data(), root), width=22).pack(side=tk.LEFT, padx=2, pady=(0,2))
 
 def update_info_label(data, count_label, last_load_time_label=None, detail=True):
     if len(data) == 0 or"error" in data:
