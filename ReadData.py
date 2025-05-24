@@ -242,9 +242,6 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
         if not set_name:
             set_name = f"セット{index + 1}"
 
-        # 環境名: [シート名]セット名
-        env_name = f"[{sheet_name}]{set_name}"
-
         # 計画列がある場合
         if len(plan_rows) > 0:
             # 計画データを取得
@@ -254,7 +251,7 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
             plan_data = None
 
         # 環境ごとのデータ集計
-        env_data[env_name], _ = get_daily(
+        env_data[set_name], _ = get_daily(
             data=processed_data,
             results=settings["test_status"]["results"],
             completed_label=settings["test_status"]["labels"]["completed"], 

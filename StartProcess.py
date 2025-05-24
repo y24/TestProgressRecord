@@ -49,8 +49,7 @@ def get_xlsx_paths(inputs):
 def make_selector_label(file, id):
     """ファイル選択用のラベルを生成する"""
     file_name = file["file"]
-    relative_path = f'[{file["relative_path"]}] ' if file["relative_path"] else ""
-    return f"{id}: {relative_path}{file_name}"
+    return f"{id}: {file_name}"
 
 def _remove_duplicate_number(filename: str) -> str:
     """
@@ -77,10 +76,7 @@ def file_processor(file, settings, id):
     # ファイル情報を付与
     result["file"] = _remove_duplicate_number(filename)
     result["filepath"] = file["fullpath"]
-    result["relative_path"] = (
-        Utility.get_relative_directory_path(full_path=file["fullpath"], base_dir=file["temp_dir"])
-        if file["temp_dir"] else ""
-    )
+    result["identifier"] = file["identifier"]
     result["selector_label"] = make_selector_label(result, id)
     # 最終読込日時を記録
     result["last_loaded"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -182,7 +178,7 @@ def process_files(inputs, project_path="", on_reload=False, web_ui=False):
                 with open(inputs[0], "r", encoding="utf-8") as f:
                     json_data = json.load(f)
 
-                # プロジェクトデータを取得^
+                # プロジェクトデータを取得
                 if "project" in json_data:
                     project_data = json_data["project"]
                     project_path = inputs[0]
@@ -195,14 +191,18 @@ def process_files(inputs, project_path="", on_reload=False, web_ui=False):
                 if "project" in json_data and "files" in json_data["project"]:
                     for file in json_data["project"]["files"]:
                         if file.get("type") == "local":
-                            local_files.append(file.get("path"))
+                            file_info = {
+                                "fullpath": file.get("path"),
+                                "identifier": file.get("identifier"),
+                                "source": "local"
+                            }
+                            local_files.append(file_info)
                         elif file.get("type") == "sharepoint":
                             sharepoint_files.append(file.get("path"))
                 
                 # localファイルの処理
                 if local_files:
-                    files, temp_dirs = get_xlsx_paths(local_files)
-                    aggregate_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))]
+                    aggregate_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(local_files))]
                 
                 # sharepointファイルの処理
                 if sharepoint_files:
