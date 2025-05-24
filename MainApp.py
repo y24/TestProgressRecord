@@ -9,7 +9,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 import json
 
-from libs import WriteData
 from libs import Utility
 from libs import AppConfig
 from libs import Dialog
@@ -778,38 +777,6 @@ def create_summary_filelist_area(parent):
     # 初期ソート順の反映
     change_sort_order(table_frame, settings["app"]["sort"]["default"], sort_menu_button, on_change=False)
 
-def write_to_excel(file_path, table_name):
-    # ファイルパス未入力
-    if not file_path:
-        Dialog.show_messagebox(root=root, type="warning", title="Error", message=f"書込先のファイルを選択してください。")
-        return
-
-    # 確認
-    response = Dialog.ask_question(title="保存確認", message=f'{len(input_data)}件のファイルから取得したデータをすべて書き込みます。よろしいですか？')
-    if response == "no":
-        return
-
-    # フィールドの設定値をグローバルに反映
-    settings["app"]["write"]["filepath"] = file_path
-    settings["app"]["write"]["table_name"] = table_name
-
-    # データ書込
-    try:
-        result = WriteData.execute(input_data, file_path, table_name)
-    except ValueError as e:
-        Dialog.show_messagebox(root=root, type="warning", title="データなし", message=e)
-        return
-    except PermissionError as e:
-        Dialog.show_messagebox(root=root, type="error", title="保存失敗", message=e)
-        return
-
-    # 成功したら設定を保存
-    if result:
-        AppConfig.save_settings(settings)
-        response = Dialog.ask_question(title="保存完了", message=f'"{table_name}"シートにデータを書き込みました。\n{file_path}\n\nこのアプリを終了して、書込先ファイルを開きますか？')
-        if response == "yes":
-            run_file(file_path=file_path, exit=True)
-
 def select_write_file(entry):
     filepath = filedialog.askopenfilename(title="書込先ファイルを選択", defaultextension=".xlsx", filetypes=[("Excel file", "*.xlsx")])
     if filepath:  # キャンセルで空文字が返ってきたときは変更しない
@@ -980,10 +947,6 @@ def create_input_area(parent, settings):
 
     submit_frame = ttk.Frame(input_frame)
     submit_frame.grid(row=2, column=0, columnspan=3, padx=5, pady=2, sticky=tk.W)
-    ttk.Button(submit_frame, text="Excelへ書込", command=lambda: write_to_excel(project_data["write_path"], project_data["data_sheet_name"])).pack(side=tk.LEFT, padx=2, pady=(0,2))
-    ttk.Button(submit_frame, text="書込先を開く", command=lambda: run_file(project_data["write_path"])).pack(side=tk.LEFT, padx=2, pady=5)
-
-    ttk.Button(submit_frame, text="CSV保存", command=lambda: save_to_csv(_get_write_data(), f'進捗集計_{Utility.get_today_str()}')).pack(side=tk.LEFT, padx=2, pady=(0,2))
     ttk.Button(submit_frame, text="クリップボードにコピー", command=lambda: copy_to_clipboard(_get_write_data()), width=22).pack(side=tk.LEFT, padx=2, pady=(0,2))
 
 def update_info_label(data, count_label, last_load_time_label=None, detail=True):
