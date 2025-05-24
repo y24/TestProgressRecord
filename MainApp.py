@@ -643,6 +643,15 @@ def edit_settings():
 def load_files():
     files = Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))
     if files:
+        # project_dataがない場合は初期化
+        global project_data
+        if not project_data:
+            project_data = {}
+        
+        # filesキーがない場合は初期化
+        if "files" not in project_data:
+            project_data["files"] = []
+            
         # ローカルファイルをproject_data["files"]から除去
         project_data["files"] = [
             file for file in project_data["files"] 
@@ -667,7 +676,7 @@ def open_project():
 def update_labels():
     """プロジェクト情報に関連するラベルを更新する"""
     # プロジェクト名の更新
-    project_name = project_data.get("project_name", "名称未設定")
+    project_name = project_data.get("project_name", "<<新規プロジェクト>>")
     project_name_label.config(text=project_name)
     # ウィンドウタイトルも更新
     update_window_title(root)
@@ -677,6 +686,12 @@ def edit_project(after_save_callback=None):
     def on_project_updated(new_project_data):
         global project_data, project_path, change_flg
         try:
+            # ファイル設定が変更されている場合、確認ダイアログを表示
+            old_files = project_data.get("files", [])
+            new_files = new_project_data.get("files", [])
+            if old_files != new_files:
+                reload_files(pre_message="ファイル設定が変更されました。", show_time=False)
+
             project_path = new_project_data.pop("project_path", None)  # パスを取り出して削除
             project_data = new_project_data  # グローバル変数を更新
 
@@ -747,6 +762,18 @@ def toggle_byfile_graph():
 def _get_write_data():
     return DataConversion.convert_to_2d_array(data=input_data, settings=settings)
 
+def new_project():
+    """新規プロジェクトを作成する"""
+    if change_flg:
+        # プロジェクトデータが変更されている場合、確認ダイアログを表示
+        response = confirm_save()
+        if response == None:
+            return  # キャンセルでアプリに戻る
+        elif response == True:
+            save_project()  # 保存
+    # 空プロジェクトを開く
+    new_process(inputs=[], project_path=None, on_reload=False, on_change=False)
+
 def create_menubar(parent, has_data=False):
     global show_byfile_graph, show_env_data
 
@@ -754,6 +781,7 @@ def create_menubar(parent, has_data=False):
     parent.config(menu=menubar)
     # File
     file_menu = tk.Menu(menubar, tearoff=0)
+    file_menu.add_command(label="新規作成", command=new_project, accelerator="Ctrl+N")
     file_menu.add_command(label="開く", command=open_project, accelerator="Ctrl+O")
     file_menu.add_command(label="保存", command=save_project, accelerator="Ctrl+S")
     file_menu.add_separator()
@@ -925,20 +953,24 @@ def save_window_position():
     settings["app"]["window_position"] = position
     AppConfig.save_settings(settings)
 
+def confirm_save():
+    """保存確認ダイアログを表示"""
+    response = Dialog.ask_yes_no_cancel(
+        root=root,
+        title="確認",
+        message="プロジェクトデータが変更されています。保存して終了しますか？"
+    )
+    return response
+
 def on_closing():
     # ウインドウ終了時
     if change_flg:
         # プロジェクトデータが変更されている場合、確認ダイアログを表示
-        response = Dialog.ask_yes_no_cancel(
-            root=root,
-            title="確認",
-            message="プロジェクトデータが変更されています。保存して終了しますか？"
-        )
-        
+        response = confirm_save()
         if response == None:
-            return  # アプリに戻る
+            return  # キャンセルでアプリに戻る
         elif response == True:
-            save_project()  # 保存して終了
+            save_project()  # 保存
     
     # ウインドウの位置情報とサイズを保存
     save_window_position()
@@ -965,11 +997,20 @@ def new_process(inputs, on_reload=False, on_change=False, project_path=None):
     subprocess.Popen(command)
     sys.exit()
 
-def reload_files():
-    # 再集計の確認ダイアログを表示
+def reload_files(pre_message:str="", show_time:bool=True):
+    # 更新日時を取得
     last_loaded = Utility.get_latest_time(input_data)
     last_updated = Utility.get_latest_time(input_data, key="last_updated")
-    response = Dialog.ask_question(root=root, title="確認", message=f"ファイルが更新されています。最新のデータを集計しますか？\n\n最終読込日時: {last_loaded}\n最終更新日時: {last_updated}")
+
+    # 更新日時表示
+    if show_time:
+        time = f"\n\n最終読込日時: {last_loaded}\n最終更新日時: {last_updated}"
+    else:
+        time = ""
+
+    # ダイアログ表示
+    response = Dialog.ask_question(root=root, title="確認", message=f"{pre_message}最新のデータを集計しますか？{time}")
+
     if response == "yes":
         # プロジェクトファイルを開いている場合
         if project_path:
@@ -1021,7 +1062,7 @@ def create_initial_screen(parent):
     initial_text = ttk.Label(initial_frame, text="集計対象のファイルを読み込んでください。", anchor="center")
     initial_text.pack(pady=(30, 0))
     # ファイル読込ボタン
-    load_files_button = ttk.Button(initial_frame, text="ファイル読込", command=load_files)
+    load_files_button = ttk.Button(initial_frame, text="ローカルファイル読込", command=load_files)
     load_files_button.pack(pady=15)
 
 def create_summary_tab(parent, has_data=False):
@@ -1034,7 +1075,7 @@ def create_summary_tab(parent, has_data=False):
 
     # プロジェクト名称
     global project_name_label
-    project_name = project_data.get("project_name", "名称未設定")
+    project_name = project_data.get("project_name", "<<新規プロジェクト>>")
     project_name_label = ttk.Label(total_frame, text=project_name, anchor="w")
     project_name_label.pack(fill=tk.X, padx=20)
     project_name_label.config(cursor="hand2", font=("Meiryo UI", 9, "underline"))
@@ -1139,7 +1180,7 @@ def _show_startup_messages(has_data, pjpath, on_reload, input_data):
     if has_data:
         # プロジェクトファイルを読込時、ファイルが更新されている場合は再集計を促す
         if pjpath and not on_reload and _needs_reload(input_data):
-            reload_files()
+            reload_files(pre_message="ファイルが更新されています。", show_time=True)
         # 再集計後の起動時にはプロジェクトを保存
         if pjpath and on_reload:
             save_project()
