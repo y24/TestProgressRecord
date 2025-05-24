@@ -6,7 +6,6 @@ import csv, os, sys, pprint
 from datetime import datetime
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import japanize_matplotlib
 import numpy as np
 import json
 
@@ -18,6 +17,8 @@ from libs import DataConversion
 
 project_data = None
 project_path = None
+show_byfile_graph = None
+show_env_data = None
 
 def _create_row_data(structure: str, values: dict, settings: dict, all_keys: set) -> list:
     """行データを生成する
@@ -448,34 +449,14 @@ def update_filelist_table(table_frame):
     padx = 1
     pady = 3
 
-    # 環境別データの表示状態を管理する変数
-    show_env_data = tk.BooleanVar(value=False)
-
     # テーブルコンテンツを配置するフレーム
+    global content_frame
     content_frame = ttk.Frame(table_frame)
     content_frame.pack(fill=tk.BOTH, expand=True)
 
     # 制御ボタンを配置するフレーム
     control_frame = ttk.Frame(table_frame)
     control_frame.pack(fill=tk.X, padx=padx, pady=pady)
-
-
-
-    def toggle_env_data():
-        """環境別データの表示/非表示を切り替える"""
-        show = show_env_data.get()
-        # テーブルコンテンツのみをクリア
-        clear_frame(content_frame)
-        # テーブルを再描画
-        create_table(show)
-
-    # 環境別データ表示切替ボタン
-    ttk.Checkbutton(
-        control_frame,
-        text="環境別データを表示",
-        variable=show_env_data,
-        command=toggle_env_data
-    ).pack(side=tk.LEFT, padx=padx)
 
     def create_table(show_env=False):
         """テーブルを作成する
@@ -676,117 +657,25 @@ def update_filelist_table(table_frame):
             frame,
             text=executed_rate
         ).grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
-        col += 1
-
-        # 完了率
-        comp_rate = Utility.meke_rate_text(completed_count, total_count)
-        ttk.Label(
-            frame,
-            text=comp_rate
-        ).grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
 
     # テーブルを作成
-    create_table()
+    create_table(show_env=show_env_data.get())
 
-def make_graph_tooltip(display_data: dict) -> str:
-    """グラフのツールチップ用のラベルを生成する
+    # create_table関数をグローバルに公開
+    global _create_table
+    _create_table = create_table
 
-    Args:
-        display_data: 表示データ
-
-    Returns:
-        str: ツールチップ用のラベル
-    """
-    return f"項目数: {display_data['available']} (Total: {display_data['all']} / 対象外: {display_data['excluded']})\nState: {display_data['state']}\n{make_results_text(display_data['total_data'], display_data['incompleted'])}"
-
-
-def sort_input_data(order: str, type: str = "asc") -> None:
-    """入力データを指定された順序でソートする
-
-    Args:
-        order (str): ソート基準
-            - "start_date": 開始日時でソート
-            - "last_update": 最終更新日時でソート
-            - "file_name": ファイル名でソート
-            - "completed_rate": 完了率でソート
-        type (str): ソート順
-            - "asc": 昇順（デフォルト）
-            - "desc": 降順
-    """
-    # ソートキーの定義
-    def safe_get(x, keys, default=None):
-        """ネストされたディクショナリから安全に値を取得する"""
-        try:
-            value = x
-            for key in keys:
-                value = value[key]
-            return value
-        except (KeyError, TypeError):
-            return default
-
-    sort_keys = {
-        "start_date": lambda x: (
-            0 if "run" not in x else 1,
-            0 if safe_get(x, ["run", "start_date"]) is None else 1,
-            safe_get(x, ["run", "start_date"], "")
-        ),
-        "last_update": lambda x: (
-            0 if "run" not in x else 1,
-            0 if safe_get(x, ["run", "last_update"]) is None else 1,
-            safe_get(x, ["run", "last_update"], "")
-        ),
-        "file_name": lambda x: (
-            0 if "file" not in x else 1,
-            0 if safe_get(x, ["file"]) is None else 1,
-            safe_get(x, ["file"], "").lower()
-        ),
-        "completed_rate": lambda x: (
-            0 if "stats" not in x else 1,
-            0 if safe_get(x, ["stats", "available"]) is None else 1,
-            safe_get(x, ["stats", "completed"], 0) / safe_get(x, ["stats", "available"], 1) 
-            if safe_get(x, ["stats", "available"], 0) > 0 else 0
-        )
-    }
-
-    # 存在するソートキーかチェック
-    if order not in sort_keys:
-        print(f"Warning: Unknown sort order '{order}'. Using 'start_date' as default.")
-        order = "start_date"
-
-    # ソート順の検証
-    if type not in ["asc", "desc"]:
-        print(f"Warning: Invalid sort type '{type}'. Using 'asc' as default.")
-        type = "asc"
-
-    # ソート実行
-    global input_data
-    input_data = sorted(
-        input_data, 
-        key=sort_keys[order], 
-        reverse=(type == "desc")  # type が "desc" の場合は reverse=True
-    )
-
-def clear_frame(frame):
-    for widget in frame.winfo_children():
+def toggle_env_data():
+    """環境別データの表示/非表示を切り替える"""
+    global show_env_data
+    settings["app"]["show_env_data"] = show_env_data.get()
+    AppConfig.save_settings(settings)
+    
+    # テーブルコンテンツのみをクリア
+    for widget in content_frame.winfo_children():
         widget.destroy()
-
-def change_sort_order(table_frame, order, sort_menu_button, on_change=False):
-    sort_input_data(order, type=settings["app"]["sort"]["orders"][order]["type"])
-    clear_frame(table_frame) # 表示をクリア
-    if on_change:
-        plt.close('all') # 表示していたグラフを開放する
-    update_filelist_table(table_frame)
-    sort_menu_button.config(text=f'ソート: {settings["app"]["sort"]["orders"][order]["label"]}')
-    if on_change:
-        # デフォルト設定に保存
-        settings["app"]["sort"]["default"] = order
-        AppConfig.save_settings(settings)
-
-def _get_filelist_data(filename_only: bool = False):
-    if filename_only:
-        return [[row[1]] for row in create_export_data(input_data, settings)[1:]]
-    else:
-        return create_export_data(input_data, settings)
+    # テーブルを再描画
+    _create_table(show_env=show_env_data.get())
 
 def create_summary_filelist_area(parent):
     # メニュー
@@ -946,9 +835,7 @@ def _get_write_data():
     return DataConversion.convert_to_2d_array(data=input_data, settings=settings)
 
 def create_menubar(parent, has_data=False):
-    global show_byfile_graph
-    # BooleanVarを作成し、設定値を反映
-    show_byfile_graph = tk.BooleanVar(value=settings["app"]["show_byfile_graph"])
+    global show_byfile_graph, show_env_data
 
     menubar = tk.Menu(parent)
     parent.config(menu=menubar)
@@ -969,7 +856,8 @@ def create_menubar(parent, has_data=False):
     menubar.add_cascade(label="Data", menu=data_menu)
     # View
     view_menu = tk.Menu(menubar, tearoff=0)
-    view_menu.add_checkbutton(label="ファイル別グラフ", variable=show_byfile_graph, command=toggle_byfile_graph, accelerator="Ctrl+G")
+    view_menu.add_checkbutton(label="ファイル別のグラフを表示", variable=show_byfile_graph, command=toggle_byfile_graph, accelerator="Ctrl+G")
+    view_menu.add_checkbutton(label="環境別の集計データを表示", variable=show_env_data, command=toggle_env_data, accelerator="Ctrl+D")
     menubar.add_cascade(label="View", menu=view_menu)
 
     # キーバインドの追加
@@ -979,6 +867,8 @@ def create_menubar(parent, has_data=False):
     parent.bind('<Control-r>', lambda e: reload_files())
     parent.bind('<Control-e>', lambda e: edit_project())
     parent.bind('<Control-q>', lambda e: parent.quit())
+    parent.bind('<Control-g>', lambda e: toggle_byfile_graph())
+    parent.bind('<Control-d>', lambda e: toggle_env_data())
 
     # ファイルデータがない場合はメニュー無効化
     if not has_data:
@@ -1389,6 +1279,7 @@ def _update_file_timestamps(input_data):
 
 def run(pjdata=None, pjpath=None, indata=None, args=None, on_reload=False, on_change=False):
     global root, input_data, settings, input_args, project_data, project_path, change_flg
+    global show_byfile_graph, show_env_data
 
     # データの初期化
     project_data = pjdata or {}
@@ -1422,6 +1313,10 @@ def run(pjdata=None, pjpath=None, indata=None, args=None, on_reload=False, on_ch
     geometry = f"{settings['app']['window_size']}{settings['app']['window_position']}"
     root.geometry(geometry)
 
+    # BooleanVarを作成し、設定値を反映
+    show_byfile_graph = tk.BooleanVar(value=settings["app"]["show_byfile_graph"])
+    show_env_data = tk.BooleanVar(value=settings["app"].get("show_env_data", False))
+
     # メニューバー生成
     create_menubar(parent=root, has_data=has_data)
 
@@ -1441,6 +1336,105 @@ def run(pjdata=None, pjpath=None, indata=None, args=None, on_reload=False, on_ch
     root.mainloop()
     # ウインドウ破棄
     root.destroy()
+
+def make_graph_tooltip(display_data: dict) -> str:
+    """グラフのツールチップ用のラベルを生成する
+
+    Args:
+        display_data: 表示データ
+
+    Returns:
+        str: ツールチップ用のラベル
+    """
+    return f"項目数: {display_data['available']} (Total: {display_data['all']} / 対象外: {display_data['excluded']})\nState: {display_data['state']}\n{make_results_text(display_data['total_data'], display_data['incompleted'])}"
+
+def sort_input_data(order: str, type: str = "asc") -> None:
+    """入力データを指定された順序でソートする
+
+    Args:
+        order (str): ソート基準
+            - "start_date": 開始日時でソート
+            - "last_update": 最終更新日時でソート
+            - "file_name": ファイル名でソート
+            - "completed_rate": 完了率でソート
+        type (str): ソート順
+            - "asc": 昇順（デフォルト）
+            - "desc": 降順
+    """
+    # ソートキーの定義
+    def safe_get(x, keys, default=None):
+        """ネストされたディクショナリから安全に値を取得する"""
+        try:
+            value = x
+            for key in keys:
+                value = value[key]
+            return value
+        except (KeyError, TypeError):
+            return default
+
+    sort_keys = {
+        "start_date": lambda x: (
+            0 if "run" not in x else 1,
+            0 if safe_get(x, ["run", "start_date"]) is None else 1,
+            safe_get(x, ["run", "start_date"], "")
+        ),
+        "last_update": lambda x: (
+            0 if "run" not in x else 1,
+            0 if safe_get(x, ["run", "last_update"]) is None else 1,
+            safe_get(x, ["run", "last_update"], "")
+        ),
+        "file_name": lambda x: (
+            0 if "file" not in x else 1,
+            0 if safe_get(x, ["file"]) is None else 1,
+            safe_get(x, ["file"], "").lower()
+        ),
+        "completed_rate": lambda x: (
+            0 if "stats" not in x else 1,
+            0 if safe_get(x, ["stats", "available"]) is None else 1,
+            safe_get(x, ["stats", "completed"], 0) / safe_get(x, ["stats", "available"], 1) 
+            if safe_get(x, ["stats", "available"], 0) > 0 else 0
+        )
+    }
+
+    # 存在するソートキーかチェック
+    if order not in sort_keys:
+        print(f"Warning: Unknown sort order '{order}'. Using 'start_date' as default.")
+        order = "start_date"
+
+    # ソート順の検証
+    if type not in ["asc", "desc"]:
+        print(f"Warning: Invalid sort type '{type}'. Using 'asc' as default.")
+        type = "asc"
+
+    # ソート実行
+    global input_data
+    input_data = sorted(
+        input_data, 
+        key=sort_keys[order], 
+        reverse=(type == "desc")  # type が "desc" の場合は reverse=True
+    )
+
+def clear_frame(frame):
+    for widget in frame.winfo_children():
+        widget.destroy()
+
+def change_sort_order(table_frame, order, sort_menu_button, on_change=False):
+    sort_input_data(order, type=settings["app"]["sort"]["orders"][order]["type"])
+    clear_frame(table_frame) # 表示をクリア
+    if on_change:
+        plt.close('all') # 表示していたグラフを開放する
+    update_filelist_table(table_frame)
+    sort_menu_button.config(text=f'ソート: {settings["app"]["sort"]["orders"][order]["label"]}')
+    if on_change:
+        # デフォルト設定に保存
+        settings["app"]["sort"]["default"] = order
+        AppConfig.save_settings(settings)
+
+def _get_filelist_data(filename_only: bool = False):
+    if filename_only:
+        return [[row[1]] for row in create_export_data(input_data, settings)[1:]]
+    else:
+        return create_export_data(input_data, settings)
 
 if __name__ == "__main__":
     run()

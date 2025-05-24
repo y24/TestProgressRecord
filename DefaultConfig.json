@@ -24,6 +24,7 @@
         "window_position": "+200+200",
         "last_opened_project": "",
         "show_byfile_graph": true,
+        "show_env_data": false,
         "structures": {"daily": "日付別", "by_env": "環境別", "by_name": "担当者別"},
         "state": {
             "completed": {"name": "完了", "foreground": "darkgreen", "background": "darkseagreen1"},
