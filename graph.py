@@ -8,53 +8,64 @@ from datetime import datetime
 with open("projects/サンプルプロジェクト01.json", encoding="utf-8") as f:
     data = json.load(f)
 
-# 1つ目のgathered_dataを利用
-aggregate = data["gathered_data"][0]
-daily = aggregate["daily"]
+# データ取得
+all_data = data["all_data"]
+daily = all_data["daily"]
+stats = all_data["stats"]
 
-# 日付でソート
+# 日付ごとのデータ
 dates = sorted(daily.keys())
 # 総テスト件数
-total_tests = aggregate["stats"]["all"]
+total_tests = stats["all"]
 
-# データフレーム生成
+# 計画消化数の累積
+cumulative_plan = []
+plan_sum = 0
+for d in dates:
+    plan_sum += daily[d].get("計画数", 0)
+    cumulative_plan.append(plan_sum)
+
 df = pd.DataFrame([
     {
         "date": d,
-        "未実施テスト項目数": total_tests - sum([daily[dt]["消化数"] for dt in dates if dt <= d]),
-        "消化数": daily[d]["消化数"],
-        "Fail": daily[d]["Fail"]
+        "未実施テスト項目数": total_tests - sum([daily[dt].get("消化数", 0) for dt in dates if dt <= d]),
+        "消化数": daily[d].get("消化数", 0),
+        "Fail": daily[d].get("Fail", 0),
+        "計画累計消化数": cumulative_plan[i],
+        "計画未実施数": total_tests - cumulative_plan[i]
     }
-    for d in dates
+    for i, d in enumerate(dates)
 ])
 df["累積Fail数"] = df["Fail"].cumsum()
 
-# Plotlyグラフ
 fig = go.Figure()
 
 # 未実施テスト項目数
 fig.add_trace(go.Scatter(
-    x=df["date"],
-    y=df["未実施テスト項目数"],
-    mode="lines+markers",
+    x=df["date"], y=df["未実施テスト項目数"],
+    mode="lines",
     name="未実施テスト項目数",
     line=dict(width=3, color="#636EFA"),
-    marker=dict(size=8),
     fill='tozeroy',
     fillcolor="rgba(99,110,250,0.08)"
 ))
 
-# 累積Fail数
+# 計画線
 fig.add_trace(go.Scatter(
-    x=df["date"],
-    y=df["累積Fail数"],
-    mode="lines+markers",
-    name="累積バグ検出数（Fail）",
-    line=dict(width=3, color="#EF553B", dash="dot"),
-    marker=dict(size=8)
+    x=df["date"], y=df["計画未実施数"],
+    mode="lines",
+    name="計画線（未実施予定）",
+    line=dict(width=2, color="#00CC96", dash="dash")
 ))
 
-# モダンなデザイン調整
+# 累積Fail数
+fig.add_trace(go.Scatter(
+    x=df["date"], y=df["累積Fail数"],
+    mode="lines",
+    name="累積バグ検出数（Fail）",
+    line=dict(width=3, color="#EF553B", dash="dot")
+))
+
 fig.update_layout(
     title="テスト進捗と不具合検出状況（PB図）",
     xaxis_title="日付",

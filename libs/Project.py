@@ -41,6 +41,7 @@ def save_to_json(file_path: str, input_data: list, project_data: dict = None) ->
             existing_data["all_data"] = {}
         # aggregate_dataキーに現在のaggregated_dataを保存
         existing_data["all_data"]["daily"] = DataConversion.aggregate_all_daily(input_data)
+        existing_data["all_data"]["stats"] = DataConversion.aggregate_all_stats(input_data)
 
         # JSONファイルに保存
         with open(file_path, "w", encoding="utf-8") as f:
