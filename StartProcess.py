@@ -181,40 +181,36 @@ def process_files(inputs, project_path="", on_reload=False):
                 with open(inputs[0], "r", encoding="utf-8") as f:
                     json_data = json.load(f)
 
-                # プロジェクトデータを取得
+                # プロジェクトデータを取得^
                 if "project" in json_data:
                     project_data = json_data["project"]
                     project_path = inputs[0]
 
-                # 記録済みのデータ（aggregate_data）がある場合はそのデータを使用
-                if "aggregate_data" in json_data:
-                    aggregate_data = json_data["aggregate_data"]
-                else:
-                    # ファイルの種類に応じて処理を分岐
-                    local_files = []
-                    sharepoint_files = []
-                    
-                    # プロジェクトデータからファイル情報を取得
-                    if "project" in json_data and "files" in json_data["project"]:
-                        for file in json_data["project"]["files"]:
-                            if file.get("type") == "local":
-                                local_files.append(file.get("path"))
-                            elif file.get("type") == "sharepoint":
-                                sharepoint_files.append(file.get("path"))
-                    
-                    # localファイルの処理
-                    if local_files:
-                        files, temp_dirs = get_xlsx_paths(local_files)
-                        aggregate_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))]
-                    
-                    # sharepointファイルの処理
-                    if sharepoint_files:
-                        files, temp_dirs = FileDownload.process_json_file(inputs[0])
-                        # xlsxファイルのみフィルタ
-                        files = filter_xlsx_files(files)
-                        # 全ファイルの集計処理
-                        if files:
-                            aggregate_data.extend([file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))])
+                # ファイルの種類に応じて処理を分岐
+                local_files = []
+                sharepoint_files = []
+                
+                # プロジェクトデータからファイル情報を取得
+                if "project" in json_data and "files" in json_data["project"]:
+                    for file in json_data["project"]["files"]:
+                        if file.get("type") == "local":
+                            local_files.append(file.get("path"))
+                        elif file.get("type") == "sharepoint":
+                            sharepoint_files.append(file.get("path"))
+                
+                # localファイルの処理
+                if local_files:
+                    files, temp_dirs = get_xlsx_paths(local_files)
+                    aggregate_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))]
+                
+                # sharepointファイルの処理
+                if sharepoint_files:
+                    files, temp_dirs = FileDownload.process_json_file(inputs[0])
+                    # xlsxファイルのみフィルタ
+                    files = filter_xlsx_files(files)
+                    # 全ファイルの集計処理
+                    if files:
+                        aggregate_data.extend([file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))])
 
             except Exception as e:
                 Dialog.show_messagebox(root=None, type="error", title="ファイル読込エラー", message=f"{str(e)}")
@@ -255,4 +251,4 @@ if __name__ == "__main__":
     parser.add_argument("data_files", nargs="*", help="処理するファイルのパス")
     args = parser.parse_args()
 
-    process_files(args.data_files, args.project, args.on_reload)
+    process_files(inputs=args.data_files, project_path=args.project, on_reload=args.on_reload)

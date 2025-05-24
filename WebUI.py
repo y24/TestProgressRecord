@@ -214,7 +214,9 @@ def main():
     
     # サイドバー
     st.sidebar.title("TestTraQ")
-    reload_clicked = st.sidebar.button("🔄 集計データ再読み込み")
+
+    # 再集計ボタン
+    reload_clicked = st.sidebar.button("🔄 再集計")
 
     # プロジェクトファイルの選択
     project_files = list(Path("projects").glob("*.json"))
