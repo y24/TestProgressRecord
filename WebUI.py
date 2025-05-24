@@ -48,14 +48,14 @@ def create_progress_chart(data, settings):
             bar_data.append({
                 "name": result,
                 "value": value,
-                "color": settings["app"]["bar"]["colors"].get(result, "gainsboro")
+                "color": settings["webui"]["bar"]["colors"].get(result, "gainsboro")
             })
     # 未着手
     if incompleted > 0:
         bar_data.append({
             "name": settings["test_status"]["labels"]["not_run"],
             "value": incompleted,
-            "color": settings["app"]["bar"]["colors"].get(settings["test_status"]["labels"]["not_run"], "gainsboro")
+            "color": settings["webui"]["bar"]["colors"].get(settings["test_status"]["labels"]["not_run"], "gainsboro")
         })
 
     # 積み上げバー作成
@@ -74,8 +74,21 @@ def create_progress_chart(data, settings):
     fig.update_layout(
         barmode='stack',
         showlegend=False,
+        dragmode=False,
         height=100,
         margin=dict(l=0, r=0, t=30, b=0),
+        xaxis=dict(
+            showticklabels=False,  # 目盛ラベルを非表示
+            showgrid=False,        # グリッド線を非表示
+            zeroline=False,        # 軸線（ゼロライン）も非表示
+            ticks=''               # 目盛マークも非表示
+        ),
+        yaxis=dict(
+            showticklabels=False,
+            showgrid=False,
+            zeroline=False,
+            ticks=''
+        )
     )
     return fig
 
@@ -156,9 +169,9 @@ def make_progress_svg(data, settings, width=120, height=16):
     for result in settings["test_status"]["results"]:
         value = results.get(result, 0)
         if value > 0:
-            bar_data.append((settings["app"]["bar"]["colors"].get(result, "#ccc"), value))
+            bar_data.append((settings["webui"]["bar"]["colors"].get(result, "#ccc"), value))
     if incompleted > 0:
-        bar_data.append((settings["app"]["bar"]["colors"].get(settings["test_status"]["labels"]["not_run"], "#ccc"), incompleted))
+        bar_data.append((settings["webui"]["bar"]["colors"].get(settings["test_status"]["labels"]["not_run"], "#ccc"), incompleted))
     # SVG生成
     svg = f'<svg width="{width}" height="{height}">' \
         + ''.join([
@@ -371,7 +384,7 @@ def main():
                     {"total": total_results,
                      "stats": total_stats},
                     settings
-                ), use_container_width=True, key="summary_progress_chart")
+                ), use_container_width=True, key="summary_progress_chart", config={"displayModeBar": False, "scrollZoom": False})
 
                 # 区切り線
                 st.markdown("---")
@@ -489,7 +502,7 @@ def main():
                         )
 
                     # 進捗状況の表示
-                    st.plotly_chart(create_progress_chart(file_data, settings), use_container_width=True, key=f"file_progress_chart_{selected_file}")
+                    st.plotly_chart(create_progress_chart(file_data, settings), use_container_width=True, key=f"file_progress_chart_{selected_file}", config={"displayModeBar": False, "scrollZoom": False})
                     # 区切り線
                     st.markdown("---")
 

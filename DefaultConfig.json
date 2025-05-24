@@ -56,6 +56,17 @@
         }
     },
     "webui": {
-        "default_project": ""
+        "default_project": "",
+        "bar": {
+            "colors": {
+                "Pass": "#28a745",
+                "Fail": "#e63946",
+                "Blocked": "#4dabf7",
+                "Fixed": "#19692c",
+                "Suspend": "#fbbc04",
+                "N/A": "#6c757d",
+                "not_run": "#e9ecef"
+            }
+        }
     }
 }
