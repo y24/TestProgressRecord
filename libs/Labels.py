@@ -34,5 +34,5 @@ def make_results_text(results: dict, incompleted: int) -> str:
     else:
         return "有効なデータがありません。エラーのないファイルのみが集計されます。"
 
-def make_rate_text(top: int, bottom: int) -> str:
+def make_count_and_rate_text(top: int, bottom: int) -> str:
     return f"{top}/{bottom} ({(top/bottom*100):.1f}%)" if bottom else "-"

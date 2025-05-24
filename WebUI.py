@@ -414,8 +414,8 @@ def main():
                             "ファイル名": data.get("file", ""),
                             "項目数": available,
                             "進捗": make_progress_svg(data, settings),
-                            "消化率": Labels.make_rate_text(executed, available),
-                            "完了率": Labels.make_rate_text(completed, available),
+                            "消化率": Labels.make_count_and_rate_text(executed, available),
+                            "完了率": Labels.make_count_and_rate_text(completed, available),
                             "状態": status,
                             "更新日": data.get("last_updated", "")
                         })
@@ -429,8 +429,8 @@ def main():
                             "ファイル名": data.get("file", ""),
                             "項目数": available,
                             "進捗": make_progress_svg(data, settings),
-                            "消化率": Labels.make_rate_text(executed, available),
-                            "完了率": Labels.make_rate_text(completed, available),
+                            "消化率": Labels.make_count_and_rate_text(executed, available),
+                            "完了率": Labels.make_count_and_rate_text(completed, available),
                             "状態": status,
                             "更新日": data.get("last_updated", "")
                         })

@@ -1,6 +1,4 @@
-from libs import Utility
-
-
+from libs import Utility, Labels
 
 def convert_to_2d_array(data, settings):
     # ヘッダーの作成
@@ -139,8 +137,8 @@ def _extract_file_data(file_data: dict) -> dict:
         "executed": stats["executed"],
         "available": stats["available"],
         "incompleted": stats["incompleted"],
-        "comp_rate_text": Utility.meke_rate_text(stats["completed"], stats["available"]),
-        "executed_rate_text": Utility.meke_rate_text(stats["executed"], stats["available"]),
+        "comp_rate_text": Labels.make_count_and_rate_text(stats["completed"], stats["available"]),
+        "executed_rate_text": Labels.make_count_and_rate_text(stats["executed"], stats["available"]),
         "start_date": run_data["start_date"],
         "last_update": run_data["last_update"]
     }

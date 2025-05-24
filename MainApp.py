@@ -350,9 +350,9 @@ def create_file_row(frame, row, index, file_data, display_data):
 
     # 消化率・完了率ラベル
     if display_data["on_error"]:
-        executed_rate_display = "-"
+        executed_rate_display = "Error"
         executed_rate_tooltip = "消化率: -"
-        comp_rate_display = "-"
+        comp_rate_display = "Error"
         comp_rate_tooltip = "完了率: -"
     else:
         executed_rate_display = display_data["executed_rate_text"]
@@ -376,6 +376,7 @@ def create_file_row(frame, row, index, file_data, display_data):
     if display_data["on_error"] or display_data["on_warning"]:
         color = "red" if display_data["on_error"] else "darkorange2"
         filename_label.config(foreground=color)
+        executed_rate_label.config(foreground=color)
         comp_rate_label.config(foreground=color)
 
     # グラフ表示ON、かつエラーではない場合は進捗グラフを表示
@@ -520,14 +521,10 @@ def update_filelist_table(table_frame):
                             last_update = date
 
                     # 環境別データ行
-                    create_env_row(
-                        table_content_frame, row, env_name,
-                        total_count, last_update,
-                        executed_count, completed_count
-                    )
+                    create_env_row(table_content_frame, row, env_name, total_count, executed_count, completed_count)
                     row += 1
 
-    def create_env_row(frame, row, env_name, total_count, last_update,
+    def create_env_row(frame, row, env_name, total_count,
                       executed_count, completed_count):
         """環境別データ行を作成する"""
         col = 0
@@ -554,18 +551,16 @@ def update_filelist_table(table_frame):
         col += 1
 
         # 消化率
-        executed_rate = Utility.meke_rate_text(executed_count, total_count)
         ttk.Label(
             frame,
-            text=executed_rate
+            text=Labels.make_count_and_rate_text(executed_count, total_count)
         ).grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=padx)
         col += 1
 
         # 完了率
-        comp_rate = Utility.meke_rate_text(completed_count, total_count)
         ttk.Label(
             frame,
-            text=comp_rate
+            text=Labels.make_count_and_rate_text(completed_count, total_count)
         ).grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=padx)
 
     # テーブルを作成
