@@ -6,6 +6,7 @@ import csv, os, sys, pprint
 from datetime import datetime
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import japanize_matplotlib
 import numpy as np
 import json
 
@@ -447,60 +448,76 @@ def update_filelist_table(table_frame):
     padx = 1
     pady = 3
 
-    # ヘッダ
-    headers = ["", "No.", "ファイル名", "項目数", "更新日", "消化率", "完了率"]
-    # 表示設定ONの場合はグラフ表示
-    if show_byfile_graph.get():
-        headers.append("テスト結果")
-    for col, text in enumerate(headers):
-        ttk.Label(table_frame, text=text, foreground="#444444", background="#e0e0e0", relief="solid").grid(
-            row=0, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
-        )
+    # 環境別データの表示状態を管理する変数
+    show_env_data = tk.BooleanVar(value=False)
 
-    # 列のリサイズ設定
-    table_frame.grid_columnconfigure(2, weight=3)
+    # テーブルコンテンツを配置するフレーム
+    content_frame = ttk.Frame(table_frame)
+    content_frame.pack(fill=tk.BOTH, expand=True)
 
-    # 環境別データの表示状態を管理する辞書
-    env_expanded = {}
+    # 制御ボタンを配置するフレーム
+    control_frame = ttk.Frame(table_frame)
+    control_frame.pack(fill=tk.X, padx=padx, pady=pady)
 
-    def shift_rows(start_row, shift_amount):
-        """指定された行以降の全てのウィジェットを移動する"""
-        # 現在のグリッドサイズを取得
-        max_row = max(int(w.grid_info()["row"]) for w in table_frame.winfo_children())
-        max_col = max(int(w.grid_info()["column"]) for w in table_frame.winfo_children())
-        
-        # 下の行から順に移動（上から移動すると上書きされてしまう）
-        for row in range(max_row, start_row - 1, -1):
-            for col in range(max_col + 1):
-                widgets = table_frame.grid_slaves(row=row, column=col)
-                for widget in widgets:
-                    widget.grid(row=row + shift_amount)
 
-    def toggle_env_data(index, file_data, button):
+
+    def toggle_env_data():
         """環境別データの表示/非表示を切り替える"""
-        if index in env_expanded:
-            # 環境別データを非表示にする
-            # 表示されている環境別データの行数を取得
-            env_rows = len(file_data["by_env"])
-            # 環境別データの行を削除
-            for row in range(index + 1, index + 1 + env_rows):
-                for col in range(table_frame.grid_size()[0]):
-                    widgets = table_frame.grid_slaves(row=row, column=col)
-                    for widget in widgets:
-                        widget.destroy()
-            # 以降の行を上に移動
-            shift_rows(index + 1 + env_rows, -env_rows)
-            env_expanded.pop(index)
-            # ボタンを+に戻す
-            button.config(text="+")
-        else:
-            # 環境別データを表示する
-            if "by_env" in file_data and file_data["by_env"]:
-                # 以降の行を下に移動
-                env_rows = len(file_data["by_env"])
-                shift_rows(index + 1, env_rows)
-                
-                row = index + 1
+        show = show_env_data.get()
+        # テーブルコンテンツのみをクリア
+        clear_frame(content_frame)
+        # テーブルを再描画
+        create_table(show)
+
+    # 環境別データ表示切替ボタン
+    ttk.Checkbutton(
+        control_frame,
+        text="環境別データを表示",
+        variable=show_env_data,
+        command=toggle_env_data
+    ).pack(side=tk.LEFT, padx=padx)
+
+    def create_table(show_env=False):
+        """テーブルを作成する
+        
+        Args:
+            show_env: 環境別データを表示するかどうか
+        """
+        # ヘッダ
+        headers = ["No.", "ファイル名", "項目数", "更新日", "消化率", "完了率"]
+        # 表示設定ONの場合はグラフ表示
+        if show_byfile_graph.get():
+            headers.append("テスト結果")
+
+        # テーブル全体を格納するフレーム
+        table_content_frame = ttk.Frame(content_frame)
+        table_content_frame.pack(fill=tk.BOTH, expand=True, padx=padx, pady=pady)
+
+        # 列の設定
+        for i in range(len(headers)):
+            table_content_frame.grid_columnconfigure(i, weight=1 if i == 1 else 0)
+
+        # ヘッダー行
+        for col, text in enumerate(headers):
+            ttk.Label(
+                table_content_frame,
+                text=text,
+                foreground="#444444",
+                background="#e0e0e0",
+                relief="solid"
+            ).grid(row=0, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
+
+        # 各ファイルのデータ表示
+        row = 1
+        for index, file_data in enumerate(input_data, 1):
+            display_data = _extract_file_data(file_data)
+            
+            # ファイルデータ行
+            create_file_row(table_content_frame, row, index, file_data, display_data)
+            row += 1
+
+            # 環境別データ表示がONの場合
+            if show_env and "by_env" in file_data and file_data["by_env"]:
                 for env_name, env_data in file_data["by_env"].items():
                     # 環境別データの集計
                     total_count = 0
@@ -519,78 +536,47 @@ def update_filelist_table(table_frame):
                         if last_update is None or date > last_update:
                             last_update = date
 
-                    # 環境名
-                    ttk.Label(table_frame, text=env_name, foreground="#666666").grid(
-                        row=row, column=2, sticky=tk.W, padx=padx, pady=pady
+                    # 環境別データ行
+                    create_env_row(
+                        table_content_frame, row, env_name,
+                        total_count, last_update,
+                        executed_count, completed_count
                     )
-                    # 項目数
-                    ttk.Label(table_frame, text=total_count).grid(
-                        row=row, column=3, padx=padx, pady=pady
-                    )
-                    # 更新日
-                    ttk.Label(table_frame, text=Utility.simplify_date(last_update) if last_update else "-").grid(
-                        row=row, column=4, padx=padx, pady=pady
-                    )
-                    # 消化率
-                    executed_rate = Utility.meke_rate_text(executed_count, total_count)
-                    ttk.Label(table_frame, text=executed_rate).grid(
-                        row=row, column=5, padx=padx, pady=pady
-                    )
-                    # 完了率
-                    comp_rate = Utility.meke_rate_text(completed_count, total_count)
-                    ttk.Label(table_frame, text=comp_rate).grid(
-                        row=row, column=6, padx=padx, pady=pady
-                    )
-                    # テスト結果グラフ
-                    fig, ax = plt.subplots(figsize=(2, 0.1))
-                    canvas = FigureCanvasTkAgg(fig, master=table_frame)
-                    plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-                    canvas.get_tk_widget().grid(row=row, column=7, padx=padx, pady=pady)
-                    # グラフを更新
-                    update_bar_chart(data=env_data, incompleted_count=total_count-executed_count, ax=ax, canvas=canvas, show_label=False)
                     row += 1
-            env_expanded[index] = True
-            # ボタンを-に変更
-            button.config(text="-")
 
-    # 各ファイルのデータ表示
-    for index, file_data in enumerate(input_data, 1):
-        display_data = _extract_file_data(file_data)
-        col_idx = 0
-
-        # 展開/折りたたみボタン
-        if "by_env" in file_data and file_data["by_env"]:
-            button = ttk.Button(table_frame, text="+", width=2)
-            button.grid(row=index, column=col_idx, padx=padx, pady=pady)
-            button.config(command=lambda idx=index, fd=file_data, btn=button: toggle_env_data(idx, fd, btn))
-        else:
-            ttk.Label(table_frame, text="").grid(row=index, column=col_idx, padx=padx, pady=pady)
-        col_idx += 1
-
+    def create_file_row(frame, row, index, file_data, display_data):
+        """ファイルデータ行を作成する"""
+        col = 0
+        
         # インデックス
-        ttk.Label(table_frame, text=index).grid(row=index, column=col_idx, padx=padx, pady=pady)
-        col_idx += 1
+        ttk.Label(frame, text=index).grid(
+            row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
+        )
+        col += 1
 
         # ファイル名
         filename = file_data['file']
-        filename_label = ttk.Label(table_frame, text=filename)
-        filename_label.grid(row=index, column=col_idx, sticky=tk.W, padx=padx, pady=pady)
+        filename_label = ttk.Label(frame, text=filename)
+        filename_label.grid(row=row, column=col, sticky=tk.W, padx=padx, pady=pady)
         tooltip_text = [filename]
-        col_idx += 1
+        col += 1
 
         # ファイル名ダブルクリック時
         filepath = file_data['filepath']
         filename_label.bind("<Double-Button-1>", create_click_handler(filepath))
 
         #項目数
-        case_count_label = ttk.Label(table_frame, text=display_data["available"])
-        case_count_label.grid(row=index, column=col_idx, padx=padx, pady=pady)
-        col_idx += 1
+        case_count_label = ttk.Label(frame, text=display_data["available"])
+        case_count_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
+        col += 1
 
         # 最終更新日
-        last_update_label = ttk.Label(table_frame, text=Utility.simplify_date(display_data["last_update"]))
-        last_update_label.grid(row=index, column=col_idx, padx=padx, pady=pady)
-        col_idx += 1
+        last_update_label = ttk.Label(
+            frame,
+            text=Utility.simplify_date(display_data["last_update"])
+        )
+        last_update_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
+        col += 1
 
         # 消化率・完了率ラベル
         if display_data["on_error"]:
@@ -605,16 +591,16 @@ def update_filelist_table(table_frame):
             comp_rate_tooltip = f'完了率: {display_data["comp_rate_text"]} ({display_data["completed"]}/{display_data["available"]})'
 
         # 消化率
-        executed_rate_label = ttk.Label(table_frame, text=executed_rate_display)
-        executed_rate_label.grid(row=index, column=col_idx, padx=padx, pady=pady)
+        executed_rate_label = ttk.Label(frame, text=executed_rate_display)
+        executed_rate_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
         ToolTip(executed_rate_label, msg=executed_rate_tooltip, delay=0.3, follow=False)
-        col_idx += 1
+        col += 1
 
         # 完了率
-        comp_rate_label = ttk.Label(table_frame, text=comp_rate_display)
-        comp_rate_label.grid(row=index, column=col_idx, padx=padx, pady=pady)
+        comp_rate_label = ttk.Label(frame, text=comp_rate_display)
+        comp_rate_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
         ToolTip(comp_rate_label, msg=comp_rate_tooltip, delay=0.3, follow=False)
-        col_idx += 1
+        col += 1
 
         # エラー時赤色・ワーニング時オレンジ色
         if display_data["on_error"] or display_data["on_warning"]:
@@ -626,12 +612,18 @@ def update_filelist_table(table_frame):
         if show_byfile_graph.get() and not display_data["on_error"]:
             # 進捗グラフ
             fig, ax = plt.subplots(figsize=(2, 0.1))
-            canvas = FigureCanvasTkAgg(fig, master=table_frame)
+            canvas = FigureCanvasTkAgg(fig, master=frame)
             plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-            canvas.get_tk_widget().grid(row=index, column=col_idx, padx=padx, pady=pady)
+            canvas.get_tk_widget().grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
 
             # グラフを更新
-            update_bar_chart(data=display_data["total_data"], incompleted_count=display_data["incompleted"], ax=ax, canvas=canvas, show_label=False)
+            update_bar_chart(
+                data=display_data["total_data"],
+                incompleted_count=display_data["incompleted"],
+                ax=ax,
+                canvas=canvas,
+                show_label=False
+            )
 
             # グラフのツールチップ
             graph_tooltop = make_graph_tooltip(display_data)
@@ -644,6 +636,57 @@ def update_filelist_table(table_frame):
         # ファイル名のツールチップ
         tooltip_text.append("<ダブルクリックで開きます>")
         ToolTip(filename_label, msg="\n".join(tooltip_text), delay=0.3, follow=False)
+
+    def create_env_row(frame, row, env_name, total_count, last_update,
+                      executed_count, completed_count):
+        """環境別データ行を作成する"""
+        col = 0
+
+        # インデックス（空）
+        ttk.Label(frame, text="").grid(
+            row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
+        )
+        col += 1
+
+        # 環境名
+        ttk.Label(
+            frame,
+            text=env_name,
+            foreground="#666666"
+        ).grid(row=row, column=col, sticky=tk.W, padx=(20, padx), pady=pady)
+        col += 1
+
+        # 項目数
+        ttk.Label(
+            frame,
+            text=total_count
+        ).grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
+        col += 1
+
+        # 更新日
+        ttk.Label(
+            frame,
+            text=Utility.simplify_date(last_update) if last_update else "-"
+        ).grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
+        col += 1
+
+        # 消化率
+        executed_rate = Utility.meke_rate_text(executed_count, total_count)
+        ttk.Label(
+            frame,
+            text=executed_rate
+        ).grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
+        col += 1
+
+        # 完了率
+        comp_rate = Utility.meke_rate_text(completed_count, total_count)
+        ttk.Label(
+            frame,
+            text=comp_rate
+        ).grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
+
+    # テーブルを作成
+    create_table()
 
 def make_graph_tooltip(display_data: dict) -> str:
     """グラフのツールチップ用のラベルを生成する
