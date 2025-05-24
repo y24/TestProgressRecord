@@ -253,11 +253,6 @@ def treeview_to_array(treeview):
 
     return [headers] + data  # ヘッダーとデータを結合
 
-# 2次元配列をCSVファイルに保存
-def save_to_csv(data, filename):
-    """CSVファイルに保存する"""
-    CsvFile.save_2d_array(data, filename)
-
 def update_byfile_tab(selected_file, count_label, last_load_time_label, ax, canvas, notebook):
     # タブ切り替え
     current_tab = notebook.index(notebook.select()) if notebook.tabs() else 0
@@ -312,7 +307,7 @@ def update_byfile_tab(selected_file, count_label, last_load_time_label, ax, canv
     notebook.select(current_tab)
 
 def create_click_handler(filepath):
-    return lambda event: run_file(file_path=filepath)
+    return lambda event: FileOperation.run(file_path=filepath)
 
 def set_state_color(label, state_name):
     # キー名を取得
@@ -676,7 +671,7 @@ def create_summary_filelist_area(parent):
     # エクスポートメニュー
     exp_menu_button = ttk.Menubutton(menu_frame, text="エクスポート", direction="below")
     expmenu = tk.Menu(exp_menu_button, tearoff=0)
-    expmenu.add_command(label="CSVで保存", command=lambda: save_to_csv(_get_filelist_data(), f'{Utility.get_today_str()}'))
+    expmenu.add_command(label="CSVで保存", command=lambda: CsvFile.save_2d_array(_get_filelist_data(), f'{Utility.get_today_str()}'))
     expmenu.add_command(label="クリップボードにコピー", command=lambda: Clipboard.copy_2d_array(_get_filelist_data(), root))
     expmenu.add_command(label="ファイル名一覧をコピー", command=lambda: Clipboard.copy_2d_array(_get_filelist_data(filename_only=True), root))
     exp_menu_button.config(menu=expmenu)
@@ -698,14 +693,10 @@ def select_write_file(entry):
         entry.delete(0, tk.END)  # 既存の内容をクリア
         entry.insert(0, filepath)  # 新しいファイルパスをセット
 
-def run_file(file_path, exit:bool=False):
-    """ファイルを実行/開く"""
-    FileOperation.run_file(file_path, exit)
-
 def edit_settings():
     response = Dialog.ask_question(root=root, title="環境設定", message=f"環境設定ファイル (UserConfig.json) を開きますか？\n※設定を反映するにはアプリを再起動するか、Data > 再集計 を実行してください。")
     if response == "yes":
-        run_file(file_path="UserConfig.json", exit=False)
+        FileOperation.run(file_path="UserConfig.json", exit=False)
 
 def load_files():
     files = Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))

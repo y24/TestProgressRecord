@@ -2,7 +2,7 @@ import os
 import subprocess
 from libs import Dialog
 
-def run_file(file_path: str, exit: bool = False) -> None:
+def run(file_path: str, exit: bool = False) -> None:
     """ファイルを実行/開く
 
     Args:
