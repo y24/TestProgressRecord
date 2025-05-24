@@ -17,6 +17,7 @@
         "labels": {
             "completed": "完了数",
             "executed": "消化数",
+            "planned": "計画数",
             "not_run": "未着手"
         }
     },
