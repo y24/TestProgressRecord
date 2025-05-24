@@ -398,8 +398,10 @@ def main():
     if 'previous_project' not in st.session_state:
         st.session_state.previous_project = None
 
+    st.sidebar.markdown("### 📂プロジェクト")
+
     selected_display_name = st.sidebar.selectbox(
-        "プロジェクトを選択",
+        "選択中",
         options=project_names,
         index=default_index
     )
@@ -419,13 +421,13 @@ def main():
     st.sidebar.markdown("---")
 
     # グラフ表示設定
-    st.sidebar.markdown("### 表示設定")
+    st.sidebar.markdown("### ⚙️表示設定")
     # 表示設定の読み込み
     display_settings = load_display_settings()
     
     # 進捗グラフの表示設定
     axis_type = st.sidebar.radio(
-        "進捗グラフ",
+        "PB図：横軸",
         ["時間軸で表示", "等間隔で表示"],
         index=0 if display_settings["axis_type"] == "時間軸で表示" else 1,
         captions=["実際の日付間隔で表示する", "データのない日付を詰めて表示する"]
