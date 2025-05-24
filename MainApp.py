@@ -642,7 +642,23 @@ def edit_settings():
 
 def load_files():
     files = Dialog.select_files(("Excel/Zipファイル", "*.xlsx;*.zip"))
-    if files: new_process(inputs=list(files), project_path=project_path, on_reload=False, on_change=True)
+    if files:
+        # ローカルファイルをproject_data["files"]から除去
+        project_data["files"] = [
+            file for file in project_data["files"] 
+            if file["type"] != "local"
+        ]
+        # 読込ファイルをプロジェクトデータに追加
+        for file in files:
+            project_data["files"].append({
+                "type": "local",
+                "identifier": "",
+                "path": file
+            })
+        # プロジェクトデータを保存
+        save_project()
+        # 新しいプロセスでプロジェクト読込
+        new_process(inputs=list(files), project_path=project_path, on_reload=False, on_change=True)
 
 def open_project():
     project_path = Dialog.select_file(("JSONファイル", "*.json"))
@@ -740,22 +756,23 @@ def create_menubar(parent, has_data=False):
     file_menu = tk.Menu(menubar, tearoff=0)
     file_menu.add_command(label="開く", command=open_project, accelerator="Ctrl+O")
     file_menu.add_command(label="保存", command=save_project, accelerator="Ctrl+S")
-    file_menu.add_command(label="ファイル読込", command=load_files, accelerator="Ctrl+L")
+    file_menu.add_separator()
+    file_menu.add_command(label="ローカルファイルを読込", command=load_files, accelerator="Ctrl+L")
     file_menu.add_separator()
     file_menu.add_command(label="プロジェクト設定", command=edit_project, accelerator="Ctrl+E")
     file_menu.add_command(label="環境設定", command=edit_settings)
     file_menu.add_separator()
     file_menu.add_command(label="終了", command=parent.quit, accelerator="Ctrl+Q")
-    menubar.add_cascade(label="File", menu=file_menu)
+    menubar.add_cascade(label="ファイル", menu=file_menu)
     # Data
     data_menu = tk.Menu(menubar, tearoff=0)
-    data_menu.add_command(label="再集計", command=reload_files, accelerator="Ctrl+R")
-    menubar.add_cascade(label="Data", menu=data_menu)
+    data_menu.add_command(label="再集計を実行", command=reload_files, accelerator="Ctrl+R")
+    menubar.add_cascade(label="集計", menu=data_menu)
     # View
     view_menu = tk.Menu(menubar, tearoff=0)
     view_menu.add_checkbutton(label="ファイル別のグラフを表示", variable=show_byfile_graph, command=toggle_byfile_graph)
     view_menu.add_checkbutton(label="環境別の集計データを表示", variable=show_env_data, command=toggle_env_data)
-    menubar.add_cascade(label="View", menu=view_menu)
+    menubar.add_cascade(label="表示", menu=view_menu)
 
     # キーバインドの追加
     parent.bind('<Control-s>', lambda e: save_project())

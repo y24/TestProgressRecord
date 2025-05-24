@@ -14,7 +14,7 @@ class ProjectEditorApp:
         self.parent = parent
         self.callback = callback
         window_title = "プロジェクト設定"
-        window_size = "1040x400"
+        window_size = "1040x600"
         if parent is None:
             self.root = tk.Tk()
             self.root.title(window_title)
@@ -271,9 +271,7 @@ class ProjectEditorApp:
         # JSONファイルに保存するプロジェクトデータ
         json_project_data = {
             "project_name": project_name,
-            "files": files,
-            "write_path": write_path,
-            "data_sheet_name": data_sheet
+            "files": files
         }
 
         # 既存のデータを保持しつつ、projectキーのデータを更新
