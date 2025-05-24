@@ -523,4 +523,4 @@ if __name__ == "__main__":
     main() 
 
 # launch command
-# streamlit run app.py
+# streamlit run WebUI.py
