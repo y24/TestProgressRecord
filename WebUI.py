@@ -69,6 +69,9 @@ def create_progress_chart(data, settings):
             marker_color=bar["color"],
             text=[bar["value"]],
             textposition='inside',
+            textfont=dict(
+                size=16
+            ),
         ))
 
     fig.update_layout(
