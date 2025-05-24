@@ -152,3 +152,11 @@ def aggregate_all_daily(data):
             for k, v in values.items():
                 result[date][k] += v
     return {date: dict(stats) for date, stats in result.items()}
+
+def aggregate_all_stats(data):
+    result = defaultdict(int)
+    for record in data:
+        stats = record.get("stats", {})
+        for k, v in stats.items():
+            result[k] += v
+    return dict(result)

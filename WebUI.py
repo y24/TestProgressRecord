@@ -217,6 +217,104 @@ def save_default_project(project_name):
     settings["webui"]["default_project"] = project_name
     AppConfig.save_settings(settings)
 
+# PB図を作成
+def create_pb_chart(project_data):
+    if not project_data.get("all_data"):
+        return None
+    
+    all_data = project_data["all_data"]
+    daily = all_data.get("daily", {})
+    stats = all_data.get("stats", {})
+    
+    if not daily or not stats:
+        return None
+
+    # 日付ごとのデータ
+    dates = sorted(daily.keys())
+    if not dates:
+        return None
+        
+    # 総テスト件数
+    total_tests = stats.get("all", 0)
+    
+    # 計画消化数の累積
+    cumulative_plan = []
+    plan_sum = 0
+    for d in dates:
+        plan_sum += daily[d].get("計画数", 0)
+        cumulative_plan.append(plan_sum)
+    
+    df = pd.DataFrame([
+        {
+            "date": d,
+            "未実施テスト項目数": total_tests - sum([daily[dt].get("消化数", 0) for dt in dates if dt <= d]),
+            "消化数": daily[d].get("消化数", 0),
+            "Fail": daily[d].get("Fail", 0),
+            "計画累計消化数": cumulative_plan[i],
+            "計画未実施数": total_tests - cumulative_plan[i]
+        }
+        for i, d in enumerate(dates)
+    ])
+    df["累積Fail数"] = df["Fail"].cumsum()
+    
+    fig = go.Figure()
+    
+    # 未実施テスト項目数
+    fig.add_trace(go.Scatter(
+        x=df["date"], y=df["未実施テスト項目数"],
+        mode="lines",
+        name="未実施テスト項目数",
+        line=dict(width=3, color="#636EFA"),
+        fill='tozeroy',
+        fillcolor="rgba(99,110,250,0.08)"
+    ))
+    
+    # 計画線
+    fig.add_trace(go.Scatter(
+        x=df["date"], y=df["計画未実施数"],
+        mode="lines",
+        name="計画線（未実施予定）",
+        line=dict(width=2, color="#00CC96", dash="dash")
+    ))
+    
+    # 累積Fail数
+    fig.add_trace(go.Scatter(
+        x=df["date"], y=df["累積Fail数"],
+        mode="lines",
+        name="累積バグ検出数（Fail）",
+        line=dict(width=3, color="#EF553B", dash="dot")
+    ))
+    
+    fig.update_layout(
+        title="テスト進捗と不具合検出状況",
+        xaxis_title="日付",
+        yaxis_title="件数",
+        xaxis=dict(
+            tickmode='array',
+            tickvals=df["date"],
+            ticktext=[datetime.strptime(d, "%Y-%m-%d").strftime("%m/%d") for d in df["date"]],
+            showgrid=False
+        ),
+        yaxis=dict(
+            showgrid=True,
+            gridcolor="rgba(200,200,200,0.2)"
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        ),
+        plot_bgcolor="#FFF",
+        font=dict(
+            family="sans-serif",
+            size=16
+        )
+    )
+    
+    return fig
+
 # メインアプリケーション
 def main():
     st.set_page_config(
@@ -329,6 +427,11 @@ def main():
         if "last_loaded" in project_data["project"]:
             last_loaded = datetime.fromisoformat(project_data["project"]["last_loaded"])
             st.caption(f"最終更新: {last_loaded.strftime('%Y/%m/%d %H:%M')}")
+    
+    # PB図の表示
+    pb_fig = create_pb_chart(project_data)
+    if pb_fig:
+        st.plotly_chart(pb_fig, use_container_width=True)
     
     # タブの作成
     tab1, tab2, tab3 = st.tabs(["全体集計", "ファイル別集計", "エラー情報"])
