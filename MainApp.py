@@ -402,7 +402,7 @@ def _extract_file_data(file_data: dict) -> dict:
         "last_update": run_data["last_update"]
     }
 
-def _create_export_data(input_data: list, settings: dict) -> list:
+def create_export_data(input_data: list, settings: dict) -> list:
     """エクスポート用のデータを生成する
 
     Args:
@@ -459,9 +459,6 @@ def update_filelist_table(table_frame):
 
     # 列のリサイズ設定
     table_frame.grid_columnconfigure(2, weight=3)
-
-    # エクスポート用データの生成
-    export_data = _create_export_data(input_data, settings)
 
     # 環境別データの表示状態を管理する辞書
     env_expanded = {}
@@ -648,8 +645,6 @@ def update_filelist_table(table_frame):
         tooltip_text.append("<ダブルクリックで開きます>")
         ToolTip(filename_label, msg="\n".join(tooltip_text), delay=0.3, follow=False)
 
-    return export_data
-
 def make_graph_tooltip(display_data: dict) -> str:
     """グラフのツールチップ用のラベルを生成する
 
@@ -733,21 +728,24 @@ def clear_frame(frame):
         widget.destroy()
 
 def change_sort_order(table_frame, order, sort_menu_button, on_change=False):
-    global export_data
     sort_input_data(order, type=settings["app"]["sort"]["orders"][order]["type"])
     clear_frame(table_frame) # 表示をクリア
     if on_change:
         plt.close('all') # 表示していたグラフを開放する
-    export_data = update_filelist_table(table_frame)
+    update_filelist_table(table_frame)
     sort_menu_button.config(text=f'ソート: {settings["app"]["sort"]["orders"][order]["label"]}')
     if on_change:
         # デフォルト設定に保存
         settings["app"]["sort"]["default"] = order
         AppConfig.save_settings(settings)
 
-def create_summary_filelist_area(parent):
-    global export_data
+def _get_filelist_data(filename_only: bool = False):
+    if filename_only:
+        return [[row[1]] for row in create_export_data(input_data, settings)[1:]]
+    else:
+        return create_export_data(input_data, settings)
 
+def create_summary_filelist_area(parent):
     # メニュー
     menu_frame = ttk.Frame(parent)
     menu_frame.pack(fill=tk.BOTH, padx=5, pady=2)
@@ -763,9 +761,9 @@ def create_summary_filelist_area(parent):
     # エクスポートメニュー
     exp_menu_button = ttk.Menubutton(menu_frame, text="エクスポート", direction="below")
     expmenu = tk.Menu(exp_menu_button, tearoff=0)
-    expmenu.add_command(label="CSVで保存", command=lambda: save_to_csv(export_data, f'進捗集計_{Utility.get_today_str()}'))
-    expmenu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(export_data))
-    expmenu.add_command(label="ファイル名一覧をコピー", command=lambda: copy_to_clipboard(export_data, filename_only=True))
+    expmenu.add_command(label="CSVで保存", command=lambda: save_to_csv(_get_filelist_data(), f'進捗集計_{Utility.get_today_str()}'))
+    expmenu.add_command(label="クリップボードにコピー", command=lambda: copy_to_clipboard(_get_filelist_data()))
+    expmenu.add_command(label="ファイル名一覧をコピー", command=lambda: copy_to_clipboard(_get_filelist_data(filename_only=True)))
     exp_menu_button.config(menu=expmenu)
     exp_menu_button.pack(anchor=tk.SW, side=tk.LEFT, padx=(0, 4))
 
@@ -774,7 +772,7 @@ def create_summary_filelist_area(parent):
     table_frame.pack(fill=tk.BOTH, expand=True, padx=10)
 
     # ファイル別テーブルの更新
-    export_data = update_filelist_table(table_frame)
+    update_filelist_table(table_frame)
 
     # 初期ソート順の反映
     change_sort_order(table_frame, settings["app"]["sort"]["default"], sort_menu_button, on_change=False)
@@ -831,20 +829,15 @@ def run_file(file_path, exit:bool=False):
     else:
         Dialog.show_messagebox(root=root, type="error", title="Error", message="指定されたファイルが見つかりません")
 
-def copy_to_clipboard(data, filename_only=False):
+def copy_to_clipboard(data):
     """クリップボードにデータをコピーする
 
     Args:
         data: コピーするデータ
         filename_only: Trueの場合、ファイル名のみをコピー
     """
-    if filename_only:
-        # ファイル名のみを抽出（ヘッダー行を除く）
-        filenames = [row[1] for row in data[1:]]
-        text = "\n".join(filenames)
-    else:
-        # タブ区切りのテキストに変換
-        text = "\n".join(["\t".join(map(str, row)) for row in data])
+    # タブ区切りのテキストに変換
+    text = "\n".join(["\t".join(map(str, row)) for row in data])
     
     # クリップボードにコピー
     root.clipboard_clear()
@@ -938,6 +931,9 @@ def toggle_byfile_graph():
     settings["app"]["show_byfile_graph"] = show_byfile_graph.get()
     AppConfig.save_settings(settings)
 
+def _get_write_data():
+    return WriteData.convert_to_2d_array(data=input_data, settings=settings)
+
 def create_menubar(parent, has_data=False):
     global show_byfile_graph
     # BooleanVarを作成し、設定値を反映
@@ -986,8 +982,8 @@ def create_input_area(parent, settings):
     ttk.Button(submit_frame, text="Excelへ書込", command=lambda: write_to_excel(project_data["write_path"], project_data["data_sheet_name"])).pack(side=tk.LEFT, padx=2, pady=(0,2))
     ttk.Button(submit_frame, text="書込先を開く", command=lambda: run_file(project_data["write_path"])).pack(side=tk.LEFT, padx=2, pady=5)
 
-    ttk.Button(submit_frame, text="CSV保存", command=lambda: save_to_csv(WriteData.convert_to_2d_array(data=input_data, settings=settings), f'進捗集計_{Utility.get_today_str()}')).pack(side=tk.LEFT, padx=2, pady=(0,2))
-    ttk.Button(submit_frame, text="クリップボードにコピー", command=lambda: copy_to_clipboard(WriteData.convert_to_2d_array(data=input_data, settings=settings)), width=22).pack(side=tk.LEFT, padx=2, pady=(0,2))
+    ttk.Button(submit_frame, text="CSV保存", command=lambda: save_to_csv(_get_write_data(), f'進捗集計_{Utility.get_today_str()}')).pack(side=tk.LEFT, padx=2, pady=(0,2))
+    ttk.Button(submit_frame, text="クリップボードにコピー", command=lambda: copy_to_clipboard(_get_write_data()), width=22).pack(side=tk.LEFT, padx=2, pady=(0,2))
 
 def update_info_label(data, count_label, last_load_time_label=None, detail=True):
     if len(data) == 0 or"error" in data:
