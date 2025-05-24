@@ -223,13 +223,9 @@ def process_files(inputs, project_path="", on_reload=False, web_ui=False):
             # 全ファイルの集計処理
             gathered_data = [file_processor(file, settings, i+1) for i, file in enumerate(tqdm(files))]
 
-    # 全ファイルの合計
-    aggregated_data = DataConversion.aggregate_all_daily(gathered_data)
-    print(aggregated_data)
-
     # プロジェクトファイル保存（再集計後に即時保存）
     if project_path:
-        Project.save_to_json(file_path=project_path, aggregated_data=aggregated_data, input_data=gathered_data, project_data=project_data)
+        Project.save_to_json(file_path=project_path, input_data=gathered_data, project_data=project_data)
 
     # アプリケーションの起動
     if not web_ui:

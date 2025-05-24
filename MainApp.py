@@ -722,7 +722,7 @@ def save_project():
 
     try:
         # JSONファイルに保存
-        Project.save_to_json(project_path, input_data, project_data)
+        Project.save_to_json(file_path=project_path, input_data=input_data, project_data=project_data)
 
         # 編集中フラグOFF
         change_flg = False
