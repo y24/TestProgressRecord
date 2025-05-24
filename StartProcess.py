@@ -4,7 +4,7 @@ from datetime import datetime
 
 import ReadData
 import MainApp
-from libs import Utility, Dialog, Zip, AppConfig, TempDir, FileDownload
+from libs import Utility, Dialog, Zip, AppConfig, TempDir, FileDownload, Project
 
 def get_xlsx_paths(inputs):
     """
@@ -232,7 +232,7 @@ def process_files(inputs, project_path="", on_reload=False, on_change=False):
 
     # プロジェクトファイル保存（再集計後に即時保存）
     if project_path:
-        save_project(project_data, aggregate_data, project_path)
+        Project.save_to_json(file_path=project_path, input_data=aggregate_data, project_data=project_data)
 
     # 再集計フラグファイルの削除（完了通知用）
     if project_path:
@@ -246,27 +246,6 @@ def process_files(inputs, project_path="", on_reload=False, on_change=False):
             TempDir.cleanup_old_temp_dirs("_TEMP_")
     except NameError:
         pass
-
-def save_project(project_data, input_data, project_path):
-    """集計データとプロジェクト情報をJSONファイルに保存する（MainApp.pyから移植）"""
-    file_path = project_path
-    try:
-        # 既存のJSONファイルがある場合は読み込む
-        existing_data = {}
-        if os.path.exists(file_path):
-            with open(file_path, "r", encoding="utf-8") as f:
-                existing_data = json.load(f)
-        # projectキーにproject_dataを保存
-        existing_data["project"] = project_data
-        # aggregate_dataキーに現在のinput_dataを保存
-        existing_data["aggregate_data"] = input_data
-        # 最終読込日時を保存（最も遅い日時を使用）
-        existing_data["last_loaded"] = Utility.get_latest_time(input_data)
-        # JSONファイルに保存
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(existing_data, f, ensure_ascii=False, indent=2)
-    except Exception as e:
-        print(f"[ERROR] プロジェクトファイルの保存に失敗しました: {str(e)}")
 
 if __name__ == "__main__":
     # コマンドライン引数の設定
