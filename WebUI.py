@@ -425,7 +425,7 @@ def main():
     with col2:
         is_default = selected_project_name == default_project
         star_icon = "⭐" if is_default else "☆"
-        if st.button(star_icon, key="favorite_button"):
+        if st.button(star_icon, key="favorite_button", help="デフォルトプロジェクトに設定"):
             if is_default:
                 # デフォルト設定を解除
                 save_default_project(None)
@@ -434,7 +434,7 @@ def main():
                 save_default_project(selected_project_name)
             st.rerun()
     with col3:
-        if st.button("🔄", key="reload_button"):
+        if st.button("🔄", key="reload_button", help="再集計を実行"):
             if selected_project:
                 project_path = str(selected_project)
                 python_exe = sys.executable
@@ -446,14 +446,14 @@ def main():
                 st.session_state['reload_state'] = 'waiting'
                 st.rerun()
     with col4:
-        if st.button("📋", help="集計データをクリップボードにコピー"):
+        if st.button("📋", help="集計データをコピー"):
             # 集計データを2次元配列に変換
             array_data = DataConversion.convert_to_2d_array(project_data["gathered_data"], settings)
             # TSV形式に変換
             tsv_data = "\n".join(["\t".join(map(str, row)) for row in array_data])
             # クリップボードにコピー
             pyperclip.copy(tsv_data)
-            st.toast("集計データをクリップボードにコピーしました")
+            st.toast("コピーしました")
 
     # 最終更新日時の表示
     if "last_loaded" in project_data["project"]:
