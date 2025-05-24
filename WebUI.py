@@ -231,6 +231,9 @@ def create_pb_chart(project_data, settings, axis_type="時間軸で表示"):
         plan_sum += daily[d].get("計画数", 0)
         cumulative_plan.append(plan_sum)
     
+    # 今日の日付を取得
+    today = datetime.now().strftime("%Y-%m-%d")
+    
     df = pd.DataFrame([
         {
             "date": d,
@@ -244,11 +247,14 @@ def create_pb_chart(project_data, settings, axis_type="時間軸で表示"):
     ])
     df["累積Fail数"] = df["Fail"].cumsum()
     
+    # 今日の日付以降のデータを除外した実績値のデータフレームを作成
+    df_actual = df[df["date"] <= today].copy()
+    
     fig = go.Figure()
     
-    # 未実施テスト項目数
+    # 未実施テスト項目数（明日以降は除外）
     fig.add_trace(go.Scatter(
-        x=df["date"], y=df["未実施テスト項目数"],
+        x=df_actual["date"], y=df_actual["未実施テスト項目数"],
         mode="lines",
         name="残項目数",
         line=dict(width=3, color=settings["webui"]["graph"]["colors"]["untested"]),
@@ -256,7 +262,7 @@ def create_pb_chart(project_data, settings, axis_type="時間軸で表示"):
         fillcolor="rgba(99,110,250,0.08)"
     ))
     
-    # 計画線
+    # 計画線（全期間表示）
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["計画未実施数"],
         mode="lines",
@@ -284,9 +290,9 @@ def create_pb_chart(project_data, settings, axis_type="時間軸で表示"):
         tickvals.append(df["date"].values[-1])
         ticktexts.append(date_objs[-1].strftime("%m/%d"))
 
-    # 累積Fail数
+    # 累積Fail数（明日以降は除外）
     fig.add_trace(go.Scatter(
-        x=df["date"], y=df["累積Fail数"],
+        x=df_actual["date"], y=df_actual["累積Fail数"],
         mode="lines",
         name="不具合検出数(累積)",
         line=dict(width=3, color=settings["webui"]["graph"]["colors"]["fail"], dash="dot"),
