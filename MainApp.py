@@ -402,6 +402,46 @@ def _extract_file_data(file_data: dict) -> dict:
         "last_update": run_data["last_update"]
     }
 
+def _create_export_data(input_data: list, settings: dict) -> list:
+    """エクスポート用のデータを生成する
+
+    Args:
+        input_data: 集計データ
+        settings: 設定情報
+
+    Returns:
+        list: エクスポート用の2次元配列データ
+    """
+    # クリップボード出力用のヘッダ
+    export_headers = ["No.", "ファイル名", "項目数", "更新日", "完了数", "消化率", "完了率"]
+    export_data = [export_headers + settings["test_status"]["results"] + [settings["test_status"]["labels"]["not_run"]]]
+
+    # 各ファイルのデータを追加
+    for index, file_data in enumerate(input_data, 1):
+        display_data = _extract_file_data(file_data)
+        export_row = [
+            index,  # No.
+            file_data['file'],  # ファイル名
+            display_data["available"],  # 項目数
+            display_data["last_update"] or "",  # 更新日
+            display_data["completed"],  # 完了数
+            display_data["executed_rate_text"],  # 消化率
+            display_data["comp_rate_text"]  # 完了率
+        ]
+
+        # エラー時は空文字を設定
+        if display_data["on_error"]:
+            export_row[4:] = ["", "", ""]  # 完了数、消化率、完了率を空に
+
+        # テスト結果データを追加
+        if not display_data["on_error"]:
+            export_row += list(display_data["total_data"].values())
+            export_row.append(display_data["incompleted"])
+
+        export_data.append(export_row)
+
+    return export_data
+
 def update_filelist_table(table_frame):
     # テーブルの余白
     padx = 1
@@ -420,9 +460,8 @@ def update_filelist_table(table_frame):
     # 列のリサイズ設定
     table_frame.grid_columnconfigure(2, weight=3)
 
-    # クリップボード出力用のヘッダ
-    export_headers = ["No.", "ファイル名", "項目数", "更新日", "完了数", "消化率", "完了率"]
-    export_data = [export_headers + settings["test_status"]["results"] + [settings["test_status"]["labels"]["not_run"]]]
+    # エクスポート用データの生成
+    export_data = _create_export_data(input_data, settings)
 
     # 環境別データの表示状態を管理する辞書
     env_expanded = {}
@@ -533,7 +572,6 @@ def update_filelist_table(table_frame):
 
         # インデックス
         ttk.Label(table_frame, text=index).grid(row=index, column=col_idx, padx=padx, pady=pady)
-        export_row = [index] # エクスポート用データ
         col_idx += 1
 
         # ファイル名
@@ -541,7 +579,6 @@ def update_filelist_table(table_frame):
         filename_label = ttk.Label(table_frame, text=filename)
         filename_label.grid(row=index, column=col_idx, sticky=tk.W, padx=padx, pady=pady)
         tooltip_text = [filename]
-        export_row.append(filename)
         col_idx += 1
 
         # ファイル名ダブルクリック時
@@ -551,28 +588,22 @@ def update_filelist_table(table_frame):
         #項目数
         case_count_label = ttk.Label(table_frame, text=display_data["available"])
         case_count_label.grid(row=index, column=col_idx, padx=padx, pady=pady)
-        export_row.append(display_data["available"])
         col_idx += 1
 
         # 最終更新日
         last_update_label = ttk.Label(table_frame, text=Utility.simplify_date(display_data["last_update"]))
         last_update_label.grid(row=index, column=col_idx, padx=padx, pady=pady)
-        export_row.append(display_data["last_update"] or "")
         col_idx += 1
 
         # 消化率・完了率ラベル
         if display_data["on_error"]:
-            executed_rate_export = ""
             executed_rate_display = "-"
             executed_rate_tooltip = "消化率: -"
-            comp_rate_export = ""
             comp_rate_display = "-"
             comp_rate_tooltip = "完了率: -"
         else:
-            executed_rate_export = display_data["executed_rate_text"]
             executed_rate_display = display_data["executed_rate_text"]
             executed_rate_tooltip = f'消化率: {display_data["executed_rate_text"]} ({display_data["executed"]}/{display_data["available"]})'
-            comp_rate_export = display_data["comp_rate_text"]
             comp_rate_display = display_data["comp_rate_text"]
             comp_rate_tooltip = f'完了率: {display_data["comp_rate_text"]} ({display_data["completed"]}/{display_data["available"]})'
 
@@ -587,11 +618,6 @@ def update_filelist_table(table_frame):
         comp_rate_label.grid(row=index, column=col_idx, padx=padx, pady=pady)
         ToolTip(comp_rate_label, msg=comp_rate_tooltip, delay=0.3, follow=False)
         col_idx += 1
-
-        # エクスポート用データ
-        export_row.append(display_data["completed"]) # 完了数
-        export_row.append(executed_rate_export) # 消化率
-        export_row.append(comp_rate_export) # 完了率
 
         # エラー時赤色・ワーニング時オレンジ色
         if display_data["on_error"] or display_data["on_warning"]:
@@ -613,13 +639,6 @@ def update_filelist_table(table_frame):
             # グラフのツールチップ
             graph_tooltop = make_graph_tooltip(display_data)
             ToolTip(canvas.get_tk_widget(), msg=graph_tooltop, delay=0.3, follow=False)
-
-            # エクスポート用データ
-            export_row += list(display_data["total_data"].values())
-            export_row.append(display_data["incompleted"])
-
-        # エクスポート用の配列に格納
-        export_data.append(export_row)
 
         # エラー・ワーニング時はツールチップにメッセージを追加
         if display_data["on_error"] or display_data["on_warning"]:
