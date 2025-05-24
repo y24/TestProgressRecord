@@ -203,6 +203,21 @@ def save_default_project(project_name):
     settings["webui"]["default_project"] = project_name
     AppConfig.save_settings(settings)
 
+# 表示設定を読み込む
+def load_display_settings():
+    settings = AppConfig.load_settings()
+    return settings.get("webui", {}).get("display_settings", {
+        "axis_type": "時間軸で表示"  # デフォルト値
+    })
+
+# 表示設定を保存
+def save_display_settings(display_settings):
+    settings = AppConfig.load_settings()
+    if "webui" not in settings:
+        settings["webui"] = {}
+    settings["webui"]["display_settings"] = display_settings
+    AppConfig.save_settings(settings)
+
 # PB図を作成
 def create_pb_chart(project_data, settings, axis_type="時間軸で表示"):
     if not project_data.get("gathered_data"):
@@ -405,11 +420,21 @@ def main():
 
     # グラフ表示設定
     st.sidebar.markdown("### 表示設定")
+    # 表示設定の読み込み
+    display_settings = load_display_settings()
+    
+    # 進捗グラフの表示設定
     axis_type = st.sidebar.radio(
         "進捗グラフ",
         ["時間軸で表示", "等間隔で表示"],
+        index=0 if display_settings["axis_type"] == "時間軸で表示" else 1,
         captions=["実際の日付間隔で表示する", "データのない日付を詰めて表示する"]
     )
+
+    # 設定が変更された場合は保存
+    if axis_type != display_settings["axis_type"]:
+        save_display_settings({"axis_type": axis_type})
+        st.rerun()  # 設定を反映するために再読み込み
 
     # 再集計状態管理
     if 'reload_state' not in st.session_state:
