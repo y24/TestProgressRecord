@@ -248,7 +248,7 @@ def create_pb_chart(project_data, settings):
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["未実施テスト項目数"],
         mode="lines",
-        name="未実施テスト項目数",
+        name="残項目数",
         line=dict(width=3, color=settings["webui"]["graph"]["colors"]["untested"]),
         fill='tozeroy',
         fillcolor="rgba(99,110,250,0.08)"
@@ -275,7 +275,7 @@ def create_pb_chart(project_data, settings):
         if d_str in df["date"].values:
             tickvals.append(d_str)
             ticktexts.append(cur.strftime("%m/%d"))
-        cur += timedelta(days=3)
+        cur += timedelta(days=1)
 
     # 必ず最終日も追加
     if df["date"].values[-1] not in tickvals:
@@ -286,14 +286,14 @@ def create_pb_chart(project_data, settings):
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["累積Fail数"],
         mode="lines",
-        name="累積バグ検出数（Fail）",
+        name="不具合検出数(累積)",
         line=dict(width=3, color=settings["webui"]["graph"]["colors"]["fail"], dash="dot"),
         fill='tozeroy',
         fillcolor="rgba(229,103,10,0.08)"
     ))
     
     fig.update_layout(
-        title="テスト進捗と不具合検出状況",
+        title="テスト進捗 / 不具合検出状況",
         xaxis_title="",
         yaxis_title="",
         xaxis=dict(
@@ -412,8 +412,9 @@ def main():
         return
     
     # プロジェクト名とお気に入りボタンの表示
-    col1, col2, col3, col4 = st.columns([12, 1, 1, 2])
+    col1, col2, col3 = st.columns([14, 1, 1])
     with col1:
+        # プロジェクト名
         st.header(project_data["project"]["project_name"])
     with col2:
         is_default = selected_project_name == default_project
@@ -438,11 +439,12 @@ def main():
                 subprocess.Popen(cmd)
                 st.session_state['reload_state'] = 'waiting'
                 st.rerun()
-    with col4:
-        if "last_loaded" in project_data["project"]:
-            last_loaded = datetime.fromisoformat(project_data["project"]["last_loaded"])
-            st.caption(f"最終更新: {last_loaded.strftime('%Y/%m/%d %H:%M')}")
-    
+
+    # 最終更新日時の表示
+    if "last_loaded" in project_data["project"]:
+        last_loaded = datetime.fromisoformat(project_data["project"]["last_loaded"])
+        st.caption(f"最終更新: {last_loaded.strftime('%Y/%m/%d %H:%M')}")
+
     # PB図の表示
     pb_fig = create_pb_chart(project_data, settings)
     if pb_fig:

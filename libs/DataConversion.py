@@ -147,6 +147,9 @@ def _extract_file_data(file_data: dict) -> dict:
 def aggregate_all_daily(data):
     result = defaultdict(lambda: defaultdict(int))
     for record in data:
+        # エラーまたはワーニングのあるデータは除外
+        if "error" in record or "warning" in record:
+            continue
         daily = record.get("daily", {})
         for date, values in daily.items():
             for k, v in values.items():
@@ -156,6 +159,9 @@ def aggregate_all_daily(data):
 def aggregate_all_stats(data):
     result = defaultdict(int)
     for record in data:
+        # エラーまたはワーニングのあるデータは除外
+        if "error" in record or "warning" in record:
+            continue
         stats = record.get("stats", {})
         for k, v in stats.items():
             result[k] += v
