@@ -2,7 +2,7 @@ import json
 import os
 from libs import Utility, DataConversion
 
-def save_to_json(file_path: str, input_data: list, project_data: dict = None) -> None:
+def save_to_json(file_path: str, input_data: list, all_data: dict = None, project_data: dict = None) -> None:
     """プロジェクトデータをJSONファイルに保存する
 
     Args:
@@ -35,13 +35,6 @@ def save_to_json(file_path: str, input_data: list, project_data: dict = None) ->
 
         # gathered_dataキーに現在のinput_dataを保存
         existing_data["gathered_data"] = input_data
-
-        # all_dataキーを初期化（存在しない場合）
-        if "all_data" not in existing_data:
-            existing_data["all_data"] = {}
-        # aggregate_dataキーに現在のaggregated_dataを保存
-        existing_data["all_data"]["daily"] = DataConversion.aggregate_all_daily(input_data)
-        existing_data["all_data"]["stats"] = DataConversion.aggregate_all_stats(input_data)
 
         # JSONファイルに保存
         with open(file_path, "w", encoding="utf-8") as f:

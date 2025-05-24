@@ -205,12 +205,13 @@ def save_default_project(project_name):
 
 # PB図を作成
 def create_pb_chart(project_data, settings):
-    if not project_data.get("all_data"):
+    if not project_data.get("gathered_data"):
         return None
     
-    all_data = project_data["all_data"]
-    daily = all_data.get("daily", {})
-    stats = all_data.get("stats", {})
+    # 日付ごとのデータ
+    daily = DataConversion.aggregate_all_daily(project_data.get("gathered_data"))
+    # 総テスト件数
+    stats = DataConversion.aggregate_all_stats(project_data.get("gathered_data"))
     
     if not daily or not stats:
         return None
