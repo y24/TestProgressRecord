@@ -20,10 +20,6 @@ from libs import Clipboard
 from libs import CsvFile
 from libs import FileOperation
 
-# 定数定義
-PADDING_X = 1  # 横方向の余白
-PADDING_Y = 3  # 縦方向の余白
-
 project_data = None
 project_path = None
 show_byfile_graph = None
@@ -324,18 +320,22 @@ def set_state_color(label, state_name):
 
 def create_file_row(frame, row, index, file_data, display_data):
     """ファイルデータ行を作成する"""
+    # セルの余白
+    padx = 1
+    pady = 3
+    # 列番号の初期化
     col = 0
     
     # インデックス
     ttk.Label(frame, text=index).grid(
-        row=row, column=col, sticky=tk.W+tk.E, padx=PADDING_X, pady=PADDING_Y
+        row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady
     )
     col += 1
 
     # ファイル名
     filename = file_data['file']
     filename_label = ttk.Label(frame, text=filename)
-    filename_label.grid(row=row, column=col, sticky=tk.W, padx=PADDING_X, pady=PADDING_Y)
+    filename_label.grid(row=row, column=col, sticky=tk.W, padx=padx, pady=pady)
     tooltip_text = [filename]
     col += 1
 
@@ -345,7 +345,7 @@ def create_file_row(frame, row, index, file_data, display_data):
 
     #項目数
     case_count_label = ttk.Label(frame, text=display_data["available"])
-    case_count_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=PADDING_X, pady=PADDING_Y)
+    case_count_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
     col += 1
 
     # 最終更新日
@@ -353,7 +353,7 @@ def create_file_row(frame, row, index, file_data, display_data):
         frame,
         text=Utility.simplify_date(display_data["last_update"])
     )
-    last_update_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=PADDING_X, pady=PADDING_Y)
+    last_update_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
     col += 1
 
     # 消化率・完了率ラベル
@@ -370,13 +370,13 @@ def create_file_row(frame, row, index, file_data, display_data):
 
     # 消化率
     executed_rate_label = ttk.Label(frame, text=executed_rate_display)
-    executed_rate_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=PADDING_X, pady=PADDING_Y)
+    executed_rate_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
     ToolTip(executed_rate_label, msg=executed_rate_tooltip, delay=0.3, follow=False)
     col += 1
 
     # 完了率
     comp_rate_label = ttk.Label(frame, text=comp_rate_display)
-    comp_rate_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=PADDING_X, pady=PADDING_Y)
+    comp_rate_label.grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
     ToolTip(comp_rate_label, msg=comp_rate_tooltip, delay=0.3, follow=False)
     col += 1
 
@@ -392,7 +392,7 @@ def create_file_row(frame, row, index, file_data, display_data):
         fig, ax = plt.subplots(figsize=(2, 0.1))
         canvas = FigureCanvasTkAgg(fig, master=frame)
         plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-        canvas.get_tk_widget().grid(row=row, column=col, sticky=tk.W+tk.E, padx=PADDING_X, pady=PADDING_Y)
+        canvas.get_tk_widget().grid(row=row, column=col, sticky=tk.W+tk.E, padx=padx, pady=pady)
 
         # グラフを更新
         update_bar_chart(
