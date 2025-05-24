@@ -7,8 +7,9 @@ def convert_to_2d_array(data, settings):
     base_header = ["ファイル名", "識別子", "環境名", "日付"]
     completed_label = settings["test_status"]["labels"]["completed"]
     executed_label = settings["test_status"]["labels"]["executed"]
+    planned_label = settings["test_status"]["labels"]["planned"]
     results = settings["test_status"]["results"]
-    out_results = results + [executed_label, completed_label]
+    out_results = results + [executed_label, completed_label, planned_label]
     header = base_header + out_results
 
     # 出力用の2次元配列の作成
