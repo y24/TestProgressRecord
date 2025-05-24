@@ -361,6 +361,10 @@ def main():
     elif default_project in project_options:
         default_index = project_names.index(f"⭐ {default_project}")
 
+    # プロジェクト選択の状態管理
+    if 'previous_project' not in st.session_state:
+        st.session_state.previous_project = None
+
     selected_display_name = st.sidebar.selectbox(
         "プロジェクトを選択",
         options=project_names,
@@ -370,8 +374,11 @@ def main():
     # 表示名からプロジェクト名（stem）を取得
     selected_project_name = project_name_to_stem[selected_display_name]
     
-    # 選択されたプロジェクト名をURLクエリパラメータに保存
-    st.query_params["project"] = selected_project_name
+    # プロジェクトが変更された場合、URLパラメータを更新して画面を再読み込み
+    if st.session_state.previous_project != selected_project_name:
+        st.session_state.previous_project = selected_project_name
+        st.query_params["project"] = selected_project_name
+        st.rerun()
     
     # 選択されたプロジェクトのPathオブジェクトを取得
     selected_project = project_options[selected_project_name]
