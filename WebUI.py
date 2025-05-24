@@ -622,6 +622,11 @@ def main():
             if matching_data:
                 file_data = matching_data[0]
                 if "error" not in file_data:
+                    # PB図の表示
+                    pb_fig = create_pb_chart({"gathered_data": [file_data]}, settings, axis_type)
+                    if pb_fig:
+                        st.plotly_chart(pb_fig, use_container_width=True, config={"displayModeBar": False, "scrollZoom": False})
+
                     # 集計情報の表示
                     col1, col2, col3 = st.columns(3)
                     with col1:
