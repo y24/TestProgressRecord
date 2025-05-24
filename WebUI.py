@@ -297,14 +297,20 @@ def create_pb_chart(project_data, settings):
         xaxis_title="",
         yaxis_title="",
         xaxis=dict(
+            type="category",
             tickmode='array',
             tickvals=tickvals,
             ticktext=ticktexts,
-            showgrid=False
+            showgrid=True,
+            gridcolor="rgba(200,200,200,0.2)",
+            gridwidth=0.5,
+            categoryorder="array",
+            categoryarray=dates
         ),
         yaxis=dict(
             showgrid=True,
-            gridcolor="rgba(200,200,200,0.2)"
+            gridcolor="rgba(200,200,200,0.2)",
+            gridwidth=0.5
         ),
         legend=dict(
             orientation="h",
