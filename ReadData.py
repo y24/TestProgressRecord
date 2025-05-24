@@ -23,8 +23,8 @@ def get_daily(data, results: list[str], completed_label:str, completed_results: 
     
     for index, row in enumerate(data):
         # 計画データの日付別集計
-        plan = plan_data[index] if plan_data else None
-        if plan != [None]:
+        plan = plan_data[index] if plan_data and index < len(plan_data) else None
+        if plan and plan != [None] and len(plan) > 0:
             plan_date = plan[0]
             # 各実績値は0で初期化
             result_count = initialize_result_counts(results, plan_date, result_count, completed_label, executed_label, plan_label)
