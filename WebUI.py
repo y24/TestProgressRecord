@@ -409,7 +409,7 @@ def main():
                             "消化率": "-",
                             "完了率": "-",
                             "状態": status,
-                            "更新日": data.get("last_updated", "")
+                            "更新日時": data.get("last_updated", "")
                         })
                     elif "warning" in data:
                         status = "⚠️警告"
@@ -421,7 +421,7 @@ def main():
                             "消化率": Labels.make_count_and_rate_text(executed, available),
                             "完了率": Labels.make_count_and_rate_text(completed, available),
                             "状態": status,
-                            "更新日": data.get("last_updated", "")
+                            "更新日時": data.get("last_updated", "")
                         })
                     elif "stats" in data:
                         status = "✅正常"
@@ -436,7 +436,7 @@ def main():
                             "消化率": Labels.make_count_and_rate_text(executed, available),
                             "完了率": Labels.make_count_and_rate_text(completed, available),
                             "状態": status,
-                            "更新日": data.get("last_updated", "")
+                            "更新日時": data.get("last_updated", "")
                         })
                     else:
                         file_data.append({
@@ -446,7 +446,7 @@ def main():
                             "消化率": "-",
                             "完了率": "-",
                             "状態": "不明",
-                            "更新日": data.get("last_updated", "")
+                            "更新日時": data.get("last_updated", "")
                         })
                 
                 df = pd.DataFrame(file_data)
