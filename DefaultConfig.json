@@ -7,6 +7,7 @@
         "result_row": {"keys": ["結果"], "ignores": ["期待結果"]},
         "person_row": {"keys": ["担当者"]},
         "date_row": {"keys": ["日付", "実施日"]},
+        "plan_row": {"keys": ["計画"]},
         "excluded": ["対象外"]
     },
     "test_status": {

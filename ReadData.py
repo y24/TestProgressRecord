@@ -191,7 +191,7 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
     data = []
     env_data = {}  # 環境データを格納する辞書を初期化
     
-    for set in sets:
+    for index, set in enumerate(sets):
         # セットのデータ取得
         set_data = Excel.get_columns_data(sheet=sheet, col_nums=set, header_row=header_rownum, ignore_header=True)
 
@@ -208,9 +208,9 @@ def _process_sheet(workbook, sheet_name: str, settings: dict):
         # そのセットの1行目からセット名を取得(セル内改行は_に置換)
         set_name = Excel.get_cell_value(sheet=sheet, col=set[0], row=1, replace_newline=True)
 
-        # セット名がない場合はスキップ
+        # セット名がない場合はシート名をセット
         if not set_name:
-            continue
+            set_name = f"セット{index + 1}"
 
         # 環境名
         env_name = f"[{sheet_name}]{set_name}"
