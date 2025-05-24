@@ -606,7 +606,7 @@ def create_summary_filelist_area(parent):
     sort_menu_button = ttk.Menubutton(menu_frame, text="ソート", direction="below")
     sort_menu = tk.Menu(sort_menu_button, tearoff=0)
     for key, order_info in settings["app"]["sort"]["orders"].items():
-        sort_menu.add_command(label=order_info["label"], command=lambda key=key: change_sort_order(table_frame, key, sort_menu_button, on_change=True))
+        sort_menu.add_command(label=order_info["label"], command=lambda key=key: change_sort_order(table_frame, key, sort_menu_button, on_change_order=True))
     sort_menu_button.config(menu=sort_menu)
     sort_menu_button.pack(anchor=tk.SW, side=tk.LEFT, padx=(0, 4))
 
@@ -627,7 +627,7 @@ def create_summary_filelist_area(parent):
     update_filelist_table(table_frame)
 
     # 初期ソート順の反映
-    change_sort_order(table_frame, settings["app"]["sort"]["default"], sort_menu_button, on_change=False)
+    change_sort_order(table_frame, settings["app"]["sort"]["default"], sort_menu_button, on_change_order=False)
 
 def select_write_file(entry):
     filepath = filedialog.askopenfilename(title="書込先ファイルを選択", defaultextension=".xlsx", filetypes=[("Excel file", "*.xlsx")])
@@ -667,11 +667,11 @@ def load_files():
         # プロジェクトデータを保存
         save_project()
         # 新しいプロセスでプロジェクト読込
-        new_process(inputs=list(files), project_path=project_path, on_reload=False, on_change=True)
+        new_process(inputs=list(files), project_path=project_path, on_reload=False)
 
 def open_project():
     project_path = Dialog.select_file(("JSONファイル", "*.json"))
-    if project_path: new_process(inputs=[project_path], on_reload=False, on_change=False)
+    if project_path: new_process(inputs=[project_path], on_reload=False)
 
 def update_labels():
     """プロジェクト情報に関連するラベルを更新する"""
@@ -772,7 +772,7 @@ def new_project():
         elif response == True:
             save_project()  # 保存
     # 空プロジェクトを開く
-    new_process(inputs=[], project_path=None, on_reload=False, on_change=False)
+    new_process(inputs=[], project_path=None, on_reload=False)
 
 def create_menubar(parent, has_data=False):
     global show_byfile_graph, show_env_data
@@ -983,7 +983,7 @@ def close_all_dialogs():
         if isinstance(widget, tk.Toplevel):
             widget.destroy()
 
-def new_process(inputs, on_reload=False, on_change=False, project_path=None):
+def new_process(inputs, on_reload=False, project_path=None):
     """新しいプロセスを起動"""
     # ダイアログを閉じる
     close_all_dialogs()
@@ -991,7 +991,6 @@ def new_process(inputs, on_reload=False, on_change=False, project_path=None):
     python = sys.executable
     command = [python, "StartProcess.py"] + inputs
     if on_reload: command += ["--on_reload"]
-    if on_change: command += ["--on_change"]
     if project_path: command += ["--project", project_path]
     # 新しいプロセスを起動
     subprocess.Popen(command)
@@ -1036,12 +1035,12 @@ def reload_files(pre_message:str="", show_time:bool=True):
             # 取得元の設定がない場合、集計データからパスを取得して起動
             file_paths = [item["filepath"] for item in input_data if "filepath" in item]
             if len(file_paths) > 0:
-                new_process(inputs=file_paths, project_path=project_path, on_reload=True, on_change=False)
+                new_process(inputs=file_paths, project_path=project_path, on_reload=True)
             else:
                 Dialog.show_messagebox(root=root, type="warning", title="読込ファイルなし", message=f"再読み込みするファイルが設定されていません。")
         else:
             # 取得元の設定がある場合、通常通りプロジェクトファイルを読み込む
-            new_process(inputs=list(input_args), project_path=project_path, on_reload=True, on_change=False)
+            new_process(inputs=list(input_args), project_path=project_path, on_reload=True)
 
 def create_global_tab(parent, has_data=False):
     nb = ttk.Notebook(parent)
@@ -1226,7 +1225,7 @@ def _update_file_timestamps(input_data):
         updated_data.append(data)
     return updated_data
 
-def run(pjdata=None, pjpath=None, indata=None, args=None, on_reload=False, on_change=False):
+def run(pjdata=None, pjpath=None, indata=None, args=None, on_reload=False):
     global root, input_data, settings, input_args, project_data, project_path, change_flg
     global show_byfile_graph, show_env_data
 
@@ -1239,7 +1238,7 @@ def run(pjdata=None, pjpath=None, indata=None, args=None, on_reload=False, on_ch
     has_data = len(input_data)
 
     # 編集中フラグの初期化
-    change_flg = on_change
+    change_flg = False
     # プロジェクトファイル未保存かつファイルがある場合は編集中フラグON
     if not pjpath and has_data: change_flg = True
 
@@ -1356,14 +1355,14 @@ def clear_frame(frame):
     for widget in frame.winfo_children():
         widget.destroy()
 
-def change_sort_order(table_frame, order, sort_menu_button, on_change=False):
+def change_sort_order(table_frame, order, sort_menu_button, on_change_order=False):
     sort_input_data(order, type=settings["app"]["sort"]["orders"][order]["type"])
     clear_frame(table_frame) # 表示をクリア
-    if on_change:
+    if on_change_order:
         plt.close('all') # 表示していたグラフを開放する
     update_filelist_table(table_frame)
     sort_menu_button.config(text=f'ソート: {settings["app"]["sort"]["orders"][order]["label"]}')
-    if on_change:
+    if on_change_order:
         # デフォルト設定に保存
         settings["app"]["sort"]["default"] = order
         AppConfig.save_settings(settings)
