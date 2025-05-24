@@ -8,8 +8,9 @@ import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
+import pyperclip
 
-from libs import AppConfig, Labels
+from libs import AppConfig, Labels, DataConversion
 
 # プロジェクトデータの読み込み
 def load_project_data(project_path):
@@ -416,7 +417,7 @@ def main():
         return
     
     # プロジェクト名とお気に入りボタンの表示
-    col1, col2, col3 = st.columns([14, 1, 1])
+    col1, col2, col3, col4 = st.columns([13, 1, 1, 1])
     with col1:
         # プロジェクト名
         st.header(project_data["project"]["project_name"])
@@ -443,6 +444,15 @@ def main():
                 subprocess.Popen(cmd)
                 st.session_state['reload_state'] = 'waiting'
                 st.rerun()
+    with col4:
+        if st.button("📋", help="集計データをクリップボードにコピー"):
+            # 集計データを2次元配列に変換
+            array_data = DataConversion.convert_to_2d_array(project_data["gathered_data"], settings)
+            # TSV形式に変換
+            tsv_data = "\n".join(["\t".join(map(str, row)) for row in array_data])
+            # クリップボードにコピー
+            pyperclip.copy(tsv_data)
+            st.toast("集計データをクリップボードにコピーしました")
 
     # 最終更新日時の表示
     if "last_loaded" in project_data["project"]:
