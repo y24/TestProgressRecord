@@ -69,6 +69,13 @@
                 "N/A": "#6c757d",
                 "not_run": "#e9ecef"
             }
+        },
+        "graph": {
+            "colors": {
+                "untested": "#3b82f6",
+                "fail": "#ef4444",
+                "plan": "#9ca3af"
+            }
         }
     }
 }

@@ -2,29 +2,14 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import json
-import os
+import json, os, time, re, subprocess, sys
 from datetime import datetime
 import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
-import io
-import base64
-import subprocess
-import sys
-import time
-import re
+from datetime import datetime, timedelta
 
 from libs import AppConfig, Labels
-
-# 設定の読み込み
-def load_settings():
-    try:
-        with open("UserConfig.json", "r", encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        with open("DefaultConfig.json", "r", encoding="utf-8") as f:
-            return json.load(f)
 
 # プロジェクトデータの読み込み
 def load_project_data(project_path):
@@ -218,7 +203,7 @@ def save_default_project(project_name):
     AppConfig.save_settings(settings)
 
 # PB図を作成
-def create_pb_chart(project_data):
+def create_pb_chart(project_data, settings):
     if not project_data.get("all_data"):
         return None
     
@@ -264,7 +249,7 @@ def create_pb_chart(project_data):
         x=df["date"], y=df["未実施テスト項目数"],
         mode="lines",
         name="未実施テスト項目数",
-        line=dict(width=3, color="#636EFA"),
+        line=dict(width=3, color=settings["webui"]["graph"]["colors"]["untested"]),
         fill='tozeroy',
         fillcolor="rgba(99,110,250,0.08)"
     ))
@@ -273,26 +258,48 @@ def create_pb_chart(project_data):
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["計画未実施数"],
         mode="lines",
-        name="計画線（未実施予定）",
-        line=dict(width=2, color="#00CC96", dash="dash")
+        name="計画線",
+        line=dict(width=2, color=settings["webui"]["graph"]["colors"]["plan"])
     ))
-    
+
+    date_objs = [datetime.strptime(d, "%Y-%m-%d") for d in df["date"]]
+    min_date = date_objs[0]
+    max_date = date_objs[-1]
+
+    # 7日おきの日付ラベル
+    tickvals = []
+    ticktexts = []
+    cur = min_date
+    while cur <= max_date:
+        d_str = cur.strftime("%Y-%m-%d")
+        if d_str in df["date"].values:
+            tickvals.append(d_str)
+            ticktexts.append(cur.strftime("%m/%d"))
+        cur += timedelta(days=3)
+
+    # 必ず最終日も追加
+    if df["date"].values[-1] not in tickvals:
+        tickvals.append(df["date"].values[-1])
+        ticktexts.append(date_objs[-1].strftime("%m/%d"))
+
     # 累積Fail数
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["累積Fail数"],
         mode="lines",
         name="累積バグ検出数（Fail）",
-        line=dict(width=3, color="#EF553B", dash="dot")
+        line=dict(width=3, color=settings["webui"]["graph"]["colors"]["fail"], dash="dot"),
+        fill='tozeroy',
+        fillcolor="rgba(229,103,10,0.08)"
     ))
     
     fig.update_layout(
         title="テスト進捗と不具合検出状況",
-        xaxis_title="日付",
-        yaxis_title="件数",
+        xaxis_title="",
+        yaxis_title="",
         xaxis=dict(
             tickmode='array',
-            tickvals=df["date"],
-            ticktext=[datetime.strptime(d, "%Y-%m-%d").strftime("%m/%d") for d in df["date"]],
+            tickvals=tickvals,
+            ticktext=ticktexts,
             showgrid=False
         ),
         yaxis=dict(
@@ -310,7 +317,8 @@ def create_pb_chart(project_data):
         font=dict(
             family="sans-serif",
             size=16
-        )
+        ),
+        dragmode=False
     )
     
     return fig
@@ -324,7 +332,7 @@ def main():
     )
     
     # 設定の読み込み
-    settings = load_settings()
+    settings = AppConfig.load_settings()
     
     # サイドバー
     st.sidebar.title("TestTraQ")
@@ -436,9 +444,9 @@ def main():
             st.caption(f"最終更新: {last_loaded.strftime('%Y/%m/%d %H:%M')}")
     
     # PB図の表示
-    pb_fig = create_pb_chart(project_data)
+    pb_fig = create_pb_chart(project_data, settings)
     if pb_fig:
-        st.plotly_chart(pb_fig, use_container_width=True)
+        st.plotly_chart(pb_fig, use_container_width=True, config={"displayModeBar": False, "scrollZoom": False})
     
     # タブの作成
     tab1, tab2, tab3 = st.tabs(["全体集計", "ファイル別集計", "エラー情報"])
