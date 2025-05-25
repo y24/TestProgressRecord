@@ -256,7 +256,9 @@ def create_pb_chart(project_data, settings, axis_type="時間軸で表示"):
             "消化数": daily[d].get("消化数", 0),
             "Fail": daily[d].get("Fail", 0),
             "計画累計消化数": cumulative_plan[i],
-            "計画未実施数": total_tests - cumulative_plan[i]
+            "計画未実施数": total_tests - cumulative_plan[i],
+            "計画数": daily[d].get("計画数", 0),
+            "完了数": daily[d].get("完了数", 0)
         }
         for i, d in enumerate(dates)
     ])
@@ -267,6 +269,27 @@ def create_pb_chart(project_data, settings, axis_type="時間軸で表示"):
     
     fig = go.Figure()
     
+    # --- 縦棒グラフ ---
+    # 計画件数（灰色）
+    fig.add_trace(go.Bar(
+        x=df["date"], y=df["計画数"],
+        name="計画数",
+        marker_color=settings["webui"]["graph"]["colors"]["plan"],   # 灰色
+        opacity=0.65,
+        width=0.3,
+        yaxis="y"  # 追加：別のy軸を使用
+    ))
+    # 完了件数
+    fig.add_trace(go.Bar(
+        x=df["date"], y=df["消化数"],
+        name="消化数",
+        marker_color=settings["webui"]["graph"]["colors"]["daily_executed"],
+        opacity=0.85,
+        width=0.3,
+        yaxis="y"  # 追加：別のy軸を使用
+    ))
+
+    #  --- 折れ線グラフ ---
     # 未実施テスト項目数（明日以降は除外）
     fig.add_trace(go.Scatter(
         x=df_actual["date"], y=df_actual["未実施テスト項目数"],
@@ -315,8 +338,10 @@ def create_pb_chart(project_data, settings, axis_type="時間軸で表示"):
         fillcolor="rgba(229,103,10,0.08)"
     ))
     
+    # --- グラフの表示設定 ---
     fig.update_layout(
         title="テスト進捗 / 不具合検出状況",
+        barmode="group",
         xaxis=dict(
             type="date" if axis_type == "時間軸で表示" else "category",
             tickmode='array',
@@ -331,7 +356,8 @@ def create_pb_chart(project_data, settings, axis_type="時間軸で表示"):
         yaxis=dict(
             showgrid=True,
             gridcolor="rgba(200,200,200,0.2)",
-            gridwidth=0.5
+            gridwidth=0.5,
+            title="件数"
         ),
         legend=dict(
             orientation="h",
@@ -398,7 +424,7 @@ def main():
     if 'previous_project' not in st.session_state:
         st.session_state.previous_project = None
 
-    st.sidebar.markdown("### 📂プロジェクト")
+    st.sidebar.markdown("### プロジェクト")
 
     selected_display_name = st.sidebar.selectbox(
         "選択中",
@@ -421,7 +447,7 @@ def main():
     st.sidebar.markdown("---")
 
     # グラフ表示設定
-    st.sidebar.markdown("### ⚙️表示設定")
+    st.sidebar.markdown("### 表示設定")
     # 表示設定の読み込み
     display_settings = load_display_settings()
     
