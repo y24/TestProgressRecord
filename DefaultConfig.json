@@ -74,7 +74,8 @@
             "colors": {
                 "untested": "#3b82f6",
                 "fail": "#ef4444",
-                "plan": "#9ca3af"
+                "plan": "#9ca3af",
+                "daily_executed": "#fbbc04"
             }
         }
     }
