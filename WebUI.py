@@ -223,7 +223,7 @@ def main():
         return
 
     # サイドバーにtsvデータボタンを追加
-    if st.sidebar.button("📋 tsvデータを表示", help="集計データをコピー"):
+    if st.sidebar.button("📋 tsvデータを表示"):
         st.session_state.show_data = not st.session_state.show_data
 
     # tsvデータ表示モードの場合
