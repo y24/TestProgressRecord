@@ -125,7 +125,7 @@ class ChartManager:
             name="計画数",
             marker_color=settings["webui"]["graph"]["colors"]["plan"],
             opacity=0.65,
-            width=0.3,
+            width=86400000 * 0.2 if axis_type == "時間軸で表示" else 0.2,
             yaxis="y"
         ))
         # 完了件数
@@ -134,7 +134,7 @@ class ChartManager:
             name="消化数",
             marker_color=settings["webui"]["graph"]["colors"]["daily_executed"],
             opacity=0.85,
-            width=0.3,
+            width=86400000 * 0.2 if axis_type == "時間軸で表示" else 0.2,
             yaxis="y"
         ))
 
