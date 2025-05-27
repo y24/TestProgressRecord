@@ -314,8 +314,18 @@ def main():
     if 'show_data' not in st.session_state:
         st.session_state.show_data = False
 
-    # タブの作成
-    tab1, tab2, tab3 = st.tabs(["全体集計", "ファイル別集計", "エラー情報"])
+    # エラー情報の確認
+    error_df = create_error_table(project_data)
+    has_errors = not error_df.empty
+
+    # タブの作成（エラーがある場合のみエラー情報タブを表示）
+    tabs = ["全体集計", "ファイル別集計"]
+    if has_errors:
+        tabs.append("⚠️エラー情報")
+    
+    all_tabs = st.tabs(tabs)
+    tab1, tab2 = all_tabs[0], all_tabs[1]
+    tab3 = all_tabs[2] if has_errors else None
     
     with tab1:
         # 全体集計タブ
@@ -527,13 +537,10 @@ def main():
             else:
                 st.error(f"選択されたファイル '{selected_file}' のデータが見つかりません。")
 
-    with tab3:
-        # エラー情報タブ
-        error_df = create_error_table(project_data)
-        if not error_df.empty:
+    if has_errors:
+        with tab3:
+            # エラー情報タブ
             st.dataframe(error_df, hide_index=True, use_container_width=True)
-        else:
-            st.info("エラー・ワーニングはありません。")
 
 if __name__ == "__main__":
     main() 
