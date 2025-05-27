@@ -346,7 +346,7 @@ def _aggregate_final_results(all_data, all_plan_data, data_by_env, counts_by_she
     # 未実施テストケース数(マイナスは0)
     incompleted_count = max(0, available_count - executed_count)
     # 総計画数
-    total_plan_count = sum(data_total.values())
+    total_plan_count = sum(1 for item in all_plan_data if item and item[0] is not None)
     # 集計データ
     count_stats = {
         "all": case_count_all,
