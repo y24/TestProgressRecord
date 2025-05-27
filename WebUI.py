@@ -197,10 +197,10 @@ def main():
     if 'previous_project' not in st.session_state:
         st.session_state.previous_project = None
 
-    st.sidebar.markdown("### プロジェクト")
+    # st.sidebar.markdown("### プロジェクト")
 
     selected_display_name = st.sidebar.selectbox(
-        "選択中",
+        "プロジェクトを選択",
         options=project_names,
         index=default_index
     )
@@ -216,6 +216,30 @@ def main():
     
     # 選択されたプロジェクトのPathオブジェクトを取得
     selected_project = project_options[selected_project_name]
+
+    # プロジェクトデータの読み込み
+    project_data = load_project_data(selected_project)
+    if not project_data:
+        return
+
+    # サイドバーにtsvデータボタンを追加
+    if st.sidebar.button("📋 tsvデータを表示", help="集計データをコピー"):
+        st.session_state.show_data = not st.session_state.show_data
+
+    # tsvデータ表示モードの場合
+    if st.session_state.show_data:
+        # 集計データを2次元配列に変換
+        array_data = DataConversion.convert_to_2d_array(project_data["gathered_data"], settings)
+        # TSV形式に変換
+        tsv_data = "\n".join(["\t".join(map(str, row)) for row in array_data])
+        
+        st.markdown("### tsvデータ")
+        st.text("以下のデータをコピーしてください：")
+        st.code(tsv_data, height=600)
+        if st.button("戻る"):
+            st.session_state.show_data = False
+            st.rerun()
+        return  # メイン画面の表示をスキップ
 
     st.sidebar.markdown("---")
 
@@ -251,11 +275,6 @@ def main():
             st.info("再集計中です。しばらくお待ちください。")
             time.sleep(2)
             st.rerun()
-    
-    # プロジェクトデータの読み込み
-    project_data = load_project_data(selected_project)
-    if not project_data:
-        return
     
     # プロジェクト名とお気に入りボタンの表示
     col1, col2, col3 = st.columns([14, 1, 1])
@@ -294,17 +313,6 @@ def main():
     # データ表示の状態管理
     if 'show_data' not in st.session_state:
         st.session_state.show_data = False
-
-    if st.button("📋 tsvデータ", help="集計データをコピー"):
-        st.session_state.show_data = not st.session_state.show_data
-
-    if st.session_state.show_data:
-        # 集計データを2次元配列に変換
-        array_data = DataConversion.convert_to_2d_array(project_data["gathered_data"], settings)
-        # TSV形式に変換
-        tsv_data = "\n".join(["\t".join(map(str, row)) for row in array_data])
-
-        st.code(tsv_data, height=300)
 
     # タブの作成
     tab1, tab2, tab3 = st.tabs(["全体集計", "ファイル別集計", "エラー情報"])
