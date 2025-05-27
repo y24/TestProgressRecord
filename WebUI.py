@@ -310,7 +310,7 @@ def main():
             # PB図の表示
             pb_fig = create_pb_chart(project_data, settings, axis_type)
             if pb_fig:
-                st.plotly_chart(pb_fig, use_container_width=True, config={"displayModeBar": False, "scrollZoom": False})
+                st.plotly_chart(pb_fig, use_container_width=True, key=f"pb_chart_{selected_project_name}", config={"displayModeBar": False, "scrollZoom": False})
 
             # エラーとワーニングのあるデータを除外
             filtered_data = [d for d in project_data["gathered_data"] 
@@ -463,7 +463,7 @@ def main():
                     # PB図の表示
                     pb_fig = create_pb_chart({"gathered_data": [file_data]}, settings, axis_type)
                     if pb_fig:
-                        st.plotly_chart(pb_fig, use_container_width=True, config={"displayModeBar": False, "scrollZoom": False})
+                        st.plotly_chart(pb_fig, use_container_width=True, key=f"file_pb_chart_{selected_file}", config={"displayModeBar": False, "scrollZoom": False})
 
                     # 集計情報の表示
                     col1, col2, col3 = st.columns(3)
