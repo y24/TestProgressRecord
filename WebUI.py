@@ -258,7 +258,7 @@ def main():
         return
     
     # プロジェクト名とお気に入りボタンの表示
-    col1, col2, col3, col4 = st.columns([13, 1, 1, 1])
+    col1, col2, col3 = st.columns([14, 1, 1])
     with col1:
         # プロジェクト名
         st.header(project_data["project"]["project_name"])
@@ -285,21 +285,27 @@ def main():
                 subprocess.Popen(cmd)
                 st.session_state['reload_state'] = 'waiting'
                 st.rerun()
-    with col4:
-        if st.button("📋", help="集計データをコピー"):
-            # 集計データを2次元配列に変換
-            array_data = DataConversion.convert_to_2d_array(project_data["gathered_data"], settings)
-            # TSV形式に変換
-            tsv_data = "\n".join(["\t".join(map(str, row)) for row in array_data])
-            # クリップボードにコピー
-            pyperclip.copy(tsv_data)
-            st.toast("コピーしました")
 
     # 最終更新日時の表示
     if "last_loaded" in project_data["project"]:
         last_loaded = datetime.fromisoformat(project_data["project"]["last_loaded"])
         st.caption(f"最終更新: {last_loaded.strftime('%Y/%m/%d %H:%M')}")
-    
+
+    # データ表示の状態管理
+    if 'show_data' not in st.session_state:
+        st.session_state.show_data = False
+
+    if st.button("📋 tsvデータ", help="集計データをコピー"):
+        st.session_state.show_data = not st.session_state.show_data
+
+    if st.session_state.show_data:
+        # 集計データを2次元配列に変換
+        array_data = DataConversion.convert_to_2d_array(project_data["gathered_data"], settings)
+        # TSV形式に変換
+        tsv_data = "\n".join(["\t".join(map(str, row)) for row in array_data])
+
+        st.code(tsv_data, height=300)
+
     # タブの作成
     tab1, tab2, tab3 = st.tabs(["全体集計", "ファイル別集計", "エラー情報"])
     
