@@ -72,9 +72,9 @@ while ($true) {
             $lastXlsx = @()
             Write-Host "Found .xlsx files:" -ForegroundColor Green
             foreach ($f in $xlsx) {
-                $url = (Get-MgDriveItem -DriveId $DriveId -ItemId $f.Id -Select '@microsoft.graph.downloadUrl')."@microsoft.graph.downloadUrl"
-                Write-Host "$($f.Name) : $url"
-                $lastXlsx += @{ type = 'sharepoint'; identifier = $f.Name; path = $url }
+                # $url = (Get-MgDriveItem -DriveId $DriveId -ItemId $f.Id -Select '@microsoft.graph.downloadUrl')."@microsoft.graph.downloadUrl"
+                Write-Host "$($f.Name) : $f.Id"
+                $lastXlsx += @{ type = 'sharepoint'; identifier = $f.Name; path = $f.Id }
             }
         }
         'exit' { break }
