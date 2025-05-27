@@ -324,7 +324,8 @@ def main():
                     "available": sum(d["stats"]["available"] for d in filtered_data),
                     "executed": sum(d["stats"]["executed"] for d in filtered_data),
                     "completed": sum(d["stats"]["completed"] for d in filtered_data),
-                    "incompleted": sum(d["stats"]["incompleted"] for d in filtered_data)
+                    "incompleted": sum(d["stats"]["incompleted"] for d in filtered_data),
+                    "planned": sum(d["stats"]["planned"] for d in filtered_data)
                 }
                 
                 # 集計情報の表示
@@ -381,6 +382,7 @@ def main():
                         file_data.append({
                             "ファイル名": data.get("file", ""),
                             "項目数": "-",
+                            "計画数": "-",
                             "進捗": "-",
                             "消化率": "-",
                             "完了率": "-",
@@ -393,6 +395,7 @@ def main():
                         file_data.append({
                             "ファイル名": data.get("file", ""),
                             "項目数": available,
+                            "計画数": planned,
                             "進捗": make_progress_svg(data, settings),
                             "消化率": Labels.make_count_and_rate_text(executed, available),
                             "完了率": Labels.make_count_and_rate_text(completed, available),
@@ -403,11 +406,13 @@ def main():
                         status = "✅正常"
                         status_color = "green"
                         available = data["stats"].get("available", 0)
+                        planned = data["stats"].get("planned", 0)
                         executed = data["stats"].get("executed", 0)
                         completed = data["stats"].get("completed", 0)
                         file_data.append({
                             "ファイル名": data.get("file", ""),
                             "項目数": available,
+                            "計画数": planned,
                             "進捗": make_progress_svg(data, settings),
                             "消化率": Labels.make_count_and_rate_text(executed, available),
                             "完了率": Labels.make_count_and_rate_text(completed, available),
@@ -418,6 +423,7 @@ def main():
                         file_data.append({
                             "ファイル名": data.get("file", ""),
                             "項目数": "-",
+                            "計画数": "-",
                             "進捗": "-",
                             "消化率": "-",
                             "完了率": "-",
@@ -426,7 +432,7 @@ def main():
                         })
                 
                 df = pd.DataFrame(file_data)
-                for col in ["項目数", "消化率", "完了率"]:
+                for col in ["項目数", "計画数", "消化率", "完了率"]:
                     if col in df.columns:
                         df[col] = df[col].astype(str)
                 # HTMLテーブルでSVGを表示
