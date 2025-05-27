@@ -191,6 +191,8 @@ class ChartManager:
         fig.update_layout(
             title="テスト進捗 / 不具合検出状況",
             barmode="group",
+            bargap=0.4,
+            bargroupgap=0.0,
             xaxis=dict(
                 type="date" if axis_type == "時間軸で表示" else "category",
                 tickmode='array',
