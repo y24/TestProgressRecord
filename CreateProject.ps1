@@ -1,11 +1,11 @@
-# Requires Microsoft.Graph PowerShell SDK: Install-Module Microsoft.Graph -Scope CurrentUser
-# Interactive Graph Explorer for Teams Drive Items with Project JSON Output
+# Microsoft.Graph PowerShellモジュールが必要です: Install-Module Microsoft.Graph -Scope CurrentUser
+# TeamsドライブアイテムのインタラクティブなGraphエクスプローラー（プロジェクトJSON出力機能付き）
 
 function Connect-Graph {
     try {
-        Connect-MgGraph -Scopes "Group.Read.All","Files.Read.All","Team.ReadBasic.All"
+        Connect-MgGraph -Scopes "Team.ReadBasic.All","Files.Read.All"
     } catch {
-        Write-Error "Graph authentication failed. Ensure Microsoft.Graph module and permissions are set."
+        Write-Error "Graphの認証に失敗しました。Microsoft.Graphモジュールと権限が設定されていることを確認してください。"
         exit 1
     }
 }
@@ -17,13 +17,13 @@ function Prompt-Selection {
         if ($input -match '^[0-9]+$' -and [int]$input -ge 1 -and [int]$input -le $MaxIndex) {
             return [int]$input
         } else {
-            Write-Host "Please enter a number between 1 and $MaxIndex."
+            Write-Host "1から$MaxIndexまでの数字を入力してください。"
         }
     }
 }
 
 function Get-MyTeams {
-    $teams = Get-MgUserTeam -All
+    $teams = Get-MgUserJoinedTeam
     if (-not $teams) { return @() }
     $indexed = @(); $i = 1
     foreach ($t in $teams) {
@@ -35,45 +35,51 @@ function Get-MyTeams {
 
 function Show-DriveItems {
     param([Microsoft.Graph.PowerShell.Models.IMicrosoftGraphDriveItem]$Parent)
-    $items = if ($Parent) { Get-MgDriveItemChild -DriveId $global:DriveId -ItemId $Parent.Id -All } else { Get-MgDriveItemChild -DriveId $global:DriveId -All }
+    $items = if ($Parent) { Get-MgGroupDriveItemChild -GroupId $global:GroupId -DriveId $global:DriveId -ItemId $Parent.Id -All } else { Get-MgGroupDriveItemChild -GroupId $global:GroupId -DriveId $global:DriveId -All }
     $folders = $items | Where-Object { $_.Folder -ne $null }
     $files   = $items | Where-Object { $_.File   -ne $null }
     if ($folders) {
-        Write-Host "Folders:" -ForegroundColor Cyan
+        Write-Host "フォルダ:" -ForegroundColor Cyan
         $i = 1; foreach ($f in $folders) { Write-Host "  [$i] $($f.Id) : $($f.Name)"; $i++ }
     }
     if ($files) {
-        Write-Host "Files:" -ForegroundColor Yellow
+        Write-Host "ファイル:" -ForegroundColor Yellow
         foreach ($f in $files) { Write-Host "    $($f.Id) : $($f.Name)" }
     }
     return @{ Folders = $folders; Files = $files }
 }
 
-# Authenticate and select Team
+# 認証とチームの選択
 Connect-Graph
-$teams = Get-MyTeams; if (-not $teams) { Write-Error "No teams found."; exit }
-$sel = Prompt-Selection -Message "Select a team by number" -MaxIndex $teams.Count
+$teams = Get-MyTeams; if (-not $teams) { Write-Error "チームが見つかりません。"; exit }
+$sel = Prompt-Selection -Message "番号を入力してチームを選択してください" -MaxIndex $teams.Count
 $team = $teams[$sel - 1]
-$drive = Get-MgTeamDrive -TeamId $team.Id; $global:DriveId = $drive.Id
+$drive = Get-MgTeamDrive -TeamId $team.Id
+$global:DriveId = $drive.Id
+$global:GroupId = $team.Id
 
-# Navigation and collecting XLSX URLs
+# ナビゲーションとXLSXファイルのURL収集
 $stack = @($null); $lastXlsx = @()
 while ($true) {
     $current = $stack[-1]
     $listing = Show-DriveItems -Parent $current
     $folders = $listing.Folders
-    $input = Read-Host -Prompt "Enter folder number to navigate, 'back', 'get', or 'exit'"
+    $input = Read-Host -Prompt "フォルダ番号を入力して移動するか、'back'で戻る、'get'でファイル取得、'exit'で終了"
     switch ($input.ToLower()) {
         'back' { if ($stack.Count -gt 1) { $stack = $stack[0..($stack.Count-2)] } }
         'get' {
-            $items = if ($current) { Get-MgDriveItemChild -DriveId $DriveId -ItemId $current.Id -All } else { Get-MgDriveItemChild -DriveId $DriveId -All }
+            $items = if ($current) { 
+                Get-MgGroupDriveItemChild -GroupId $GroupId -DriveId $DriveId -ItemId $current.Id -All 
+            } else { 
+                Get-MgGroupDriveItemChild -GroupId $GroupId -DriveId $DriveId -All 
+            }
             $xlsx = $items | Where-Object { $_.File -and $_.Name -like '*.xlsx' }
-            if (-not $xlsx) { Write-Host "No .xlsx files found."; continue }
+            if (-not $xlsx) { Write-Host "Excelファイル（.xlsx）が見つかりません。"; continue }
             $lastXlsx = @()
-            Write-Host "Found .xlsx files:" -ForegroundColor Green
+            Write-Host "見つかったExcelファイル:" -ForegroundColor Green
             foreach ($f in $xlsx) {
-                # $url = (Get-MgDriveItem -DriveId $DriveId -ItemId $f.Id -Select '@microsoft.graph.downloadUrl')."@microsoft.graph.downloadUrl"
-                Write-Host "$($f.Name) : $f.Id"
+                # $url = (Get-MgGroupDriveItem -GroupId $GroupId -DriveId $DriveId -ItemId $f.Id -Select '@microsoft.graph.downloadUrl')."@microsoft.graph.downloadUrl"
+                Write-Host "$($f.Name) : $($f.Id)"
                 $lastXlsx += @{ type = 'sharepoint'; identifier = $f.Name; path = $f.Id }
             }
         }
@@ -81,15 +87,15 @@ while ($true) {
         default {
             if ($input -match '^[0-9]+$') {
                 $idx = [int]$input
-                if ($idx -ge 1 -and $idx -le $folders.Count) { $stack += $folders[$idx-1] } else { Write-Host "Invalid folder number." }
-            } else { Write-Host "Unknown command." }
+                if ($idx -ge 1 -and $idx -le $folders.Count) { $stack += $folders[$idx-1] } else { Write-Host "無効なフォルダ番号です。" }
+            } else { Write-Host "不明なコマンドです。" }
         }
     }
 }
 
-# Project JSON creation
+# プロジェクトJSONの作成
 while ($true) {
-    $yn = Read-Host -Prompt "Create project file from this list? (y/n)"
+    $yn = Read-Host -Prompt "このリストからプロジェクトファイルを作成しますか？ (y/n)"
     if ($yn -eq 'y') {
         $projName = "NewProject_$(Get-Date -Format yyyy-MM-dd)"
         $project = @{ project = @{ project_name = $projName; files = $lastXlsx } }
@@ -97,11 +103,11 @@ while ($true) {
         if (-not (Test-Path 'projects')) { New-Item -ItemType Directory -Path 'projects' | Out-Null }
         $filePath = "projects\$projName.json"
         $json | Out-File -FilePath $filePath -Encoding UTF8
-        Write-Host "Project saved to $filePath"
+        Write-Host "プロジェクトを $filePath に保存しました"
         break
     } elseif ($yn -eq 'n') {
         continue
     } else {
-        Write-Host "Please enter 'y' or 'n'."
+        Write-Host "'y'または'n'を入力してください。"
     }
 }
