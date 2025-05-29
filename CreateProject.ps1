@@ -1,6 +1,10 @@
 # Microsoft.Graph PowerShellモジュールが必要です: Install-Module Microsoft.Graph -Scope CurrentUser
 # TeamsドライブアイテムのインタラクティブなGraphエクスプローラー（プロジェクトJSON出力機能付き）
 
+# 必要なモジュールのインポート
+Import-Module Microsoft.Graph.Teams
+Import-Module Microsoft.Graph.Files
+
 function Connect-Graph {
     try {
         Connect-MgGraph -Scopes "Team.ReadBasic.All","Files.Read.All"
