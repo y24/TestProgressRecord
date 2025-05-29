@@ -22,9 +22,19 @@ function Prompt-Selection {
     }
 }
 
+function Get-MyUserInfo {
+    $me = Get-MgUser -UserId "me"
+    if (-not $me) {
+        Write-Error "ユーザー情報の取得に失敗しました。"
+        exit 1
+    }
+    return $me
+}
+
 function Get-MyTeams {
-    $teams = Get-MgUserJoinedTeam
+    $teams = Get-MgUserJoinedTeam -UserId "me"
     if (-not $teams) { return @() }
+    
     $indexed = @(); $i = 1
     foreach ($t in $teams) {
         Write-Host "[$i] $($t.Id) : $($t.DisplayName)"
