@@ -1,4 +1,4 @@
-# Microsoft.Graph PowerShellモジュールが必要です: Install-Module Microsoft.Graph -Scope CurrentUser
+﻿# Microsoft.Graph PowerShellモジュールが必要です: Install-Module Microsoft.Graph -Scope CurrentUser
 # TeamsドライブアイテムのインタラクティブなGraphエクスプローラー（プロジェクトJSON出力機能付き）
 
 # 必要なモジュールのインポート
