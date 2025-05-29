@@ -1,4 +1,4 @@
-import os, re, json
+import os, re, json, subprocess
 from tqdm import tqdm
 from datetime import datetime
 
@@ -206,7 +206,13 @@ def process_files(inputs, project_path="", on_reload=False, web_ui=False):
                 
                 # sharepointファイルの処理
                 if sharepoint_files:
-                    files, temp_dirs = DownloadFiles.download_files(sharepoint_files)
+                    # Get-DownloadUrl.ps1の実行
+                    for file in sharepoint_files:
+                        download_urls = []
+                        command = f"Get-DownloadUrl.ps1 -ItemId {file}"
+                        download_urls.append(subprocess.run(command, shell=True, capture_output=True, text=True))
+                    # ファイルのダウンロード
+                    files, temp_dirs = DownloadFiles.download_files(download_urls)
                     # xlsxファイルのみフィルタ
                     files = filter_xlsx_files(files)
                     # 全ファイルの集計処理
