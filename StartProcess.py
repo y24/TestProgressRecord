@@ -4,7 +4,7 @@ from datetime import datetime
 
 import ReadData
 import MainApp
-from libs import Utility, Dialog, Zip, AppConfig, TempDir, FileDownload, Project, DataConversion
+from libs import Utility, Dialog, Zip, AppConfig, TempDir, DownloadFiles, Project, DataConversion
 
 def get_xlsx_paths(inputs):
     """
@@ -206,7 +206,7 @@ def process_files(inputs, project_path="", on_reload=False, web_ui=False):
                 
                 # sharepointファイルの処理
                 if sharepoint_files:
-                    files, temp_dirs = FileDownload.process_json_file(inputs[0])
+                    files, temp_dirs = DownloadFiles.download_files(sharepoint_files)
                     # xlsxファイルのみフィルタ
                     files = filter_xlsx_files(files)
                     # 全ファイルの集計処理
