@@ -210,7 +210,8 @@ def process_files(inputs, project_path="", on_reload=False, web_ui=False):
                     for file in sharepoint_files:
                         download_urls = []
                         command = f"Get-DownloadUrl.ps1 -ItemId {file}"
-                        download_urls.append(subprocess.run(command, shell=True, capture_output=True, text=True))
+                        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+                        download_urls.append(result.stdout)
                     # ファイルのダウンロード
                     files, temp_dirs = DownloadFiles.download_files(download_urls)
                     # xlsxファイルのみフィルタ
