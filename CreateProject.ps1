@@ -78,10 +78,10 @@ while ($true) {
     $current = $stack[-1]
     $listing = Show-DriveItems -Parent $current
     $folders = $listing.Folders
-    $selection = Read-Host -Prompt "フォルダ番号を入力して移動するか、'back'で戻る、'get'でファイル取得、'exit'で終了"
+    $selection = Read-Host -Prompt "フォルダ番号を入力して移動 / 'select'でこのフォルダに決定 / 'back'で戻る / 'exit'で終了"
     switch ($selection.ToLower()) {
         'back' { if ($stack.Count -gt 1) { $stack = $stack[0..($stack.Count-2)] } }
-        'get' {
+        'select' {
             $items = if ($current) { 
                 Get-MgGroupDriveItemChild -GroupId $GroupId -DriveId $DriveId -ItemId $current.Id -All 
             } else { 
