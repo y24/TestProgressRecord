@@ -14,12 +14,12 @@ function Connect-Graph {
     }
 }
 
-function Prompt-Selection {
+function Read-Selection {
     param([string]$Message, [int]$MaxIndex)
     while ($true) {
-        $input = Read-Host -Prompt $Message
-        if ($input -match '^[0-9]+$' -and [int]$input -ge 1 -and [int]$input -le $MaxIndex) {
-            return [int]$input
+        $selection = Read-Host -Prompt $Message
+        if ($selection -match '^[0-9]+$' -and [int]$selection -ge 1 -and [int]$selection -le $MaxIndex) {
+            return [int]$selection
         } else {
             Write-Host "1から$MaxIndexまでの数字を入力してください。"
         }
@@ -50,8 +50,8 @@ function Get-MyTeams {
 function Show-DriveItems {
     param([Microsoft.Graph.PowerShell.Models.IMicrosoftGraphDriveItem]$Parent)
     $items = if ($Parent) { Get-MgGroupDriveItemChild -GroupId $global:GroupId -DriveId $global:DriveId -ItemId $Parent.Id -All } else { Get-MgGroupDriveItemChild -GroupId $global:GroupId -DriveId $global:DriveId -All }
-    $folders = $items | Where-Object { $_.Folder -ne $null }
-    $files   = $items | Where-Object { $_.File   -ne $null }
+    $folders = $items | Where-Object { $null -ne $_.Folder }
+    $files   = $items | Where-Object { $null -ne $_.File }
     if ($folders) {
         Write-Host "フォルダ:" -ForegroundColor Cyan
         $i = 1; foreach ($f in $folders) { Write-Host "  [$i] $($f.Id) : $($f.Name)"; $i++ }
@@ -66,7 +66,7 @@ function Show-DriveItems {
 # 認証とチームの選択
 Connect-Graph
 $teams = Get-MyTeams; if (-not $teams) { Write-Error "チームが見つかりません。"; exit }
-$sel = Prompt-Selection -Message "番号を入力してチームを選択してください" -MaxIndex $teams.Count
+$sel = Read-Selection -Message "番号を入力してチームを選択してください" -MaxIndex $teams.Count
 $team = $teams[$sel - 1]
 $drive = Get-MgTeamDrive -TeamId $team.Id
 $global:DriveId = $drive.Id
@@ -78,8 +78,8 @@ while ($true) {
     $current = $stack[-1]
     $listing = Show-DriveItems -Parent $current
     $folders = $listing.Folders
-    $input = Read-Host -Prompt "フォルダ番号を入力して移動するか、'back'で戻る、'get'でファイル取得、'exit'で終了"
-    switch ($input.ToLower()) {
+    $selection = Read-Host -Prompt "フォルダ番号を入力して移動するか、'back'で戻る、'get'でファイル取得、'exit'で終了"
+    switch ($selection.ToLower()) {
         'back' { if ($stack.Count -gt 1) { $stack = $stack[0..($stack.Count-2)] } }
         'get' {
             $items = if ($current) { 
@@ -99,8 +99,8 @@ while ($true) {
         }
         'exit' { break }
         default {
-            if ($input -match '^[0-9]+$') {
-                $idx = [int]$input
+            if ($selection -match '^[0-9]+$') {
+                $idx = [int]$selection
                 if ($idx -ge 1 -and $idx -le $folders.Count) { $stack += $folders[$idx-1] } else { Write-Host "無効なフォルダ番号です。" }
             } else { Write-Host "不明なコマンドです。" }
         }
