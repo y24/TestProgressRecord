@@ -123,7 +123,7 @@ class ChartManager:
         if show_plan_line:
             fig.add_trace(go.Bar(
                 x=df["date"], y=df["計画数"],
-                name="計画数",
+                name="計画数(日次)",
                 marker_color=settings["webui"]["graph"]["colors"]["plan"],
                 opacity=0.65,
                 width=86400000 * 0.2 if axis_type == "時間軸で表示" else 0.2,
@@ -132,7 +132,7 @@ class ChartManager:
         # 完了件数
         fig.add_trace(go.Bar(
             x=df["date"], y=df["消化数"],
-            name="消化数",
+            name="消化数(日次)",
             marker_color=settings["webui"]["graph"]["colors"]["daily_executed"],
             opacity=0.85,
             width=86400000 * 0.2 if axis_type == "時間軸で表示" else 0.2,
@@ -150,12 +150,12 @@ class ChartManager:
             fillcolor="rgba(99,110,250,0.08)"
         ))
 
-        # 計画数（全期間表示）
+        # 計画線（全期間表示）
         if show_plan_line:
             fig.add_trace(go.Scatter(
                 x=df["date"], y=df["計画未実施数"],
                 mode="lines",
-                name="計画数",
+                name="計画線",
                 line=dict(width=2, color=settings["webui"]["graph"]["colors"]["plan"])
             ))
 
