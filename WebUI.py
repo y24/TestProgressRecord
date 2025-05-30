@@ -249,16 +249,16 @@ def main():
     st.sidebar.markdown("---")
 
     # グラフ表示設定
-    st.sidebar.markdown("### 表示設定")
+    st.sidebar.markdown("### グラフ表示設定")
     # 表示設定の読み込み
     display_settings = load_display_settings()
     
     # 進捗グラフの表示設定
     axis_type = st.sidebar.radio(
-        "PB図：横軸",
-        ["時間軸で表示", "等間隔で表示"],
+        "横軸の表示方法",
+        ["時間軸", "等間隔"],
         index=0 if display_settings["axis_type"] == "時間軸で表示" else 1,
-        captions=["実際の日付間隔で表示する", "データのない日付を詰めて表示する"]
+        captions=["実際の日付間隔で表示する", "データのない日付は詰めて表示する"]
     )
 
     # 計画線表示の設定
