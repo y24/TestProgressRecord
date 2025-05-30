@@ -228,10 +228,6 @@ def main():
     if not project_data:
         return
 
-    # サイドバーにtsvデータボタンを追加
-    if st.sidebar.button("📋 TSVデータ"):
-        st.session_state.show_data = not st.session_state.show_data
-
     # tsvデータ表示モードの場合
     if st.session_state.show_data:
         # 集計データを2次元配列に変換
@@ -240,11 +236,11 @@ def main():
         tsv_data = "\n".join(["\t".join(map(str, row)) for row in array_data])
         
         st.markdown("### tsvデータ")
-        st.text("データをコピーしてください：")
-        st.code(tsv_data, height=600)
+        st.text("データをコピーしてください。")
         if st.button("戻る"):
             st.session_state.show_data = False
             st.rerun()
+        st.code(tsv_data, height=600)
         return  # メイン画面の表示をスキップ
 
     st.sidebar.markdown("---")
@@ -291,7 +287,7 @@ def main():
             st.rerun()
     
     # プロジェクト名とお気に入りボタンの表示
-    col1, col2, col3 = st.columns([14, 1, 1])
+    col1, col2, col3, col4 = st.columns([14, 1, 1, 1])
     with col1:
         # プロジェクト名
         st.header(project_data["project"]["project_name"])
@@ -307,6 +303,10 @@ def main():
                 save_default_project(selected_project_name)
             st.rerun()
     with col3:
+        if st.button("📋", key="tsv_button", help="TSVデータを表示"):
+            st.session_state.show_data = not st.session_state.show_data
+            st.rerun()
+    with col4:
         if st.button("🔄", key="reload_button", help="再集計を実行"):
             if selected_project:
                 project_path = str(selected_project)
