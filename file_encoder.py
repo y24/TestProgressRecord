@@ -1,6 +1,21 @@
 import sys
 import base64
 
+def create_download_link(b64_content: str, filename: str, link_text: str = None) -> str:
+    """
+    Base64エンコードされたデータを含むダウンロードリンクのHTML文字列を生成します。
+    
+    Args:
+        b64_content (str): Base64エンコードされたファイルの内容
+        filename (str): ダウンロード時のファイル名
+        link_text (str, optional): リンクに表示するテキスト。指定がない場合はファイル名が使用されます。
+    
+    Returns:
+        str: HTML形式のダウンロードリンク文字列
+    """
+    link_text = link_text or filename
+    return f'<a href="data:application/octet-stream;base64,{b64_content}" download="{filename}" style="text-decoration:none;">{link_text}</a>'
+
 def encode_file(file_path):
     try:
         with open(file_path, "rb") as f:
