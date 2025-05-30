@@ -229,7 +229,7 @@ def main():
         return
 
     # サイドバーにtsvデータボタンを追加
-    if st.sidebar.button("📋 tsvデータを表示"):
+    if st.sidebar.button("📋 TSVデータ"):
         st.session_state.show_data = not st.session_state.show_data
 
     # tsvデータ表示モードの場合
@@ -240,7 +240,7 @@ def main():
         tsv_data = "\n".join(["\t".join(map(str, row)) for row in array_data])
         
         st.markdown("### tsvデータ")
-        st.text("以下のデータをコピーしてください：")
+        st.text("データをコピーしてください：")
         st.code(tsv_data, height=600)
         if st.button("戻る"):
             st.session_state.show_data = False
