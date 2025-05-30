@@ -77,6 +77,11 @@
                 "plan": "#9ca3af",
                 "daily_executed": "#fbbc04"
             }
+        },
+        "display_settings": {
+            "axis_type": "等間隔",
+            "show_plan_line": true,
+            "show_bug_curve": false
         }
     }
 }
