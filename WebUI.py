@@ -136,7 +136,8 @@ def load_display_settings():
     settings = AppConfig.load_settings()
     return settings.get("webui", {}).get("display_settings", {
         "axis_type": "時間軸で表示",  # デフォルト値
-        "show_plan_line": True  # デフォルト値
+        "show_plan_line": True,  # デフォルト値
+        "show_bug_curve": False  # デフォルト値を追加
     })
 
 # 表示設定を保存
@@ -150,6 +151,56 @@ def save_display_settings(display_settings):
 # PB図を作成
 def create_pb_chart(project_data, settings, axis_type="時間軸で表示", show_plan_line=True):
     return ChartManager.create_pb_chart(project_data, settings, axis_type, show_plan_line)
+
+def create_bug_curve_chart(project_data, settings):
+    # エラーとワーニングのあるデータを除外
+    filtered_data = [d for d in project_data["gathered_data"] 
+                    if "error" not in d and "warning" not in d]
+    
+    if not filtered_data:
+        return None
+
+    # 日付順にデータを集計
+    executed_counts = []
+    bug_counts = []
+    total_executed = 0
+    total_bugs = 0
+    
+    for data in filtered_data:
+        if "daily" in data:
+            for date, values in sorted(data["daily"].items()):
+                # 完了数を累積
+                total_executed += values.get("完了数", 0)
+                # Failを累積
+                total_bugs += values.get("Fail", 0)
+                executed_counts.append(total_executed)
+                bug_counts.append(total_bugs)
+    
+    if not executed_counts:
+        return None
+
+    # グラフの作成
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=executed_counts,
+        y=bug_counts,
+        mode='lines+markers',
+        name='バグ収束曲線',
+        line=dict(color='red'),
+        hovertemplate='テスト完了数: %{x}<br>不具合検出数: %{y}<extra></extra>'
+    ))
+
+    # レイアウトの設定
+    fig.update_layout(
+        title='バグ収束曲線',
+        xaxis_title='テスト完了数（累積）',
+        yaxis_title='不具合検出数（累積）',
+        showlegend=True,
+        height=400,
+        margin=dict(t=50, b=50)
+    )
+
+    return fig
 
 # メインアプリケーション
 def main():
@@ -265,12 +316,21 @@ def main():
         captions=["実際の日付間隔で表示する", "データのない日付は詰めて表示する"]
     )
 
+    # バグ収束曲線の表示設定を追加
+    show_bug_curve = st.sidebar.toggle(
+        "バグ収束曲線を表示",
+        value=display_settings.get("show_bug_curve", False),
+        help="テスト実施数と不具合検出数の関係を示すグラフを表示します"
+    )
+
     # 設定が変更された場合は保存
     if (axis_type != display_settings["axis_type"] or
-        show_plan_line != display_settings.get("show_plan_line", True)):
+        show_plan_line != display_settings.get("show_plan_line", True) or
+        show_bug_curve != display_settings.get("show_bug_curve", False)):
         save_display_settings({
             "axis_type": axis_type,
-            "show_plan_line": show_plan_line
+            "show_plan_line": show_plan_line,
+            "show_bug_curve": show_bug_curve
         })
         st.rerun()  # 設定を反映するために再読み込み
 
@@ -345,6 +405,12 @@ def main():
             pb_fig = create_pb_chart(project_data, settings, axis_type, display_settings.get("show_plan_line", True))
             if pb_fig:
                 st.plotly_chart(pb_fig, use_container_width=True, key=f"pb_chart_{selected_project_name}", config={"displayModeBar": False, "scrollZoom": False})
+
+            # バグ収束曲線の表示
+            if display_settings.get("show_bug_curve", False):
+                bug_curve_fig = create_bug_curve_chart(project_data, settings)
+                if bug_curve_fig:
+                    st.plotly_chart(bug_curve_fig, use_container_width=True, key=f"bug_curve_{selected_project_name}", config={"displayModeBar": False, "scrollZoom": False})
 
             # エラーとワーニングのあるデータを除外
             filtered_data = [d for d in project_data["gathered_data"] 
