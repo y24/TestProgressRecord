@@ -9,6 +9,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 import pyperclip
+import base64
 
 from libs import AppConfig, Labels, DataConversion
 from libs.webui_chart_manager import ChartManager
@@ -414,13 +415,15 @@ def main():
                         status_color = "red"
                         file_data.append({
                             "ファイル名": data.get("file", ""),
+                            "DL": "📥",
                             "項目数": "-",
                             "計画数": "-",
                             "進捗": "-",
                             "消化率": "-",
                             "完了率": "-",
                             "状態": status,
-                            "更新日時": data.get("last_updated", "")
+                            "更新日時": data.get("last_updated", ""),
+                            "filepath": data.get("filepath", "")
                         })
                     elif "warning" in data:
                         status = "⚠️警告"
@@ -432,13 +435,15 @@ def main():
                         completed = data.get("stats", {}).get("completed", 0)
                         file_data.append({
                             "ファイル名": data.get("file", ""),
+                            "DL": "📥",
                             "項目数": available,
                             "計画数": planned,
                             "進捗": make_progress_svg(data, settings),
                             "消化率": Labels.make_count_and_rate_text(executed, available),
                             "完了率": Labels.make_count_and_rate_text(completed, available),
                             "状態": status,
-                            "更新日時": data.get("last_updated", "")
+                            "更新日時": data.get("last_updated", ""),
+                            "filepath": data.get("filepath", "")
                         })
                     elif "stats" in data:
                         status = "✅正常"
@@ -449,39 +454,58 @@ def main():
                         completed = data["stats"].get("completed", 0)
                         file_data.append({
                             "ファイル名": data.get("file", ""),
+                            "DL": "📥",
                             "項目数": available,
                             "計画数": planned,
                             "進捗": make_progress_svg(data, settings),
                             "消化率": Labels.make_count_and_rate_text(executed, available),
                             "完了率": Labels.make_count_and_rate_text(completed, available),
                             "状態": status,
-                            "更新日時": data.get("last_updated", "")
+                            "更新日時": data.get("last_updated", ""),
+                            "filepath": data.get("filepath", "")
                         })
                     else:
                         file_data.append({
                             "ファイル名": data.get("file", ""),
+                            "DL": "-",
                             "項目数": "-",
                             "計画数": "-",
                             "進捗": "-",
                             "消化率": "-",
                             "完了率": "-",
                             "状態": "不明",
-                            "更新日時": data.get("last_updated", "")
+                            "更新日時": data.get("last_updated", ""),
+                            "filepath": data.get("filepath", "")
                         })
                 
                 df = pd.DataFrame(file_data)
                 for col in ["項目数", "計画数", "消化率", "完了率"]:
                     if col in df.columns:
                         df[col] = df[col].astype(str)
-                # HTMLテーブルでSVGを表示
+
+                # HTMLテーブルでSVGを表示し、ダウンロードボタンを追加
                 def df_to_html(df):
                     html = '<table style="width:100%; border-collapse:collapse;">'
-                    html += '<tr>' + ''.join(f'<th style="padding:2px 4px;">{c}</th>' for c in df.columns) + '</tr>'
+                    html += '<tr>' + ''.join(f'<th style="padding:2px 4px;">{c}</th>' for c in df.columns if c != "filepath") + '</tr>'
                     for _, row in df.iterrows():
-                        html += '<tr>' + ''.join(
-                            f'<td style="padding:2px 4px; vertical-align:middle;">{row[c] if c != "進捗" else row[c]}</td>'
-                            for c in df.columns
-                        ) + '</tr>'
+                        html += '<tr>'
+                        for c in df.columns:
+                            if c == "filepath":
+                                continue
+                            elif c == "DL" and row["filepath"]:
+                                # ダウンロードボタンを作成
+                                file_path = row["filepath"]
+                                if os.path.exists(file_path):
+                                    with open(file_path, "rb") as f:
+                                        file_content = f.read()
+                                    b64 = base64.b64encode(file_content).decode()
+                                    download_link = f'<span style="font-size:0.8em;"><a href="data:application/octet-stream;base64,{b64}" download="{os.path.basename(file_path)}" style="text-decoration:none;">■</a></span>'
+                                    html += f'<td style="padding:2px 4px; vertical-align:middle;">{download_link}</td>'
+                                else:
+                                    html += '<td style="padding:2px 4px; vertical-align:middle;">-</td>'
+                            else:
+                                html += f'<td style="padding:2px 4px; vertical-align:middle;">{row[c] if c != "進捗" else row[c]}</td>'
+                        html += '</tr>'
                     html += '</table>'
                     return html
                 st.markdown(df_to_html(df), unsafe_allow_html=True)
