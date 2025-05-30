@@ -134,7 +134,8 @@ def save_default_project(project_name):
 def load_display_settings():
     settings = AppConfig.load_settings()
     return settings.get("webui", {}).get("display_settings", {
-        "axis_type": "時間軸で表示"  # デフォルト値
+        "axis_type": "時間軸で表示",  # デフォルト値
+        "show_plan_line": True  # デフォルト値
     })
 
 # 表示設定を保存
@@ -146,8 +147,8 @@ def save_display_settings(display_settings):
     AppConfig.save_settings(settings)
 
 # PB図を作成
-def create_pb_chart(project_data, settings, axis_type="時間軸で表示"):
-    return ChartManager.create_pb_chart(project_data, settings, axis_type)
+def create_pb_chart(project_data, settings, axis_type="時間軸で表示", show_plan_line=True):
+    return ChartManager.create_pb_chart(project_data, settings, axis_type, show_plan_line)
 
 # メインアプリケーション
 def main():
@@ -260,9 +261,20 @@ def main():
         captions=["実際の日付間隔で表示する", "データのない日付を詰めて表示する"]
     )
 
+    # 計画線表示の設定
+    show_plan_line = st.sidebar.toggle(
+        "計画線を表示",
+        value=display_settings.get("show_plan_line", True),
+        help="PB図の計画線の表示/非表示を切り替えます"
+    )
+
     # 設定が変更された場合は保存
-    if axis_type != display_settings["axis_type"]:
-        save_display_settings({"axis_type": axis_type})
+    if (axis_type != display_settings["axis_type"] or
+        show_plan_line != display_settings.get("show_plan_line", True)):
+        save_display_settings({
+            "axis_type": axis_type,
+            "show_plan_line": show_plan_line
+        })
         st.rerun()  # 設定を反映するために再読み込み
 
     # 再集計状態管理
@@ -329,7 +341,7 @@ def main():
         if "gathered_data" in project_data:
 
             # PB図の表示
-            pb_fig = create_pb_chart(project_data, settings, axis_type)
+            pb_fig = create_pb_chart(project_data, settings, axis_type, display_settings.get("show_plan_line", True))
             if pb_fig:
                 st.plotly_chart(pb_fig, use_container_width=True, key=f"pb_chart_{selected_project_name}", config={"displayModeBar": False, "scrollZoom": False})
 
@@ -487,7 +499,7 @@ def main():
                 file_data = matching_data[0]
                 if "error" not in file_data:
                     # PB図の表示
-                    pb_fig = create_pb_chart({"gathered_data": [file_data]}, settings, axis_type)
+                    pb_fig = create_pb_chart({"gathered_data": [file_data]}, settings, axis_type, display_settings.get("show_plan_line", True))
                     if pb_fig:
                         st.plotly_chart(pb_fig, use_container_width=True, key=f"file_pb_chart_{selected_file}", config={"displayModeBar": False, "scrollZoom": False})
 

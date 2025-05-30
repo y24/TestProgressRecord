@@ -66,7 +66,7 @@ class ChartManager:
         return fig
 
     @staticmethod
-    def create_pb_chart(project_data: Dict[str, Any], settings: Dict[str, Any], axis_type: str = "時間軸で表示") -> Optional[go.Figure]:
+    def create_pb_chart(project_data: Dict[str, Any], settings: Dict[str, Any], axis_type: str = "時間軸で表示", show_plan_line: bool = True) -> Optional[go.Figure]:
         """PB図を作成"""
         if not project_data.get("gathered_data"):
             return None
@@ -120,14 +120,15 @@ class ChartManager:
 
         # --- 縦棒グラフ ---
         # 計画件数（灰色）
-        fig.add_trace(go.Bar(
-            x=df["date"], y=df["計画数"],
-            name="計画数",
-            marker_color=settings["webui"]["graph"]["colors"]["plan"],
-            opacity=0.65,
-            width=86400000 * 0.2 if axis_type == "時間軸で表示" else 0.2,
-            yaxis="y"
-        ))
+        if show_plan_line:
+            fig.add_trace(go.Bar(
+                x=df["date"], y=df["計画数"],
+                name="計画数",
+                marker_color=settings["webui"]["graph"]["colors"]["plan"],
+                opacity=0.65,
+                width=86400000 * 0.2 if axis_type == "時間軸で表示" else 0.2,
+                yaxis="y"
+            ))
         # 完了件数
         fig.add_trace(go.Bar(
             x=df["date"], y=df["消化数"],
@@ -150,12 +151,13 @@ class ChartManager:
         ))
 
         # 計画線（全期間表示）
-        fig.add_trace(go.Scatter(
-            x=df["date"], y=df["計画未実施数"],
-            mode="lines",
-            name="計画線",
-            line=dict(width=2, color=settings["webui"]["graph"]["colors"]["plan"])
-        ))
+        if show_plan_line:
+            fig.add_trace(go.Scatter(
+                x=df["date"], y=df["計画未実施数"],
+                mode="lines",
+                name="計画線",
+                line=dict(width=2, color=settings["webui"]["graph"]["colors"]["plan"])
+            ))
 
         date_objs = [datetime.strptime(d, "%Y-%m-%d") for d in df["date"]]
         min_date = date_objs[0]
