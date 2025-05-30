@@ -157,6 +157,14 @@ def main():
         layout="wide"
     )
     
+    # セッション状態の初期化
+    if 'show_data' not in st.session_state:
+        st.session_state.show_data = False
+    if 'reload_state' not in st.session_state:
+        st.session_state['reload_state'] = 'idle'
+    if 'previous_project' not in st.session_state:
+        st.session_state.previous_project = None
+
     # 設定の読み込み
     settings = AppConfig.load_settings()
     
@@ -192,10 +200,6 @@ def main():
         default_index = project_names.index(display_name)
     elif default_project in project_options:
         default_index = project_names.index(f"⭐ {default_project}")
-
-    # プロジェクト選択の状態管理
-    if 'previous_project' not in st.session_state:
-        st.session_state.previous_project = None
 
     # st.sidebar.markdown("### プロジェクト")
 
@@ -262,9 +266,6 @@ def main():
         st.rerun()  # 設定を反映するために再読み込み
 
     # 再集計状態管理
-    if 'reload_state' not in st.session_state:
-        st.session_state['reload_state'] = 'idle'
-
     if st.session_state.get('reload_state') == 'waiting':
         flag_path = f"{str(selected_project)}.reloading"
         if not os.path.exists(flag_path):
@@ -309,10 +310,6 @@ def main():
     if "last_loaded" in project_data["project"]:
         last_loaded = datetime.fromisoformat(project_data["project"]["last_loaded"])
         st.caption(f"最終更新: {last_loaded.strftime('%Y/%m/%d %H:%M')}")
-
-    # データ表示の状態管理
-    if 'show_data' not in st.session_state:
-        st.session_state.show_data = False
 
     # エラー情報の確認
     error_df = create_error_table(project_data)
