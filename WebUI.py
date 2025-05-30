@@ -254,19 +254,19 @@ def main():
     # 表示設定の読み込み
     display_settings = load_display_settings()
     
+    # 計画線表示の設定
+    show_plan_line = st.sidebar.toggle(
+        "計画線を表示",
+        value=display_settings.get("show_plan_line", True),
+        help="PB図の計画線の表示/非表示を切り替えます"
+    )
+
     # 進捗グラフの表示設定
     axis_type = st.sidebar.radio(
         "横軸の表示方法",
         ["時間軸", "等間隔"],
         index=0 if display_settings["axis_type"] == "時間軸で表示" else 1,
         captions=["実際の日付間隔で表示する", "データのない日付は詰めて表示する"]
-    )
-
-    # 計画線表示の設定
-    show_plan_line = st.sidebar.toggle(
-        "計画線を表示",
-        value=display_settings.get("show_plan_line", True),
-        help="PB図の計画線の表示/非表示を切り替えます"
     )
 
     # 設定が変更された場合は保存
