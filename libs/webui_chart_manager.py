@@ -150,12 +150,12 @@ class ChartManager:
             fillcolor="rgba(99,110,250,0.08)"
         ))
 
-        # 計画線（全期間表示）
+        # 計画数（全期間表示）
         if show_plan_line:
             fig.add_trace(go.Scatter(
                 x=df["date"], y=df["計画未実施数"],
                 mode="lines",
-                name="計画線",
+                name="計画数",
                 line=dict(width=2, color=settings["webui"]["graph"]["colors"]["plan"])
             ))
 
