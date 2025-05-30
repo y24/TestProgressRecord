@@ -250,4 +250,70 @@ class ChartManager:
                 f'<rect x="{sum(width * v / total for _, v in bar_data[:i])}" y="0" width="{width * value / total}" height="{height}" fill="{color}" />'
                 for i, (color, value) in enumerate(bar_data)
             ]) + '</svg>'
-        return svg 
+        return svg
+
+    @staticmethod
+    def create_bug_curve_chart(project_data: Dict[str, Any], settings: Dict[str, Any]) -> Optional[go.Figure]:
+        """バグ収束曲線を作成"""
+        # エラーとワーニングのあるデータを除外
+        filtered_data = [d for d in project_data["gathered_data"] 
+                        if "error" not in d and "warning" not in d]
+        
+        if not filtered_data:
+            return None
+
+        # 日付順にデータを集計
+        executed_counts = []
+        bug_counts = []
+        total_executed = 0
+        total_bugs = 0
+        
+        for data in filtered_data:
+            if "daily" in data:
+                for date, values in sorted(data["daily"].items()):
+                    # 完了数を累積
+                    total_executed += values.get("完了数", 0)
+                    # Failを累積
+                    total_bugs += values.get("Fail", 0)
+                    executed_counts.append(total_executed)
+                    bug_counts.append(total_bugs)
+        
+        if not executed_counts:
+            return None
+
+        # グラフの作成
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=executed_counts,
+            y=bug_counts,
+            mode='lines+markers',
+            name='バグ収束曲線',
+            line=dict(
+                color='red',
+                shape='spline',  # スプライン曲線を使用
+                smoothing=0.8    # スムージングの強さを指定（0-1.3）
+            ),
+            marker=dict(
+                size=6,          # マーカーのサイズを小さめに
+                color='red'
+            ),
+            hovertemplate='テスト完了数: %{x}<br>不具合検出数: %{y}<extra></extra>'
+        ))
+
+        # レイアウトの設定
+        fig.update_layout(
+            title='バグ収束曲線',
+            xaxis_title='テスト完了数（累積）',
+            yaxis_title='不具合検出数（累積）',
+            showlegend=True,
+            height=400,
+            margin=dict(t=50, b=50),
+            plot_bgcolor="#FFF",  # PB図と同じ背景色に
+            font=dict(
+                family="sans-serif",
+                size=16
+            ),
+            dragmode=False
+        )
+
+        return fig 

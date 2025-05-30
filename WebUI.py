@@ -152,56 +152,6 @@ def save_display_settings(display_settings):
 def create_pb_chart(project_data, settings, axis_type="時間軸で表示", show_plan_line=True):
     return ChartManager.create_pb_chart(project_data, settings, axis_type, show_plan_line)
 
-def create_bug_curve_chart(project_data, settings):
-    # エラーとワーニングのあるデータを除外
-    filtered_data = [d for d in project_data["gathered_data"] 
-                    if "error" not in d and "warning" not in d]
-    
-    if not filtered_data:
-        return None
-
-    # 日付順にデータを集計
-    executed_counts = []
-    bug_counts = []
-    total_executed = 0
-    total_bugs = 0
-    
-    for data in filtered_data:
-        if "daily" in data:
-            for date, values in sorted(data["daily"].items()):
-                # 完了数を累積
-                total_executed += values.get("完了数", 0)
-                # Failを累積
-                total_bugs += values.get("Fail", 0)
-                executed_counts.append(total_executed)
-                bug_counts.append(total_bugs)
-    
-    if not executed_counts:
-        return None
-
-    # グラフの作成
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=executed_counts,
-        y=bug_counts,
-        mode='lines+markers',
-        name='バグ収束曲線',
-        line=dict(color='red'),
-        hovertemplate='テスト完了数: %{x}<br>不具合検出数: %{y}<extra></extra>'
-    ))
-
-    # レイアウトの設定
-    fig.update_layout(
-        title='バグ収束曲線',
-        xaxis_title='テスト完了数（累積）',
-        yaxis_title='不具合検出数（累積）',
-        showlegend=True,
-        height=400,
-        margin=dict(t=50, b=50)
-    )
-
-    return fig
-
 # メインアプリケーション
 def main():
     st.set_page_config(
@@ -408,7 +358,7 @@ def main():
 
             # バグ収束曲線の表示
             if display_settings.get("show_bug_curve", False):
-                bug_curve_fig = create_bug_curve_chart(project_data, settings)
+                bug_curve_fig = ChartManager.create_bug_curve_chart(project_data, settings)
                 if bug_curve_fig:
                     st.plotly_chart(bug_curve_fig, use_container_width=True, key=f"bug_curve_{selected_project_name}", config={"displayModeBar": False, "scrollZoom": False})
 
