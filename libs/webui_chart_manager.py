@@ -196,7 +196,7 @@ class ChartManager:
             bargap=0.4,
             bargroupgap=0.0,
             xaxis=dict(
-                type="date" if axis_type == "時間軸で表示" else "category",
+                type="date" if axis_type == "時間軸" else "category",
                 tickmode='array',
                 tickvals=tickvals,
                 ticktext=ticktexts,
