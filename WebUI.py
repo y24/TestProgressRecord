@@ -416,6 +416,11 @@ def main():
                     elif "warning" in data:
                         status = "⚠️警告"
                         status_color = "orange"
+                        # 警告時の統計情報の取得
+                        available = data.get("stats", {}).get("available", 0)
+                        planned = data.get("stats", {}).get("planned", 0)
+                        executed = data.get("stats", {}).get("executed", 0)
+                        completed = data.get("stats", {}).get("completed", 0)
                         file_data.append({
                             "ファイル名": data.get("file", ""),
                             "項目数": available,
