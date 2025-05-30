@@ -496,11 +496,30 @@ def main():
                                 # ダウンロードボタンを作成
                                 file_path = row["filepath"]
                                 if os.path.exists(file_path):
-                                    with open(file_path, "rb") as f:
-                                        file_content = f.read()
-                                    b64 = base64.b64encode(file_content).decode()
-                                    download_link = f'<span style="font-size:0.8em;"><a href="data:application/octet-stream;base64,{b64}" download="{os.path.basename(file_path)}" style="text-decoration:none;">■</a></span>'
-                                    html += f'<td style="padding:2px 4px; vertical-align:middle;">{download_link}</td>'
+                                    try:
+                                        # サブプロセスでファイルエンコードを実行
+                                        python_exe = sys.executable
+                                        encoder_script = os.path.join(os.path.dirname(__file__), "file_encoder.py")
+                                        result = subprocess.run(
+                                            [python_exe, encoder_script, file_path],
+                                            capture_output=True,
+                                            text=True,
+                                            timeout=30  # タイムアウトを30秒に設定
+                                        )
+                                        
+                                        if result.returncode == 0:
+                                            b64 = result.stdout.strip()
+                                            download_link = f'<span style="font-size:0.8em;"><a href="data:application/octet-stream;base64,{b64}" download="{os.path.basename(file_path)}" style="text-decoration:none;">■</a></span>'
+                                            html += f'<td style="padding:2px 4px; vertical-align:middle;">{download_link}</td>'
+                                        else:
+                                            st.error(f"ファイルのエンコードに失敗しました: {result.stderr}")
+                                            html += '<td style="padding:2px 4px; vertical-align:middle;">-</td>'
+                                    except subprocess.TimeoutExpired:
+                                        st.warning(f"ファイルのエンコードがタイムアウトしました: {os.path.basename(file_path)}")
+                                        html += '<td style="padding:2px 4px; vertical-align:middle;">-</td>'
+                                    except Exception as e:
+                                        st.error(f"エラーが発生しました: {str(e)}")
+                                        html += '<td style="padding:2px 4px; vertical-align:middle;">-</td>'
                                 else:
                                     html += '<td style="padding:2px 4px; vertical-align:middle;">-</td>'
                             else:
