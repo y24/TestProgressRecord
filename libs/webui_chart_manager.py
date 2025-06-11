@@ -159,9 +159,20 @@ class ChartManager:
                 line=dict(width=2, color=settings["webui"]["graph"]["colors"]["plan"])
             ))
 
-        date_objs = [datetime.strptime(d, "%Y-%m-%d") for d in df["date"]]
-        min_date = date_objs[0]
-        max_date = date_objs[-1]
+        # 日付オブジェクトの作成（無効な日付をスキップ）
+        date_objs = []
+        for d in df["date"]:
+            try:
+                date_obj = datetime.strptime(d, "%Y-%m-%d")
+                date_objs.append(date_obj)
+            except ValueError:
+                continue
+        
+        if not date_objs:  # 有効な日付が1つもない場合
+            return None
+            
+        min_date = min(date_objs)
+        max_date = max(date_objs)
 
         # 7日おきの日付ラベル
         tickvals = []
