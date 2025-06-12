@@ -87,6 +87,9 @@ class ChartManager:
 
         # 総テスト件数
         total_tests = stats.get("all", 0)
+        # 対象外を除いた総テスト件数を計算
+        excluded_count = stats.get("excluded", 0)
+        total_tests_without_excluded = total_tests - excluded_count
 
         # 計画消化数の累積
         cumulative_plan = []
@@ -101,11 +104,11 @@ class ChartManager:
         df = pd.DataFrame([
             {
                 "date": d,
-                "未実施テスト項目数": total_tests - sum([daily[dt].get("消化数", 0) for dt in dates if dt <= d]),
+                "未実施テスト項目数": total_tests_without_excluded - sum([daily[dt].get("消化数", 0) for dt in dates if dt <= d]),
                 "消化数": daily[d].get("消化数", 0),
                 "Fail": daily[d].get("Fail", 0),
                 "計画累計消化数": cumulative_plan[i],
-                "計画未実施数": total_tests - cumulative_plan[i],
+                "計画未実施数": total_tests_without_excluded - cumulative_plan[i],
                 "計画数": daily[d].get("計画数", 0),
                 "完了数": daily[d].get("完了数", 0)
             }
